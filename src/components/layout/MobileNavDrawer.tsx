@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,18 +13,12 @@ import {
   Pill,
   Calendar,
   HeartPulse,
-  Heart,
   Bell,
   User,
   Settings,
-  Users,
-  Printer,
-  ChevronRight,
   ShieldCheck,
-  Search,
-  AlertCircle,
-  ExternalLink,
-  Phone,
+  ChevronRight,
+  Shield,
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,17 +28,30 @@ interface MobileNavDrawerProps {
   onClose: () => void;
 }
 
-const navGroups = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  highlight?: boolean;
+  badge?: string;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
-    title: "Main",
+    title: "Main Navigation",
     items: [
       {
-        name: "Home",
+        name: "Home Overview",
         href: "/dashboard",
         icon: Home,
       },
       {
-        name: "Copilot",
+        name: "Clinical Copilot",
         href: "/assistant",
         icon: Stethoscope,
         highlight: true,
@@ -52,35 +59,35 @@ const navGroups = [
     ],
   },
   {
-    title: "Records",
+    title: "Medical Records",
     items: [
       {
-        name: "Medical Records",
+        name: "Vault & OCR Scans",
         href: "/vault",
         icon: FileText,
       },
       {
-        name: "Timeline",
+        name: "Health Timeline",
         href: "/timeline",
         icon: Clock,
       },
     ],
   },
   {
-    title: "Health",
+    title: "Clinical Care",
     items: [
       {
-        name: "Evaluation",
+        name: "Health Evaluation",
         href: "/evaluation",
         icon: HeartPulse,
       },
       {
-        name: "Analytics",
+        name: "Biomarker Analytics",
         href: "/metrics",
         icon: Activity,
       },
       {
-        name: "Medications",
+        name: "Medication Regimen",
         href: "/medications",
         icon: Pill,
       },
@@ -90,27 +97,28 @@ const navGroups = [
         icon: Calendar,
       },
       {
-        name: "Chronic",
+        name: "Chronic Care Hub",
         href: "/chronic-care",
         icon: ShieldCheck,
       },
     ],
   },
   {
-    title: "Account",
+    title: "Settings & Account",
     items: [
       {
-        name: "Notifications",
+        name: "Care Notifications",
         href: "/notifications",
         icon: Bell,
+        badge: "3",
       },
       {
-        name: "Profile",
+        name: "Patient Profile",
         href: "/profile",
         icon: User,
       },
       {
-        name: "Settings",
+        name: "App Settings",
         href: "/settings",
         icon: Settings,
       },
@@ -120,107 +128,117 @@ const navGroups = [
 
 export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
   const pathname = usePathname();
-  const [search, setSearch] = useState("");
 
   if (!isOpen) return null;
-
-  const filteredGroups = navGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(search.toLowerCase())
-      ),
-    }))
-    .filter((group) => group.items.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex lg:hidden animate-in fade-in duration-200">
       {/* Dimmed backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Left Sidebar Drawer */}
-      <div className="relative z-10 h-full w-[300px] flex flex-col bg-white/95 backdrop-blur-xl border-r-2 border-slate-300 shadow-[0_0_60px_rgba(0,0,0,0.15)] overflow-hidden animate-in slide-in-from-left duration-300">
-        {/* Header with gradient */}
-        <div className="relative h-[80px] flex items-center px-5 border-b border-slate-200 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 via-white to-sky-50 opacity-60" />
-          <div className="relative flex items-center gap-3 w-full">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30">
-              <ShieldCheck className="h-6 w-6" />
+      <div className="relative z-10 h-full w-[285px] max-w-[85vw] flex flex-col bg-white border-r border-slate-200 shadow-2xl overflow-hidden animate-in slide-in-from-left duration-250">
+        {/* Compact Clean Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
+              <ShieldCheck className="h-5 w-5" />
             </div>
-            <div className="flex-1">
-              <span className="block text-lg font-extrabold tracking-tight text-slate-900 leading-none">
+            <div>
+              <span className="block text-sm font-extrabold tracking-tight text-slate-900 leading-none">
                 ChronicAI
               </span>
-              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">
-                Lifelong Care
+              <span className="mt-0.5 block text-[9.5px] font-bold uppercase tracking-[0.14em] text-emerald-600">
+                Care Intelligence
               </span>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-all shadow-sm cursor-pointer"
-              aria-label="Close menu"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
+            aria-label="Close menu"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
-          {filteredGroups.map((group) => (
+        {/* Navigation Groups with Proper Sizing & Tight Spacing */}
+        <div className="flex-1 overflow-y-auto px-3 py-3.5 space-y-4">
+          {navGroups.map((group) => (
             <div key={group.title}>
-              <span className="mb-3 block px-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
+              <span className="block px-2 mb-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-slate-400">
                 {group.title}
               </span>
-              <div className="space-y-1.5">
+
+              <div className="space-y-1">
                 {group.items.map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
 
+                  // Highlighting for Clinical Copilot
                   if (item.highlight) {
                     return (
                       <Link
                         key={item.name}
                         href={item.href!}
                         onClick={onClose}
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all group relative overflow-hidden"
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all group relative overflow-hidden",
+                          isActive
+                            ? "bg-emerald-50 text-emerald-900 border border-emerald-200/80 shadow-xs"
+                            : "bg-emerald-50/50 text-emerald-800 hover:bg-emerald-50 border border-emerald-100"
+                        )}
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 opacity-0 group-hover:opacity-10 transition-opacity" />
-                        <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-md shadow-emerald-500/30">
-                          <Icon className="h-5 w-5" />
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs">
+                          <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
                         </div>
-                        <span className="relative text-emerald-700">{item.name}</span>
-                        <ChevronRight className="ml-auto h-4 w-4 text-emerald-400" />
+                        <span className="flex-1">{item.name}</span>
+                        <Sparkles className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                       </Link>
                     );
                   }
 
+                  // Normal Menu Item
                   return (
                     <Link
                       key={item.name}
                       href={item.href!}
                       onClick={onClose}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all group relative",
+                        "flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-xs transition-all group relative",
                         isActive
-                          ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-900 shadow-sm border border-emerald-200"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-emerald-50/90 text-emerald-900 font-bold border border-emerald-200/70 shadow-xs"
+                          : "text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900"
                       )}
                     >
-                      <div className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-xl transition-all",
-                        isActive ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-600"
-                      )}>
-                        <Icon className="h-4.5 w-4.5" />
+                      <div
+                        className={cn(
+                          "flex h-7 w-7 items-center justify-center rounded-lg transition-colors shrink-0",
+                          isActive
+                            ? "bg-emerald-100/80 text-emerald-700"
+                            : "bg-slate-100 text-slate-500 group-hover:bg-slate-200/70 group-hover:text-slate-700"
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
                       </div>
-                      <span className="flex-1">{item.name}</span>
-                      {isActive && (
-                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
+
+                      <span className="flex-1 truncate">{item.name}</span>
+
+                      {/* Optional Badge */}
+                      {item.badge && (
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-xs">
+                          {item.badge}
+                        </span>
+                      )}
+
+                      {/* Active indicator dot */}
+                      {isActive && !item.badge && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       )}
                     </Link>
                   );
@@ -230,25 +248,25 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
           ))}
         </div>
 
-        {/* Profile */}
-        <div className="border-t-2 border-slate-200 p-4 bg-gradient-to-r from-slate-50 to-white">
+        {/* Compact Profile Footer */}
+        <div className="border-t border-slate-100 p-2.5 bg-slate-50/50">
           <Link
             href="/profile"
             onClick={onClose}
-            className="flex items-center gap-3 rounded-2xl p-3 transition-all hover:bg-white hover:shadow-md border border-slate-200/50"
+            className="flex items-center gap-2.5 rounded-xl p-2 transition-all hover:bg-white hover:shadow-xs border border-transparent hover:border-slate-200"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-sm font-bold text-white shadow-md shadow-emerald-500/20 ring-4 ring-emerald-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-[11px] font-bold text-white shadow-xs ring-2 ring-emerald-100 shrink-0">
               EV
             </div>
-            <div className="flex-1">
-              <span className="block text-sm font-bold text-slate-900 leading-tight">
+            <div className="flex-1 min-w-0">
+              <span className="block text-xs font-bold text-slate-900 leading-tight truncate">
                 Elena Vance
               </span>
-              <span className="block text-[11px] text-slate-500 font-medium">
-                View Profile
+              <span className="block text-[10px] text-slate-500 font-medium">
+                Verified Medical ID
               </span>
             </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
+            <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
           </Link>
         </div>
       </div>

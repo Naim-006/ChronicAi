@@ -38,11 +38,21 @@ export function MobileTopBar() {
           <button
             type="button"
             onClick={openDrawer}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] hover:bg-[var(--mint-deep)] transition-transform active:scale-95 cursor-pointer"
-            title="Menu"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/80 bg-white shadow-xs text-slate-800 hover:bg-slate-50 hover:border-emerald-300 transition-all active:scale-95 cursor-pointer"
+            title="Open Menu"
             aria-label="Open Menu"
           >
-            <Menu className="h-5 w-5" />
+            {/* Modern Staggered Pill Menu Icon */}
+            <svg
+              className="h-4.5 w-4.5 text-slate-800"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="2.5" y="4" width="15" height="2" rx="1" fill="currentColor" />
+              <rect x="2.5" y="9" width="10" height="2" rx="1" fill="currentColor" />
+              <rect x="2.5" y="14" width="13" height="2" rx="1" fill="currentColor" />
+            </svg>
           </button>
 
           <div className="min-w-0">
