@@ -90,7 +90,7 @@ const navGroups = [
         icon: Calendar,
       },
       {
-        name: "Chronic Care",
+        name: "Chronic",
         href: "/chronic-care",
         icon: ShieldCheck,
       },

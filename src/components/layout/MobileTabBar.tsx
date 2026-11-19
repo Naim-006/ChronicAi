@@ -114,8 +114,8 @@ export function MobileTabBar() {
             d={svgPath}
             fill="rgba(255, 255, 255, 0.45)"
             stroke="#334155"
-            strokeWidth="1.6"
-            strokeOpacity="0.85"
+            strokeWidth="1.2"
+            strokeOpacity="0.8"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
