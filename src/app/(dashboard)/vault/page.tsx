@@ -328,9 +328,9 @@ export default function VaultPage() {
       </div>
 
       {viewMode === "table" ? (
-        <div className="soft-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+        <div className="soft-card overflow-hidden max-w-full">
+          <div className="overflow-x-auto max-w-full">
+            <table className="w-full min-w-[540px] text-left text-xs">
               <thead>
                 <tr className="border-b border-[var(--border)] bg-[var(--muted)]/60 text-[11px] font-extrabold uppercase text-[var(--muted-foreground)]">
                   <th className="py-3.5 pl-6">Name</th>

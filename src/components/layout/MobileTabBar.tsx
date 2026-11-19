@@ -96,7 +96,7 @@ export function MobileTabBar() {
               key={tab.name}
               href={tab.href}
               className={cn(
-                "relative flex flex-col items-center justify-center px-3 py-1 text-center transition-all",
+                "relative flex flex-col items-center justify-center px-2 sm:px-3 py-1 text-center transition-all",
                 isActive
                   ? "text-white font-bold"
                   : "text-white/45 hover:text-white/90"

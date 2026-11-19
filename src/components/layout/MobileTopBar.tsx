@@ -28,8 +28,8 @@ export function MobileTopBar() {
   return (
     <>
       {/* Mobile / tablet top bar */}
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/85 px-4 backdrop-blur-xl sm:px-6 lg:hidden">
-        <div className="flex min-w-0 items-center gap-3">
+      <header className="sticky top-0 z-30 flex h-16 w-full max-w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/85 px-3.5 sm:px-6 backdrop-blur-xl lg:hidden">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
           {!isDashboard ? (
             <div className="flex min-w-0 items-center gap-2.5">
               <Link
@@ -49,15 +49,15 @@ export function MobileTopBar() {
               </div>
             </div>
           ) : (
-            <Link href="/profile" className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100">
+            <Link href="/profile" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100">
                 EV
               </div>
-              <div className="text-left">
-                <span className="block text-[11px] font-medium text-[var(--muted-foreground)] leading-tight">
+              <div className="text-left min-w-0">
+                <span className="block text-[11px] font-medium text-[var(--muted-foreground)] leading-tight truncate">
                   Good morning
                 </span>
-                <span className="block text-sm font-extrabold text-[var(--foreground)] leading-tight">
+                <span className="block text-sm font-extrabold text-[var(--foreground)] leading-tight truncate">
                   Elena Vance
                 </span>
               </div>
@@ -65,7 +65,7 @@ export function MobileTopBar() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {pathname !== "/assistant" && (
             <Link
               href="/assistant"

@@ -273,10 +273,10 @@ export default function TimelinePage() {
       </div>
 
       {/* CareSight Multi-Tier Horizontal Branched Timeline (Image 4 Replica) */}
-      <section className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-[var(--shadow-soft)] space-y-4">
+      <section className="rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)] space-y-4 max-w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div>
-            <h2 className="text-sm font-extrabold text-[var(--foreground)] leading-tight">
+          <div className="min-w-0">
+            <h2 className="text-sm font-extrabold text-[var(--foreground)] leading-tight truncate">
               CareSight Longitudinal Trajectory
             </h2>
             <span className="text-[11px] text-[var(--muted-foreground)] block">
@@ -285,11 +285,11 @@ export default function TimelinePage() {
           </div>
 
           {/* Quick Date Range Selectors */}
-          <div className="flex items-center gap-1 text-[10px] font-bold overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-1 text-[10px] font-bold overflow-x-auto pb-1 max-w-full hide-scrollbar">
             {["Last 30 Days", "Last 90 Days", "Last Year", "Last 5 Years", "All History"].map((r, i) => (
               <span
                 key={r}
-                className={`px-2.5 py-1 rounded-full cursor-pointer transition-colors whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-full cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
                   i === 2
                     ? "bg-[#18261F] text-white shadow-2xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -302,7 +302,7 @@ export default function TimelinePage() {
         </div>
 
         {/* Visual Branched SVG / Node Spine */}
-        <div className="relative py-4 overflow-x-auto">
+        <div className="relative py-4 overflow-x-auto max-w-full">
           <div className="min-w-[620px] relative px-4">
             {/* Top Branch: Inpatient & SNF Badges */}
             <div className="flex justify-between items-center pb-3 text-[10px] font-bold">

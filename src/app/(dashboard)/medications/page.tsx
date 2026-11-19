@@ -213,8 +213,8 @@ export default function MedicationsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-center text-xs">
+        <div className="overflow-x-auto max-w-full">
+          <table className="w-full min-w-[320px] text-center text-xs">
             <thead>
               <tr className="text-[11px] font-extrabold uppercase text-[var(--muted-foreground)]">
                 <th className="pb-3 pl-2 text-left">Month</th>
@@ -279,7 +279,7 @@ export default function MedicationsPage() {
         </div>
 
         {/* Search input to test drug */}
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
             <input
@@ -299,14 +299,14 @@ export default function MedicationsPage() {
           <button
             type="button"
             onClick={() => checkDrugInteraction(testDrugInput)}
-            className="flex h-11 items-center gap-1.5 px-4 rounded-2xl bg-[#18261F] text-white text-xs font-bold shadow-sm hover:bg-[#253D30] transition-colors cursor-pointer"
+            className="flex h-11 shrink-0 items-center justify-center gap-1.5 px-4 rounded-2xl bg-[#18261F] text-white text-xs font-bold shadow-sm hover:bg-[#253D30] transition-colors cursor-pointer"
           >
             <span>Analyze Safety</span>
           </button>
         </div>
 
         {/* Quick test chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold text-slate-600 no-scrollbar">
+        <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold text-slate-600 max-w-full hide-scrollbar">
           <span className="text-[10px] text-slate-400 font-bold shrink-0">Quick Check:</span>
           {["Ibuprofen (Advil)", "Pseudoephedrine (Sudafed)", "Amoxicillin", "Aspirin 81mg"].map((drug) => (
             <button
@@ -316,7 +316,7 @@ export default function MedicationsPage() {
                 setTestDrugInput(drug);
                 checkDrugInteraction(drug);
               }}
-              className="whitespace-nowrap px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+              className="whitespace-nowrap px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer shrink-0"
             >
               {drug}
             </button>
@@ -326,7 +326,7 @@ export default function MedicationsPage() {
         {/* Interaction Results Banner */}
         {interactionResult && (
           <div
-            className={`p-4 rounded-2xl border space-y-2.5 animate-in fade-in ${
+            className={`p-3.5 sm:p-4 rounded-2xl border space-y-2.5 animate-in fade-in ${
               interactionResult.level === "severe"
                 ? "bg-rose-50/80 border-rose-200 text-rose-950"
                 : interactionResult.level === "moderate"
@@ -334,8 +334,8 @@ export default function MedicationsPage() {
                 : "bg-emerald-50/80 border-emerald-200 text-emerald-950"
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div className="flex items-center gap-2 min-w-0">
                 {interactionResult.level === "severe" ? (
                   <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
                 ) : interactionResult.level === "moderate" ? (
@@ -343,7 +343,7 @@ export default function MedicationsPage() {
                 ) : (
                   <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
                 )}
-                <span className="text-xs font-extrabold">
+                <span className="text-xs font-extrabold truncate">
                   {interactionResult.drug}:{" "}
                   {interactionResult.level === "severe"
                     ? "Severe Contraindication / Allergy Risk"
@@ -353,7 +353,7 @@ export default function MedicationsPage() {
                 </span>
               </div>
               {interactionResult.interactingWith && (
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/70 border border-slate-200/60">
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/70 border border-slate-200/60 self-start sm:self-auto shrink-0">
                   Affects: {interactionResult.interactingWith}
                 </span>
               )}

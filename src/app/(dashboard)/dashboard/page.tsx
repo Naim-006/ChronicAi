@@ -176,26 +176,26 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Recovery / condition hero */}
-          <section className="soft-card relative overflow-hidden p-5 sm:p-6">
+          <section className="soft-card relative overflow-hidden p-4 sm:p-6">
         <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-emerald-200/30 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 left-1/3 h-32 w-32 rounded-full bg-teal-200/20 blur-3xl" />
 
-        <div className="relative flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
               <Heart className="h-5 w-5 stroke-[2.2]" />
             </div>
-            <div>
-              <h2 className="text-sm font-extrabold text-[var(--foreground)]">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-extrabold text-[var(--foreground)] truncate">
                 Health Condition
               </h2>
-              <span className="text-[11px] font-semibold text-emerald-600">
+              <span className="text-[11px] font-semibold text-emerald-600 truncate block">
                 Type 2 Diabetes & HTN · Managed
               </span>
             </div>
           </div>
 
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex shrink-0 items-center justify-center">
             <ProgressRing percent={88} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-sm font-extrabold text-[var(--foreground)]">88%</span>
@@ -216,29 +216,29 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-[var(--border)]/80 pt-4">
-          <div className="soft-inset flex items-center gap-2.5 rounded-2xl p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-emerald-600">
+        <div className="relative mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 border-t border-[var(--border)]/80 pt-4">
+          <div className="soft-inset flex items-center gap-2 sm:gap-2.5 rounded-2xl p-2.5 sm:p-3 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600">
               <Activity className="h-4 w-4" />
             </div>
-            <div>
-              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">
+            <div className="min-w-0 flex-1">
+              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)] truncate">
                 Fasting glucose
               </span>
-              <span className="text-xs font-extrabold text-[var(--foreground)]">
+              <span className="text-xs font-extrabold text-[var(--foreground)] truncate block">
                 118 mg/dL
               </span>
             </div>
           </div>
-          <div className="soft-inset flex items-center gap-2.5 rounded-2xl p-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-emerald-600">
+          <div className="soft-inset flex items-center gap-2 sm:gap-2.5 rounded-2xl p-2.5 sm:p-3 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600">
               <CheckCircle2 className="h-4 w-4" />
             </div>
-            <div>
-              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">
+            <div className="min-w-0 flex-1">
+              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)] truncate">
                 eGFR kidney
               </span>
-              <span className="text-xs font-extrabold text-[var(--foreground)]">
+              <span className="text-xs font-extrabold text-[var(--foreground)] truncate block">
                 68 · Stable
               </span>
             </div>
@@ -249,26 +249,26 @@ export default function DashboardPage() {
       {/* Logged Vitals Success Alert */}
       {logAlert && (
         <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-sm animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          <span>{logAlert}</span>
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span className="truncate">{logAlert}</span>
         </section>
       )}
 
       {/* Quick actions */}
-      <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-4">
         <button
           type="button"
           onClick={() => setShowVitalsModal(true)}
-          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group text-left cursor-pointer"
+          className="soft-card hover-lift flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 transition-all hover:border-emerald-200 group text-left cursor-pointer min-w-0"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-emerald-50 text-emerald-700">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-emerald-50 text-emerald-700">
             <Activity className="h-4 w-4" />
           </div>
-          <div className="min-w-0 text-left">
-            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+          <div className="min-w-0 flex-1 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
               Log Vitals
             </span>
-            <span className="text-[10px] text-[var(--muted-foreground)]">
+            <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
               BP, Glucose
             </span>
           </div>
@@ -276,16 +276,16 @@ export default function DashboardPage() {
 
         <Link
           href="/vault"
-          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group"
+          className="soft-card hover-lift flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 transition-all hover:border-emerald-200 group min-w-0"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-sky-50 text-sky-700">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-sky-50 text-sky-700">
             <UploadCloud className="h-4 w-4" />
           </div>
-          <div className="min-w-0 text-left">
-            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+          <div className="min-w-0 flex-1 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
               Add Record
             </span>
-            <span className="text-[10px] text-[var(--muted-foreground)]">
+            <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
               PDF, Lab scan
             </span>
           </div>
@@ -293,16 +293,16 @@ export default function DashboardPage() {
 
         <Link
           href="/appointments"
-          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group"
+          className="soft-card hover-lift flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 transition-all hover:border-emerald-200 group min-w-0"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-amber-50 text-amber-700">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-amber-50 text-amber-700">
             <Calendar className="h-4 w-4" />
           </div>
-          <div className="min-w-0 text-left">
-            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+          <div className="min-w-0 flex-1 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
               Visits
             </span>
-            <span className="text-[10px] text-[var(--muted-foreground)]">
+            <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
               Schedule, prep
             </span>
           </div>
@@ -310,16 +310,16 @@ export default function DashboardPage() {
 
         <Link
           href="/assistant"
-          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group"
+          className="soft-card hover-lift flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 transition-all hover:border-emerald-200 group min-w-0"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-gradient-to-br from-emerald-500 to-green-600 text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-gradient-to-br from-emerald-500 to-green-600 text-white">
             <Stethoscope className="h-4 w-4" />
           </div>
-          <div className="min-w-0 text-left">
-            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+          <div className="min-w-0 flex-1 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
               Copilot
             </span>
-            <span className="text-[10px] text-[var(--muted-foreground)]">
+            <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
               Clinical guidance
             </span>
           </div>
@@ -366,16 +366,16 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
           <Link
             href="/metrics"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
+            className="soft-card hover-lift flex flex-col justify-between p-3.5 transition-all hover:border-emerald-200 sm:p-5 min-w-0"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[var(--foreground)]">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
                 Fasting Glucose
               </span>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Activity className="h-3.5 w-3.5" />
               </div>
             </div>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                 </span>
                 <span className="text-xs text-[var(--muted-foreground)]">mg/dL</span>
               </div>
-              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600 truncate">
                 In target (70–130)
               </span>
             </div>
@@ -403,13 +403,13 @@ export default function DashboardPage() {
 
           <Link
             href="/metrics"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
+            className="soft-card hover-lift flex flex-col justify-between p-3.5 transition-all hover:border-emerald-200 sm:p-5 min-w-0"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[var(--foreground)]">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
                 Blood Pressure
               </span>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Heart className="h-3.5 w-3.5" />
               </div>
             </div>
@@ -420,7 +420,7 @@ export default function DashboardPage() {
                 </span>
                 <span className="text-xs text-[var(--muted-foreground)]">mmHg</span>
               </div>
-              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600 truncate">
                 Normal seated
               </span>
             </div>
@@ -438,13 +438,13 @@ export default function DashboardPage() {
 
           <Link
             href="/metrics"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
+            className="soft-card hover-lift flex flex-col justify-between p-3.5 transition-all hover:border-emerald-200 sm:p-5 min-w-0"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[var(--foreground)]">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
                 Latest HbA1c
               </span>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <TrendingDown className="h-3.5 w-3.5" />
               </div>
             </div>
@@ -453,7 +453,7 @@ export default function DashboardPage() {
                 <span className="text-xl font-extrabold text-emerald-700">6.8%</span>
                 <span className="text-xs text-[var(--muted-foreground)]">Nov 2026</span>
               </div>
-              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600 truncate">
                 −0.3% improved
               </span>
             </div>
@@ -464,13 +464,13 @@ export default function DashboardPage() {
 
           <Link
             href="/medications"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
+            className="soft-card hover-lift flex flex-col justify-between p-3.5 transition-all hover:border-emerald-200 sm:p-5 min-w-0"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[var(--foreground)]">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
                 Medications
               </span>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Pill className="h-3.5 w-3.5" />
               </div>
             </div>
@@ -481,7 +481,7 @@ export default function DashboardPage() {
                 </span>
                 <span className="text-xs text-[var(--muted-foreground)]">today</span>
               </div>
-              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600 truncate">
                 Daily protocol active
               </span>
             </div>
@@ -515,11 +515,11 @@ export default function DashboardPage() {
           </div>
 
           <div className="soft-card flex items-center justify-between gap-3 p-4 sm:p-5">
-            <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex min-w-0 flex-1 items-center gap-3.5">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-extrabold text-white shadow-md shadow-emerald-600/25 ring-4 ring-emerald-50">
                 CW
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="truncate text-sm font-extrabold text-[var(--foreground)]">
                     {nextAppointment.doctor_name}
@@ -529,17 +529,18 @@ export default function DashboardPage() {
                 <span className="block truncate text-xs font-medium text-[var(--muted-foreground)]">
                   {nextAppointment.specialty} · {nextAppointment.clinic_or_hospital}
                 </span>
-                <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                  <Clock className="h-3 w-3" />
-                  {formatDate(nextAppointment.appointment_date)} at{" "}
-                  {formatTime(nextAppointment.appointment_time)}
+                <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-emerald-700 truncate">
+                  <Clock className="h-3 w-3 shrink-0" />
+                  <span className="truncate">
+                    {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
+                  </span>
                 </span>
               </div>
             </div>
 
             <Link
               href="/appointments"
-              className="shrink-0 rounded-2xl bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
+              className="shrink-0 rounded-2xl bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
             >
               Prep
             </Link>
@@ -651,8 +652,8 @@ export default function DashboardPage() {
 
       {/* Quick Vitals Logger Modal */}
       {showVitalsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-3.5 sm:p-4 animate-in fade-in">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
