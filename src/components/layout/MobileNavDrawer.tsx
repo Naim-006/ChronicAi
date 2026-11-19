@@ -22,6 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -128,6 +129,25 @@ const navGroups: NavGroup[] = [
 
 export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
+
+  const getLocalizedName = (href: string, fallback: string) => {
+    switch (href) {
+      case "/dashboard": return t("nav.home", fallback);
+      case "/assistant": return t("nav.copilot", fallback);
+      case "/vault": return t("nav.records", fallback);
+      case "/timeline": return t("nav.timeline", fallback);
+      case "/evaluation": return t("nav.chronic_care", fallback);
+      case "/metrics": return t("nav.analytics", fallback);
+      case "/medications": return t("nav.meds", fallback);
+      case "/appointments": return t("nav.appointments", fallback);
+      case "/chronic-care": return t("nav.chronic_care", fallback);
+      case "/notifications": return t("nav.notifications", "Notifications");
+      case "/profile": return t("nav.profile", fallback);
+      case "/settings": return t("nav.settings", fallback);
+      default: return fallback;
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -197,7 +217,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs">
                           <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
                         </div>
-                        <span className="flex-1">{item.name}</span>
+                        <span className="flex-1">{getLocalizedName(item.href, item.name)}</span>
                         <Sparkles className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                       </Link>
                     );
@@ -227,7 +247,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                         <Icon className="h-3.5 w-3.5" />
                       </div>
 
-                      <span className="flex-1 truncate">{item.name}</span>
+                      <span className="flex-1 truncate">{getLocalizedName(item.href, item.name)}</span>
 
                       {/* Optional Badge */}
                       {item.badge && (

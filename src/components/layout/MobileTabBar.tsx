@@ -11,10 +11,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function MobileTabBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(420);
 
@@ -47,31 +49,31 @@ export function MobileTabBar() {
 
   const tabs = [
     {
-      name: "Home",
+      name: t("nav.home", "Home"),
       href: "/dashboard",
       icon: Home,
       matchExact: true,
     },
     {
-      name: "Records",
+      name: t("nav.short_records", "Records"),
       href: "/vault",
       icon: Folder,
       badge: "1",
       aliases: ["/timeline", "/summaries"],
     },
     {
-      name: "Copilot",
+      name: t("nav.short_copilot", "Copilot"),
       href: "/assistant",
       icon: Stethoscope,
       isCenterCopilot: true,
     },
     {
-      name: "Meds",
+      name: t("nav.short_meds", "Meds"),
       href: "/medications",
       icon: Pill,
     },
     {
-      name: "Chronic Care",
+      name: t("nav.short_chronic", "Chronic Care"),
       href: "/chronic-care",
       icon: ShieldCheck,
       aliases: ["/evaluation"],
@@ -188,7 +190,7 @@ export function MobileTabBar() {
       >
         {/* Frosted Translucent Glass Layer with soft blur */}
         <div
-          className="absolute inset-0 pointer-events-none backdrop-blur-[5px] bg-white/92"
+          className="absolute inset-0 pointer-events-none backdrop-blur-[5px] bg-white/92 dark:bg-slate-900/90"
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,
@@ -289,10 +291,10 @@ export function MobileTabBar() {
                     <span
                       className={cn(
                         "text-[12px] leading-tight tracking-tight whitespace-nowrap mt-[5px]",
-                        isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569]"
+                        isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569] dark:text-slate-300"
                       )}
                     >
-                      Copilot
+                      {tab.name}
                     </span>
 
                     {/* Spacer to align with tab indicators */}
@@ -319,7 +321,7 @@ export function MobileTabBar() {
                         "h-[24px] w-[24px] transition-transform",
                         isActive
                           ? "stroke-[2.2] text-[#00b86b] scale-105"
-                          : "stroke-[1.8] text-[#475569] group-hover:scale-105"
+                          : "stroke-[1.8] text-[#475569] dark:text-slate-300 group-hover:scale-105"
                       )}
                     />
 
@@ -335,7 +337,7 @@ export function MobileTabBar() {
                   <span
                     className={cn(
                       "text-[12px] leading-tight tracking-tight text-center whitespace-nowrap mt-[5px]",
-                      isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569]"
+                      isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569] dark:text-slate-300"
                     )}
                   >
                     {tab.name}

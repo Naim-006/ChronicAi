@@ -43,6 +43,7 @@ export interface HealthProfile {
     language: string;
     explanation_depth: "simple" | "balanced" | "detailed";
     notifications_enabled: boolean;
+    theme?: "light" | "dark" | "system";
   };
   created_at: string;
   updated_at: string;

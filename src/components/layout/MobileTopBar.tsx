@@ -3,8 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Search, Menu } from "lucide-react";
+import { Bell, Search, Sun, Moon } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
+import { useTheme } from "@/context/ThemeContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
   "/dashboard": { title: "Home" },
@@ -26,7 +28,25 @@ const pageTitles: Record<string, { title: string; parent?: string }> = {
 export function MobileTopBar() {
   const pathname = usePathname();
   const { openDrawer } = useMobileNav();
-  const pageMeta = pageTitles[pathname] || { title: "ChronicAI" };
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
+
+  const localizedTitles: Record<string, string> = {
+    "/dashboard": t("nav.home", "Home"),
+    "/vault": t("nav.records", "Medical Records"),
+    "/timeline": t("nav.timeline", "Timeline"),
+    "/assistant": t("nav.copilot", "Clinical Copilot"),
+    "/appointments": t("nav.appointments", "Appointments"),
+    "/medications": t("nav.meds", "Medications"),
+    "/metrics": t("nav.analytics", "Health Analytics"),
+    "/chronic-care": t("nav.chronic_care", "Chronic Care"),
+    "/evaluation": t("nav.chronic_care", "Health Evaluation"),
+    "/notifications": t("nav.notifications", "Notifications"),
+    "/profile": t("nav.profile", "Profile"),
+    "/settings": t("nav.settings", "Settings"),
+  };
+
+  const pageTitle = localizedTitles[pathname] || (pageTitles[pathname]?.title ?? "ChronicAI");
   const isDashboard = pathname === "/dashboard" || pathname === "/";
 
   return (
@@ -57,16 +77,31 @@ export function MobileTopBar() {
 
           <div className="min-w-0">
             <h1 className="truncate text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-tight">
-              {isDashboard ? "ChronicAI" : pageMeta.title}
+              {isDashboard ? "ChronicAI" : pageTitle}
             </h1>
-            <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
               Lifelong Care Intelligence
             </span>
           </div>
         </div>
 
-        {/* Right Side: Notification Icon + Profile Icon (No name, only avatar icon) */}
-        <div className="flex shrink-0 items-center gap-2">
+        {/* Right Side: Theme Toggle + Notification Icon + Profile Icon */}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {/* Quick Theme Toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)] cursor-pointer"
+            title={resolvedTheme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle Theme"
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun className="h-4 w-4 text-amber-400" />
+            ) : (
+              <Moon className="h-4 w-4 text-slate-700" />
+            )}
+          </button>
+
           <Link
             href="/notifications"
             className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)]"
@@ -89,10 +124,10 @@ export function MobileTopBar() {
       </header>
 
       {/* Desktop top bar */}
-      <header className="sticky top-0 z-30 hidden h-[72px] w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/80 px-8 backdrop-blur-xl lg:flex">
+      <header className="sticky top-0 z-30 hidden h-[72px] w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/80 dark:bg-slate-900/80 px-8 backdrop-blur-xl lg:flex">
         <div className="min-w-0">
           <h1 className="text-lg font-extrabold tracking-tight text-[var(--foreground)]">
-            {isDashboard ? "Health Overview" : pageMeta.title}
+            {isDashboard ? "Health Overview" : pageTitle}
           </h1>
           <p className="text-xs text-[var(--muted-foreground)]">
             {isDashboard
@@ -107,13 +142,28 @@ export function MobileTopBar() {
             <input
               type="search"
               placeholder="Search records, meds, visits…"
-              className="h-11 w-72 rounded-2xl border border-[var(--border)] bg-[var(--muted)] pl-10 pr-4 text-sm outline-none transition-all placeholder:text-[var(--muted-foreground)] focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+              className="h-11 w-72 rounded-2xl border border-[var(--border)] bg-[var(--muted)] pl-10 pr-4 text-sm outline-none transition-all placeholder:text-[var(--muted-foreground)] focus:border-emerald-300 focus:bg-white dark:focus:bg-slate-850 focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
+          {/* Desktop Theme Toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white dark:bg-slate-800 text-[var(--foreground)] transition-colors hover:bg-[var(--muted)] cursor-pointer"
+            title={resolvedTheme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle Theme"
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun className="h-4 w-4 text-amber-400" />
+            ) : (
+              <Moon className="h-4 w-4 text-slate-700 dark:text-slate-200" />
+            )}
+          </button>
+
           <Link
             href="/notifications"
-            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white dark:bg-slate-800 text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
             title="Notifications & Alerts"
             aria-label="Notifications"
           >

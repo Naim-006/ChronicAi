@@ -20,6 +20,7 @@ import {
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 const navSections = [
   {
@@ -59,6 +60,25 @@ const navSections = [
 export function DesktopNavRail() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { t } = useLanguage();
+
+  const getLocalizedName = (href: string, fallback: string) => {
+    switch (href) {
+      case "/dashboard": return t("nav.home", fallback);
+      case "/assistant": return t("nav.copilot", fallback);
+      case "/vault": return t("nav.records", fallback);
+      case "/timeline": return t("nav.timeline", fallback);
+      case "/evaluation": return t("nav.chronic_care", fallback);
+      case "/metrics": return t("nav.analytics", fallback);
+      case "/medications": return t("nav.meds", fallback);
+      case "/appointments": return t("nav.appointments", fallback);
+      case "/chronic-care": return t("nav.chronic_care", fallback);
+      case "/notifications": return t("nav.notifications", "Notifications");
+      case "/profile": return t("nav.profile", fallback);
+      case "/settings": return t("nav.settings", fallback);
+      default: return fallback;
+    }
+  };
 
   return (
     <aside className={cn(
@@ -125,13 +145,13 @@ export function DesktopNavRail() {
                         : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)]",
                       isCollapsed && "justify-center px-2.5"
                     )}
-                    title={isCollapsed ? item.name : undefined}
+                    title={isCollapsed ? getLocalizedName(item.href, item.name) : undefined}
                   >
                     <Icon className={cn(
                       "h-4.5 w-4.5",
                       isActive ? "text-emerald-600" : "text-[var(--muted-foreground)]"
                     )} />
-                    {!isCollapsed && <span>{item.name}</span>}
+                    {!isCollapsed && <span>{getLocalizedName(item.href, item.name)}</span>}
                   </Link>
                 );
               })}
