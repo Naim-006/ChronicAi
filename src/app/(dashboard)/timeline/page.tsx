@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ChevronRight,
   X,
+  Share2,
 } from "lucide-react";
 import { mockTimelineEvents } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
@@ -65,50 +66,49 @@ export default function TimelinePage() {
     setFacility("");
   };
 
-  const getEventIcon = (t: TimelineEventType) => {
+  const getEventBadge = (t: TimelineEventType) => {
     switch (t) {
       case "visit":
-        return Stethoscope;
+        return { label: "DOCTOR VISIT", color: "bg-blue-50 text-blue-700 border-blue-200" };
       case "lab_test":
-        return Activity;
+        return { label: "LAB REPORT", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
       case "medication_start":
-      case "medication_stop":
-        return Pill;
+        return { label: "MEDICATION REFILL", color: "bg-amber-50 text-amber-700 border-amber-200" };
       case "diagnosis":
-        return ShieldCheck;
+        return { label: "DIAGNOSIS CONFIRMED", color: "bg-purple-50 text-purple-700 border-purple-200" };
       default:
-        return FileText;
+        return { label: "CLINICAL RECORD", color: "bg-slate-50 text-slate-700 border-slate-200" };
     }
   };
 
   return (
-    <div className="space-y-5">
-      {/* Top Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Top Header (Inspired by Image 4 & 7) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-            Medical Timeline
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            CareSight Patient Timeline
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Your chronological health history across {events.length} milestones.
+            Chronological longitudinal patient journey across {events.length} documented milestones.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 rounded-full bg-teal-800 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all"
+          className="flex items-center gap-2 rounded-full bg-gradient-to-tr from-emerald-600 to-green-500 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
         >
-          <Plus className="h-3.5 w-3.5" />
-          <span>Add Event</span>
+          <Plus className="h-4 w-4" />
+          <span>Add Timeline Event</span>
         </button>
       </div>
 
-      {/* Add Modal */}
+      {/* Manual Entry Sheet */}
       {showAddModal && (
-        <div className="rounded-2xl border border-teal-300 bg-white p-4 shadow-md space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <span className="text-xs font-bold text-slate-900">Record New Health Event</span>
+        <div className="rounded-3xl border border-emerald-300 bg-white p-5 shadow-lg space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <span className="text-sm font-extrabold text-slate-900">Add Clinical Timeline Entry</span>
             <button
               type="button"
               onClick={() => setShowAddModal(false)}
@@ -119,141 +119,207 @@ export default function TimelinePage() {
           </div>
           <form onSubmit={handleCreate} className="space-y-3 text-xs">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Event Title *</label>
+              <label className="font-bold text-slate-700 block mb-1">Event Title *</label>
               <input
                 required
-                placeholder="e.g. Quarterly Lab Workup"
+                placeholder="e.g. Ophthalmology Retinal Exam"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-teal-700"
+                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Category</label>
+                <label className="font-bold text-slate-700 block mb-1">Category</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as TimelineEventType)}
-                  className="w-full h-8 rounded-lg border border-slate-200 px-2 text-xs"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
                 >
                   <option value="visit">Doctor Visit</option>
-                  <option value="lab_test">Lab Test</option>
+                  <option value="lab_test">Lab Report</option>
                   <option value="diagnosis">Diagnosis</option>
                   <option value="medication_start">Medication</option>
                 </select>
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Date</label>
+                <label className="font-bold text-slate-700 block mb-1">Event Date</label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full h-8 rounded-lg border border-slate-200 px-2 text-xs"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
                 />
               </div>
             </div>
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Facility / Doctor</label>
+              <label className="font-bold text-slate-700 block mb-1">Healthcare Facility / Clinician</label>
               <input
-                placeholder="e.g. Dr. Catherine Wei, MD"
+                placeholder="e.g. Quest Diagnostics / Dr. Catherine Wei"
                 value={facility}
                 onChange={(e) => setFacility(e.target.value)}
-                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
               />
             </div>
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Clinical Notes</label>
+              <label className="font-bold text-slate-700 block mb-1">Clinical Notes & Findings</label>
               <textarea
                 rows={2}
-                placeholder="Key findings, dosage instructions, or advice..."
+                placeholder="Diagnostic findings, lab values, or instructions..."
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 p-2 text-xs"
+                className="w-full rounded-xl border border-slate-200 p-3 text-xs"
               />
             </div>
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600"
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-3.5 py-1.5 rounded-lg bg-teal-800 text-xs font-semibold text-white"
+                className="px-5 py-2 rounded-xl bg-emerald-600 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
               >
-                Save Event
+                Save to Timeline
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Search & Filter Pills */}
-      <div className="space-y-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-          <input
-            type="search"
-            placeholder="Search events, diagnoses, doctors..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-xl border border-slate-200/90 bg-white pl-9 pr-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-700 shadow-2xs"
-          />
+      {/* Featured Clinical Lab Result Card with Visual Gradient Spectrum Slider (Exact design from Image 7) */}
+      <div className="rounded-3xl bg-white border border-slate-100/90 p-5 sm:p-6 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.06)] space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 block">
+              Featured Diagnostic Lab Screening
+            </span>
+            <h2 className="text-base font-extrabold text-slate-900 mt-0.5">
+              Fasting Plasma Glucose & Metabolic Panel
+            </h2>
+            <span className="text-[11px] text-slate-400 block mt-0.5">
+              November 2, 2026 • Quest Diagnostics • Dr. Catherine Wei, MD
+            </span>
+          </div>
+
+          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
+            Normal / Optimal
+          </span>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          {[
-            { id: "all", label: "All Events" },
-            { id: "visit", label: "Visits" },
-            { id: "lab_test", label: "Labs" },
-            { id: "medication_start", label: "Medications" },
-            { id: "diagnosis", label: "Diagnoses" },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setTypeFilter(cat.id)}
-              className={`px-3 py-1 rounded-full whitespace-nowrap text-[11px] font-semibold transition-colors cursor-pointer ${
-                typeFilter === cat.id
-                  ? "bg-teal-800 text-white shadow-2xs"
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        {/* Spectrum Slider Container (Exact replica of Image 7) */}
+        <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-3">
+          <div className="flex items-baseline justify-between">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 block">
+                Glucose in Serum or Plasma [Mass/volume]
+              </span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-extrabold text-slate-900">118</span>
+                <span className="text-xs text-slate-500 font-bold">mg/dL</span>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-emerald-600">
+              ● Controlled Fasting Range
+            </span>
+          </div>
+
+          {/* Color Gradient Spectrum Bar (Blue -> Emerald -> Yellow -> Red) with Indicator Pin */}
+          <div className="relative pt-3 pb-1">
+            <div className="h-3 w-full rounded-full bg-gradient-to-r from-blue-400 via-emerald-400 via-amber-400 to-red-500 relative">
+              {/* Position indicator dot for 118 mg/dL (on a 0-160 scale ~ 65%) */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-emerald-700 shadow-md ring-2 ring-emerald-200"
+                style={{ left: "62%" }}
+                title="Your Value: 118 mg/dL"
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1 px-1">
+              <span>0</span>
+              <span>70 (Low)</span>
+              <span>100 (Normal)</span>
+              <span>130 (Goal)</span>
+              <span>160+</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] pt-1">
+            <span className="text-slate-500">
+              Target Range in Managed Diabetes: <strong>70 – 130 mg/dL</strong>
+            </span>
+            <span className="text-emerald-700 font-bold">
+              Down from 126 mg/dL in May
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Chronological Structured List */}
-      <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+      {/* Search & Timeline Filter Pills (Image 4 style) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs hide-scrollbar">
+        {[
+          { id: "all", label: "All Events" },
+          { id: "visit", label: "Doctor Visits" },
+          { id: "lab_test", label: "Lab Reports" },
+          { id: "medication_start", label: "Medication Refills" },
+          { id: "diagnosis", label: "Diagnoses" },
+        ].map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setTypeFilter(cat.id)}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-bold transition-all cursor-pointer ${
+              typeFilter === cat.id
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Chronological Milestone Feed (Image 4 CareSight style) */}
+      <div className="space-y-4">
         {filteredEvents.map((ev) => {
-          const Icon = getEventIcon(ev.event_type);
+          const badge = getEventBadge(ev.event_type);
           return (
-            <div key={ev.id} className="p-4 hover:bg-slate-50/70 transition-colors space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-teal-800">
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-900">{ev.title}</span>
+            <div
+              key={ev.id}
+              className="rounded-3xl bg-white border border-slate-100/90 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:border-emerald-300 transition-all space-y-3"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider border ${badge.color}`}
+                  >
+                    {badge.label}
+                  </span>
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    {ev.title}
+                  </h3>
                 </div>
-                <span className="text-[11px] font-semibold text-teal-800">
+
+                <span className="text-xs font-bold text-slate-500">
                   {formatDate(ev.event_date)}
                 </span>
               </div>
 
-              <p className="text-xs text-slate-600 leading-relaxed pl-9">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 {ev.description}
               </p>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-400 pl-9 pt-0.5">
-                <span>{ev.facility_or_doctor}</span>
+              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                <span className="flex items-center gap-1 font-semibold text-slate-600">
+                  <Building className="h-3.5 w-3.5 text-slate-400" />
+                  {ev.facility_or_doctor}
+                </span>
+
                 {ev.document_id && (
-                  <span className="text-teal-700 font-medium flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
-                    Verified Source Linked
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <FileText className="h-3.5 w-3.5" />
+                    Source Report Linked
                   </span>
                 )}
               </div>

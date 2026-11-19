@@ -17,7 +17,10 @@ import {
   UploadCloud,
   CheckCircle2,
   Stethoscope,
-  HeartPulse,
+  Heart,
+  Flame,
+  Footprints,
+  Phone,
 } from "lucide-react";
 import { mockProfile, mockMedications, mockAppointments, mockTimelineEvents, mockDocuments } from "@/lib/mock-data";
 import { formatDate, formatTime } from "@/lib/utils";
@@ -42,32 +45,71 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Human Greeting & Health Context Banner */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-            Good morning, Elena
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Your conditions (Type 2 Diabetes, HTN, CKD2) are stable today.
-          </p>
+      {/* 1. Health Condition Top Banner (Exact design from Image 1) */}
+      <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.06)] border border-slate-100/90 relative overflow-hidden">
+        {/* Top Header Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+              <Heart className="h-5 w-5 stroke-[2.2]" />
+            </div>
+            <div>
+              <h2 className="text-sm font-extrabold text-slate-900 leading-tight">
+                Health Condition
+              </h2>
+              <span className="text-[11px] font-semibold text-emerald-600">
+                ● Type 2 Diabetes & HTN Managed
+              </span>
+            </div>
+          </div>
+
+          {/* Circular Percentage Ring */}
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700 ring-2 ring-emerald-100">
+            <span>88%</span>
+            <span className="text-[10px] font-medium text-emerald-600">Optimal</span>
+          </div>
         </div>
 
-        <Link
-          href="/chronic-care"
-          className="flex items-center gap-1.5 rounded-full bg-teal-50 border border-teal-200/80 px-3 py-1 text-xs font-semibold text-teal-800 hover:bg-teal-100 transition-colors"
-        >
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Diabetes Care</span>
-          <ChevronRight className="h-3.5 w-3.5 text-teal-600" />
-        </Link>
+        {/* Dynamic Progress Bar */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+            <span className="text-slate-500">Glycemic & Cardiovascular Target</span>
+            <span className="text-emerald-700">HbA1c 6.8% (Goal &lt; 7.0%)</span>
+          </div>
+          <div className="h-3.5 w-full rounded-full bg-slate-100 overflow-hidden p-0.5">
+            <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-400 w-[88%] transition-all shadow-xs" />
+          </div>
+        </div>
+
+        {/* Bottom Two Quick Indicators */}
+        <div className="mt-5 grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-600">
+              <Activity className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Fasting Glucose</span>
+              <span className="text-xs font-extrabold text-slate-900">118 mg/dL</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-600">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">eGFR Kidney</span>
+              <span className="text-xs font-extrabold text-slate-900">68 mL/min (Stable)</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 2. Action Required Alert (if document needs review) */}
+      {/* 2. Verification Alert Banner if unconfirmed document exists */}
       {pendingReviewDocs.length > 0 && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 transition-all">
+        <div className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50/50 p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="rounded-xl bg-amber-100 p-2 text-amber-700 shrink-0">
+            <div className="rounded-2xl bg-amber-100 p-2.5 text-amber-800 shrink-0 mt-0.5">
               <AlertCircle className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -80,10 +122,10 @@ export default function DashboardPage() {
               <div className="mt-2.5 flex items-center gap-2">
                 <Link
                   href="/vault"
-                  className="inline-flex items-center gap-1 rounded-lg bg-amber-800 px-3 py-1 text-xs font-semibold text-white shadow-xs hover:bg-amber-900 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-xl bg-amber-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-900 transition-colors"
                 >
                   Review Extracted Data
-                  <ChevronRight className="h-3 w-3" />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
@@ -91,111 +133,221 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 3. Daily Health Status Snapshot (Compact 3-Pill Strip, Apple Health Style) */}
+      {/* 3. Quick Access 2x2 Grid (Exact layout from Image 1) */}
       <div>
-        <div className="flex items-center justify-between px-1 mb-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Vital Indicators
-          </span>
-          <Link href="/metrics" className="text-xs font-medium text-teal-800 hover:underline">
-            View Analytics
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Quick Access
+          </h3>
+          <Link href="/metrics" className="text-xs font-bold text-emerald-600 hover:underline">
+            View All
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {/* Card 1: Fasting Glucose */}
           <Link
             href="/metrics"
-            className="rounded-2xl bg-white p-3 border border-slate-200/80 shadow-xs hover:border-teal-300 transition-all text-center sm:text-left"
+            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
           >
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Fasting Glucose
-            </span>
-            <div className="mt-1 flex items-baseline justify-center sm:justify-start gap-1">
-              <span className="text-lg font-bold text-slate-900">118</span>
-              <span className="text-[10px] text-slate-500 font-medium">mg/dL</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700">Fasting Glucose</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <Activity className="h-3.5 w-3.5" />
+              </div>
             </div>
-            <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
-              ● In Target
-            </span>
+            <div className="mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-extrabold text-slate-900">118</span>
+                <span className="text-xs text-slate-400 font-medium">mg/dL</span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
+                ● In Target (70-130)
+              </span>
+            </div>
+            {/* Visual Sparkline Wave */}
+            <div className="mt-3 h-8 flex items-end gap-1.5">
+              <div className="flex-1 bg-emerald-100 rounded-full h-4" />
+              <div className="flex-1 bg-emerald-200 rounded-full h-6" />
+              <div className="flex-1 bg-emerald-300 rounded-full h-5" />
+              <div className="flex-1 bg-emerald-400 rounded-full h-7" />
+              <div className="flex-1 bg-emerald-600 rounded-full h-8" />
+            </div>
           </Link>
 
+          {/* Card 2: Blood Pressure */}
           <Link
             href="/metrics"
-            className="rounded-2xl bg-white p-3 border border-slate-200/80 shadow-xs hover:border-teal-300 transition-all text-center sm:text-left"
+            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
           >
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Latest HbA1c
-            </span>
-            <div className="mt-1 flex items-baseline justify-center sm:justify-start gap-1">
-              <span className="text-lg font-bold text-teal-800">6.8</span>
-              <span className="text-[10px] text-slate-500 font-medium">%</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700">Blood Pressure</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <Heart className="h-3.5 w-3.5" />
+              </div>
             </div>
-            <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
-              -0.3% Nov Panel
-            </span>
+            <div className="mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-extrabold text-slate-900">122/78</span>
+                <span className="text-xs text-slate-400 font-medium">mmHg</span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
+                ● Normal Seated
+              </span>
+            </div>
+            {/* Dot Matrix Graphic */}
+            <div className="mt-3 grid grid-cols-4 gap-1.5">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-2 w-2 rounded-full ${
+                    i < 6 ? "bg-emerald-500" : "bg-slate-200"
+                  }`}
+                />
+              ))}
+            </div>
           </Link>
 
+          {/* Card 3: Latest HbA1c */}
           <Link
             href="/metrics"
-            className="rounded-2xl bg-white p-3 border border-slate-200/80 shadow-xs hover:border-teal-300 transition-all text-center sm:text-left"
+            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
           >
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Blood Pressure
-            </span>
-            <div className="mt-1 flex items-baseline justify-center sm:justify-start gap-1">
-              <span className="text-lg font-bold text-slate-900">122/78</span>
-              <span className="text-[10px] text-slate-500 font-medium">mmHg</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700">Latest HbA1c</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <TrendingDown className="h-3.5 w-3.5" />
+              </div>
             </div>
-            <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
-              Resting seated
-            </span>
+            <div className="mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-extrabold text-emerald-700">6.8%</span>
+                <span className="text-xs text-slate-400 font-medium">Nov 2026</span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
+                -0.3% Improved
+              </span>
+            </div>
+            {/* Horizontal Spectrum Bar */}
+            <div className="mt-3 h-2 rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-red-400 relative overflow-hidden" />
+          </Link>
+
+          {/* Card 4: Medication Adherence */}
+          <Link
+            href="/medications"
+            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700">Medication</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <Pill className="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-extrabold text-slate-900">4 of 4</span>
+                <span className="text-xs text-slate-400 font-medium">Active</span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
+                Morning doses taken
+              </span>
+            </div>
+            {/* Mini Progress Circles */}
+            <div className="mt-3 flex items-center gap-1.5">
+              <div className="h-2 flex-1 rounded-full bg-emerald-500" />
+              <div className="h-2 flex-1 rounded-full bg-emerald-500" />
+              <div className="h-2 flex-1 rounded-full bg-emerald-500" />
+              <div className="h-2 flex-1 rounded-full bg-slate-200" />
+            </div>
           </Link>
         </div>
       </div>
 
-      {/* 4. Structured Grouped List: Today's Medication Schedule (Apple Health / Banking style) */}
+      {/* 4. Top Doctor & Appointment (Exact style from Image 1 & 3) */}
       <div>
-        <div className="flex items-center justify-between px-1 mb-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Today's Medications
-          </span>
-          <Link href="/medications" className="text-xs font-medium text-teal-800 hover:underline">
-            Manage List
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Next Doctor Appointment
+          </h3>
+          <Link href="/appointments" className="text-xs font-bold text-emerald-600 hover:underline">
+            View All
           </Link>
         </div>
 
-        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+        <div className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] border border-slate-100/90 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-500 text-white font-extrabold text-sm shadow-sm ring-4 ring-emerald-50">
+              CW
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-extrabold text-slate-900">
+                  {nextAppointment.doctor_name}
+                </span>
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 fill-emerald-50" />
+              </div>
+              <span className="text-xs text-slate-500 font-medium block">
+                {nextAppointment.specialty} • {nextAppointment.clinic_or_hospital}
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-0.5">
+                <Clock className="h-3 w-3" />
+                {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/appointments"
+            className="rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs shrink-0"
+          >
+            Prep Visit
+          </Link>
+        </div>
+      </div>
+
+      {/* 5. Daily Medication Checklist (Structured Card List) */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Today's Medications
+          </h3>
+          <Link href="/medications" className="text-xs font-bold text-emerald-600 hover:underline">
+            Schedule
+          </Link>
+        </div>
+
+        <div className="rounded-3xl bg-white border border-slate-100/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] divide-y divide-slate-100 overflow-hidden">
           {mockMedications.map((med) => {
             const isTaken = loggedMeds[med.id];
             return (
               <div
                 key={med.id}
                 onClick={() => toggleMed(med.id)}
-                className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/70 transition-colors cursor-pointer select-none"
+                className="flex items-center justify-between px-4 sm:px-5 py-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer select-none"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3.5 min-w-0">
                   <button
                     type="button"
                     aria-label={`Mark ${med.name} as taken`}
-                    className={`flex h-6 w-6 items-center justify-center rounded-full border transition-colors shrink-0 ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all shrink-0 ${
                       isTaken
-                        ? "bg-teal-700 border-teal-700 text-white"
+                        ? "bg-emerald-500 border-emerald-500 text-white shadow-xs scale-105"
                         : "border-slate-300 hover:border-slate-400 bg-white"
                     }`}
                   >
-                    {isTaken && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                    {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
                   </button>
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span
                         className={`text-xs font-bold truncate ${
-                          isTaken ? "text-slate-500 line-through" : "text-slate-900"
+                          isTaken ? "text-slate-400 line-through" : "text-slate-900"
                         }`}
                       >
                         {med.name}
                       </span>
-                      <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                         {med.strength}
                       </span>
                     </div>
@@ -205,165 +357,50 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="text-right shrink-0 pl-2">
-                  <span
-                    className={`text-[11px] font-semibold ${
-                      isTaken ? "text-emerald-700" : "text-slate-400"
-                    }`}
-                  >
-                    {isTaken ? "Taken" : "Tap to take"}
-                  </span>
-                </div>
+                <span
+                  className={`text-[11px] font-bold ${
+                    isTaken ? "text-emerald-600" : "text-slate-400"
+                  }`}
+                >
+                  {isTaken ? "Done" : "Tap to log"}
+                </span>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* 5. Next Consultation Compact Card */}
-      <div>
-        <div className="flex items-center justify-between px-1 mb-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Next Doctor Visit
-          </span>
-          <Link href="/appointments" className="text-xs font-medium text-teal-800 hover:underline">
-            All Visits
-          </Link>
-        </div>
-
-        <Link
-          href="/appointments"
-          className="block rounded-2xl bg-white border border-slate-200/80 p-4 shadow-xs hover:border-slate-300 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-800 shrink-0">
-                <Stethoscope className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-slate-900 block">
-                  {nextAppointment.doctor_name}
-                </span>
-                <span className="text-[11px] text-teal-800 font-medium block">
-                  {nextAppointment.specialty} • {nextAppointment.clinic_or_hospital}
-                </span>
-                <span className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3 text-slate-400" />
-                  {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
-                </span>
-              </div>
-            </div>
-
-            <ChevronRight className="h-4 w-4 text-slate-400" />
-          </div>
-
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="text-slate-500 truncate max-w-[220px]">
-              Reason: {nextAppointment.reason}
-            </span>
-            <span className="text-teal-800 font-semibold flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
-              Preparation Ready
-            </span>
-          </div>
-        </Link>
-      </div>
-
-      {/* 6. AI Medical Health Query Banner (Integrated, Not Generic) */}
-      <div className="rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/60 to-emerald-50/40 p-4 shadow-xs">
+      {/* 6. AI Medical Prompt Bar (Integrated pill triggers) */}
+      <div className="rounded-3xl bg-gradient-to-tr from-emerald-600 to-green-500 p-5 text-white shadow-lg shadow-emerald-500/20">
         <div className="flex items-center gap-2 mb-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-800 text-white">
-            <Sparkles className="h-3.5 w-3.5" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xs font-bold text-teal-950">
-            Ask Your Medical Life Assistant
+          <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-100">
+            AI Medical Companion
           </span>
         </div>
-        <p className="text-xs text-slate-600 leading-relaxed mb-3">
-          Instant answers grounded in your verified lab results, prescriptions, and timeline.
+        <h4 className="text-base font-extrabold leading-tight">
+          Have questions about your health records?
+        </h4>
+        <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
+          Ask questions grounded in your Quest Diagnostics panels and medical history.
         </p>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-2">
           {[
-            "How has my HbA1c changed?",
-            "What questions for Dr. Wei?",
-            "List my 4 active medications",
+            "Compare my HbA1c trajectory",
+            "What questions for Dr. Wei on Dec 8?",
+            "Explain my kidney eGFR 68",
           ].map((prompt, i) => (
             <Link
               key={i}
               href="/assistant"
-              className="rounded-full bg-white border border-teal-200/80 px-3 py-1 text-[11px] font-medium text-teal-900 hover:bg-teal-50 hover:border-teal-300 transition-colors shadow-2xs"
+              className="rounded-full bg-white/20 backdrop-blur-md border border-white/30 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-white/30 transition-colors"
             >
               {prompt}
             </Link>
           ))}
-        </div>
-      </div>
-
-      {/* 7. Structured Grouped List: Recent Medical Journey */}
-      <div>
-        <div className="flex items-center justify-between px-1 mb-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Recent Timeline Records
-          </span>
-          <Link href="/timeline" className="text-xs font-medium text-teal-800 hover:underline">
-            Full Journey
-          </Link>
-        </div>
-
-        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
-          {mockTimelineEvents.slice(0, 3).map((event) => (
-            <Link
-              key={event.id}
-              href="/timeline"
-              className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/70 transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 shrink-0">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-slate-900 block truncate">
-                    {event.title}
-                  </span>
-                  <span className="text-[11px] text-slate-500 block truncate mt-0.5">
-                    {formatDate(event.event_date)} • {event.facility_or_doctor}
-                  </span>
-                </div>
-              </div>
-
-              <ChevronRight className="h-4 w-4 text-slate-300 shrink-0 ml-2" />
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* 8. Quick Actions (Pill Bar) */}
-      <div className="pt-2">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <Link
-            href="/vault"
-            className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200/90 py-2.5 px-3 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
-          >
-            <UploadCloud className="h-3.5 w-3.5 text-teal-700" />
-            Upload File
-          </Link>
-
-          <Link
-            href="/metrics"
-            className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200/90 py-2.5 px-3 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
-          >
-            <Plus className="h-3.5 w-3.5 text-teal-700" />
-            Log Biometric
-          </Link>
-
-          <Link
-            href="/appointments"
-            className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200/90 py-2.5 px-3 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
-          >
-            <Calendar className="h-3.5 w-3.5 text-teal-700" />
-            Add Visit
-          </Link>
         </div>
       </div>
     </div>

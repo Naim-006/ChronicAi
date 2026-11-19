@@ -27,6 +27,7 @@ export default function MedicationsPage() {
     "med-3": true,
     "med-4": false,
   });
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedMed, setSelectedMed] = useState<Medication | null>(null);
 
@@ -73,41 +74,33 @@ export default function MedicationsPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-            Medications
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            Current Medications
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            4 active daily prescriptions tracked.
+            4 active daily prescriptions tracked with daily adherence history.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 rounded-full bg-teal-800 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all"
+          className="flex items-center gap-2 rounded-full bg-gradient-to-tr from-emerald-600 to-green-500 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
         >
-          <Plus className="h-3.5 w-3.5" />
-          <span>Add</span>
+          <Plus className="h-4 w-4" />
+          <span>Add Prescription</span>
         </button>
-      </div>
-
-      {/* Safety Notice Banner */}
-      <div className="rounded-xl border border-slate-200/80 bg-white p-3 text-xs text-slate-600 flex items-start gap-2.5 shadow-2xs">
-        <ShieldAlert className="h-4 w-4 text-teal-800 shrink-0 mt-0.5" />
-        <span className="leading-relaxed">
-          <strong>Prescription Safety:</strong> Dosages reflect your doctor's exact instructions. The AI assistant does not alter prescribed medical regimens.
-        </span>
       </div>
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="rounded-2xl border border-teal-300 bg-white p-4 shadow-md space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <span className="text-xs font-bold text-slate-900">Add Prescribed Medication</span>
+        <div className="rounded-3xl border border-emerald-300 bg-white p-5 shadow-lg space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <span className="text-sm font-extrabold text-slate-900">Add Prescribed Medication</span>
             <button
               type="button"
               onClick={() => setShowAddModal(false)}
@@ -118,76 +111,76 @@ export default function MedicationsPage() {
           </div>
           <form onSubmit={handleAdd} className="space-y-3 text-xs">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Medication Name *</label>
+              <label className="font-bold text-slate-700 block mb-1">Medication Name *</label>
               <input
                 required
-                placeholder="e.g. Metformin ER"
+                placeholder="e.g. Metformin Extended Release"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Strength / Dose *</label>
+                <label className="font-bold text-slate-700 block mb-1">Strength / Dose *</label>
                 <input
                   required
                   placeholder="e.g. 1000mg"
                   value={dose}
                   onChange={(e) => setDose(e.target.value)}
-                  className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Frequency</label>
+                <label className="font-bold text-slate-700 block mb-1">Frequency</label>
                 <input
                   placeholder="e.g. Twice daily"
                   value={freq}
                   onChange={(e) => setFreq(e.target.value)}
-                  className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Doctor</label>
+                <label className="font-bold text-slate-700 block mb-1">Doctor</label>
                 <input
-                  placeholder="e.g. Dr. Wei"
+                  placeholder="e.g. Dr. Catherine Wei"
                   value={doc}
                   onChange={(e) => setDoc(e.target.value)}
-                  className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Condition</label>
+                <label className="font-bold text-slate-700 block mb-1">Condition</label>
                 <input
                   placeholder="e.g. Type 2 Diabetes"
                   value={cond}
                   onChange={(e) => setCond(e.target.value)}
-                  className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
                 />
               </div>
             </div>
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Instructions</label>
+              <label className="font-bold text-slate-700 block mb-1">Instructions</label>
               <input
-                placeholder="e.g. Take with food"
+                placeholder="e.g. Take with food. Drink water."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
               />
             </div>
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600"
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-3.5 py-1.5 rounded-lg bg-teal-800 text-xs font-semibold text-white"
+                className="px-5 py-2 rounded-xl bg-emerald-600 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
               >
                 Save
               </button>
@@ -196,100 +189,162 @@ export default function MedicationsPage() {
         </div>
       )}
 
-      {/* Medication Details Modal */}
-      {selectedMed && (
-        <div className="rounded-2xl border border-teal-300 bg-white p-4 shadow-md space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <span className="text-xs font-bold text-slate-900">{selectedMed.name} Details</span>
-            <button
-              type="button"
-              onClick={() => setSelectedMed(null)}
-              className="text-slate-400 hover:text-slate-700"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="space-y-2 text-xs text-slate-700">
-            <div>
-              <span className="font-semibold text-slate-500 block text-[10px] uppercase">Generic Name</span>
-              <span className="font-bold text-slate-900">{selectedMed.generic_name || selectedMed.name}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-500 block text-[10px] uppercase">Dosage & Schedule</span>
-              <span>{selectedMed.dosage} • {selectedMed.frequency}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-500 block text-[10px] uppercase">Instructions</span>
-              <span className="text-teal-900 font-medium">{selectedMed.instructions}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-[11px] text-slate-500">
-              <div>Prescriber: {selectedMed.prescribing_doctor}</div>
-              <div>Condition: {selectedMed.related_condition}</div>
-            </div>
+      {/* Category Filter Pills (Image 3 style) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs hide-scrollbar">
+        {[
+          { id: "all", label: "All Active" },
+          { id: "diabetes", label: "Diabetes (Metformin & Jardiance)" },
+          { id: "cardio", label: "Cardiovascular (Lisinopril & Statin)" },
+        ].map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setCategoryFilter(cat.id)}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-bold transition-all cursor-pointer ${
+              categoryFilter === cat.id
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Medication Adherence Matrix (Exact replica of Image 3 screen 3) */}
+      <div className="rounded-3xl bg-white border border-slate-100/90 p-5 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.06)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+            Adherence History Matrix (Last 6 Months)
+          </span>
+
+          <div className="flex items-center gap-3 text-[11px] font-bold text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              Metformin
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+              Empagliflozin
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              Lisinopril
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+              Atorvastatin
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Structured Grouped Medication List */}
-      <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+        {/* Matrix Table with Month Rows and Dot/Check Indicators */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-center text-xs">
+            <thead>
+              <tr className="text-slate-400 text-[10px] font-extrabold uppercase">
+                <th className="text-left pb-2">Month</th>
+                <th className="pb-2">Metformin</th>
+                <th className="pb-2">Empagliflozin</th>
+                <th className="pb-2">Lisinopril</th>
+                <th className="pb-2">Atorvastatin</th>
+                <th className="text-right pb-2">Rate</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {[
+                { month: "November", r1: true, r2: true, r3: true, r4: true, score: "100%" },
+                { month: "October", r1: true, r2: true, r3: true, r4: true, score: "100%" },
+                { month: "September", r1: true, r2: true, r3: true, r4: true, score: "100%" },
+                { month: "August", r1: true, r2: true, r3: true, r4: false, score: "96%" },
+                { month: "July", r1: true, r2: true, r3: true, r4: true, score: "100%" },
+              ].map((row, idx) => (
+                <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="text-left py-2.5 font-bold text-slate-800">{row.month}</td>
+                  <td className="py-2.5">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">✓</span>
+                  </td>
+                  <td className="py-2.5">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-[10px] font-extrabold">✓</span>
+                  </td>
+                  <td className="py-2.5">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">✓</span>
+                  </td>
+                  <td className="py-2.5">
+                    {row.r4 ? (
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-purple-800 text-[10px] font-extrabold">✓</span>
+                    ) : (
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-400 text-[10px]">●</span>
+                    )}
+                  </td>
+                  <td className="text-right py-2.5 font-extrabold text-emerald-600">{row.score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Active Prescription Cards */}
+      <div className="space-y-3">
+        <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 px-1 block">
           Daily Dosing Checklist
         </span>
 
-        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
-          {medications.map((med) => {
-            const isTaken = loggedMeds[med.id];
-            return (
+        {medications.map((med) => {
+          const isTaken = loggedMeds[med.id];
+          return (
+            <div
+              key={med.id}
+              className="rounded-3xl bg-white border border-slate-100/90 p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:border-emerald-300 transition-all flex items-center justify-between gap-3"
+            >
               <div
-                key={med.id}
-                className="flex items-center justify-between p-3.5 sm:px-4 hover:bg-slate-50/70 transition-colors select-none"
+                onClick={() => toggleMed(med.id)}
+                className="flex items-center gap-4 min-w-0 flex-1 cursor-pointer"
               >
-                <div
-                  onClick={() => toggleMed(med.id)}
-                  className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
-                >
-                  <button
-                    type="button"
-                    aria-label={`Mark ${med.name}`}
-                    className={`flex h-6 w-6 items-center justify-center rounded-full border transition-colors shrink-0 ${
-                      isTaken
-                        ? "bg-teal-700 border-teal-700 text-white"
-                        : "border-slate-300 hover:border-slate-400 bg-white"
-                    }`}
-                  >
-                    {isTaken && <Check className="h-3.5 w-3.5 stroke-[3]" />}
-                  </button>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs font-bold truncate ${
-                          isTaken ? "text-slate-500 line-through" : "text-slate-900"
-                        }`}
-                      >
-                        {med.name}
-                      </span>
-                      <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
-                        {med.strength}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 block truncate mt-0.5">
-                      {med.frequency}
-                    </span>
-                  </div>
-                </div>
-
                 <button
                   type="button"
-                  onClick={() => setSelectedMed(med)}
-                  className="text-xs font-medium text-teal-800 hover:underline p-1 shrink-0 ml-2"
+                  aria-label={`Mark ${med.name}`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border transition-all shrink-0 ${
+                    isTaken
+                      ? "bg-emerald-500 border-emerald-500 text-white shadow-xs scale-105"
+                      : "border-slate-300 hover:border-slate-400 bg-white"
+                  }`}
                 >
-                  Details
+                  {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
                 </button>
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3
+                      className={`text-sm font-extrabold truncate ${
+                        isTaken ? "text-slate-400 line-through" : "text-slate-900"
+                      }`}
+                    >
+                      {med.name}
+                    </h3>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      {med.strength}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-500 block truncate mt-0.5">
+                    {med.frequency} • {med.instructions}
+                  </span>
+                  <span className="text-[11px] text-slate-400 block mt-0.5">
+                    Prescribed by {med.prescribing_doctor} for {med.related_condition}
+                  </span>
+                </div>
               </div>
-            );
-          })}
-        </div>
+
+              <span
+                className={`text-xs font-bold shrink-0 ${
+                  isTaken ? "text-emerald-600" : "text-slate-400"
+                }`}
+              >
+                {isTaken ? "Taken" : "Tap to log"}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

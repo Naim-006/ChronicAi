@@ -4,11 +4,12 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Heart,
+  Home,
   FolderArchive,
   Sparkles,
+  Calendar,
+  User,
   Activity,
-  UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +17,7 @@ const tabs = [
   {
     name: "Home",
     href: "/dashboard",
-    icon: Heart,
+    icon: Home,
     matchExact: true,
   },
   {
@@ -32,15 +33,15 @@ const tabs = [
     highlight: true,
   },
   {
-    name: "Health Hub",
-    href: "/metrics",
-    icon: Activity,
-    aliases: ["/timeline", "/medications", "/chronic-care", "/appointments"],
+    name: "Visits",
+    href: "/appointments",
+    icon: Calendar,
+    aliases: ["/timeline", "/metrics", "/chronic-care", "/medications"],
   },
   {
     name: "Profile",
     href: "/profile",
-    icon: UserRound,
+    icon: User,
     aliases: ["/doctors", "/summaries", "/settings"],
   },
 ];
@@ -49,8 +50,8 @@ export function MobileTabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-slate-200/90 bg-white/95 backdrop-blur-lg safe-bottom">
-      <div className="flex h-16 items-center justify-around px-2 max-w-md mx-auto">
+    <nav className="fixed bottom-4 left-3 right-3 z-50 lg:hidden max-w-md mx-auto">
+      <div className="flex h-16 items-center justify-around rounded-full border border-slate-100/80 bg-white/95 px-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl">
         {tabs.map((tab) => {
           const isActive =
             (tab.matchExact && pathname === tab.href) ||
@@ -64,25 +65,23 @@ export function MobileTabBar() {
               <Link
                 key={tab.name}
                 href={tab.href}
-                className="flex flex-col items-center justify-center -mt-3 group"
+                className="flex flex-col items-center justify-center -mt-6 group"
               >
                 <div
                   className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-full shadow-md transition-transform active:scale-95",
-                    isActive
-                      ? "bg-teal-700 text-white ring-4 ring-teal-50"
-                      : "bg-teal-700 text-white"
+                    "flex h-13 w-13 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 to-green-500 text-white shadow-lg shadow-emerald-500/30 transition-transform active:scale-95",
+                    isActive ? "ring-4 ring-emerald-100 scale-105" : "hover:scale-105"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-6 w-6 stroke-[2.2]" />
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-semibold mt-1",
-                    isActive ? "text-teal-800" : "text-slate-600"
+                    "text-[10px] font-bold mt-1 tracking-tight",
+                    isActive ? "text-emerald-700" : "text-slate-500"
                   )}
                 >
-                  {tab.name}
+                  AI Copilot
                 </span>
               </Link>
             );
@@ -93,24 +92,35 @@ export function MobileTabBar() {
               key={tab.name}
               href={tab.href}
               className={cn(
-                "relative flex flex-col items-center justify-center py-1 px-3 text-center transition-colors min-w-[56px]",
-                isActive ? "text-teal-800 font-semibold" : "text-slate-500 hover:text-slate-800"
+                "relative flex flex-col items-center justify-center py-1 px-3 text-center transition-all",
+                isActive
+                  ? "text-emerald-600 font-bold"
+                  : "text-slate-400 hover:text-slate-700"
               )}
             >
               <div className="relative">
-                <Icon
+                <div
                   className={cn(
-                    "h-5 w-5 transition-transform",
-                    isActive && "scale-110 stroke-[2.2]"
+                    "p-1.5 rounded-full transition-colors",
+                    isActive && "bg-emerald-50 text-emerald-600"
                   )}
-                />
+                >
+                  <Icon
+                    className={cn(
+                      "h-5 w-5 transition-transform",
+                      isActive ? "scale-110 stroke-[2.4]" : "stroke-[1.8]"
+                    )}
+                  />
+                </div>
                 {tab.badge && (
-                  <span className="absolute -top-1 -right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-1 ring-white">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-extrabold text-white ring-2 ring-white">
                     {tab.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] tracking-tight mt-1 leading-none">{tab.name}</span>
+              <span className="text-[10px] font-medium tracking-tight mt-0.5 leading-none">
+                {tab.name}
+              </span>
             </Link>
           );
         })}
