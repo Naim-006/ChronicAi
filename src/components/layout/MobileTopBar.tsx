@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronLeft, Search, LayoutGrid, Menu } from "lucide-react";
+import { Bell, ChevronLeft, Search, Menu } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
@@ -130,16 +130,6 @@ export function MobileTopBar() {
             <Bell className="h-4 w-4" />
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </Link>
-
-          <button
-            type="button"
-            onClick={openDrawer}
-            className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-3.5 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--muted)] cursor-pointer"
-            title="All Pages & Care Hub"
-          >
-            <LayoutGrid className="h-4 w-4 text-emerald-600" />
-            <span>Care Hub</span>
-          </button>
 
           <Link
             href="/profile"
