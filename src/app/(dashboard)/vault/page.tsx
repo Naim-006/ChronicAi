@@ -19,7 +19,6 @@ import {
 import { mockDocuments, mockExtractedRecords } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { MedicalDocument, ExtractedRecord } from "@/types/medical";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/input";
 
 const iconTones = [
@@ -139,53 +138,53 @@ export default function VaultPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Secure vault"
-        title="Medical Records"
-        description="Encrypted storage with OCR biomarker extraction"
-        actions={
-          <div className="flex items-center gap-2">
-            <div className="hidden items-center rounded-2xl border border-[var(--border)] bg-white p-1 sm:flex">
-              <button
-                type="button"
-                onClick={() => setViewMode("cards")}
-                className={`rounded-xl p-2 transition-colors ${
-                  viewMode === "cards"
-                    ? "bg-emerald-50 text-emerald-800"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                }`}
-                title="Cards"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`rounded-xl p-2 transition-colors ${
-                  viewMode === "table"
-                    ? "bg-emerald-50 text-emerald-800"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                }`}
-                title="Table"
-              >
-                <TableIcon className="h-4 w-4" />
-              </button>
-            </div>
-
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/25 transition-transform active:scale-95">
-              <UploadCloud className="h-4 w-4" />
-              Upload
-              <input
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg"
-                className="hidden"
-                onChange={handleSimulateUpload}
-              />
-            </label>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold text-[var(--foreground)]">Medical Records</h1>
+          <p className="text-sm text--[var(--muted-foreground)] mt-0.5">
+            Encrypted storage with OCR biomarker extraction
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="hidden items-center rounded-xl border border-[var(--border)] bg-white p-0.5 sm:flex">
+            <button
+              type="button"
+              onClick={() => setViewMode("cards")}
+              className={`rounded-lg p-2 transition-colors ${
+                viewMode === "cards"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`rounded-lg p-2 transition-colors ${
+                viewMode === "table"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              <TableIcon className="h-4 w-4" />
+            </button>
           </div>
-        }
-      />
+
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/25 transition-transform active:scale-95">
+            <UploadCloud className="h-4 w-4" />
+            Upload
+            <input
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              className="hidden"
+              onChange={handleSimulateUpload}
+            />
+          </label>
+        </div>
+      </div>
 
       {uploadSuccess && (
         <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-bold text-emerald-800">

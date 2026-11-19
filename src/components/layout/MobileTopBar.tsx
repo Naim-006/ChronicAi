@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronLeft, Search, Menu } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
@@ -39,40 +39,20 @@ export function MobileTopBar() {
             type="button"
             onClick={openDrawer}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] hover:bg-[var(--mint-deep)] transition-transform active:scale-95 cursor-pointer"
-            title="Care Hub Menu"
+            title="Menu"
             aria-label="Open Menu"
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          {!isDashboard ? (
-            <div className="flex min-w-0 items-center gap-2">
-              <Link
-                href={pageMeta.parent || "/dashboard"}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                aria-label="Back"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Link>
-              <div className="min-w-0">
-                <h1 className="truncate text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-tight">
-                  {pageMeta.title}
-                </h1>
-                <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
-                  ChronicAI
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="min-w-0">
-              <span className="block text-sm font-extrabold text-[var(--foreground)] leading-tight">
-                ChronicAI
-              </span>
-              <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
-                Lifelong Care Intelligence
-              </span>
-            </div>
-          )}
+          <div className="min-w-0">
+            <h1 className="truncate text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-tight">
+              {isDashboard ? "ChronicAI" : pageMeta.title}
+            </h1>
+            <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
+              Lifelong Care Intelligence
+            </span>
+          </div>
         </div>
 
         {/* Right Side: Notification Icon + Profile Icon (No name, only avatar icon) */}

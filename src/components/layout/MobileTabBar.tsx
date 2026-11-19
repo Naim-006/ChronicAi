@@ -1,21 +1,35 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  FolderArchive,
+  Folder,
   Stethoscope,
-  HeartPulse,
-  LayoutGrid,
+  Pill,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMobileNav } from "./MobileNavContext";
 
 export function MobileTabBar() {
   const pathname = usePathname();
-  const { openDrawer, isDrawerOpen } = useMobileNav();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(380);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateWidth = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.offsetWidth;
+        if (w > 0) setWidth(w);
+      }
+    };
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const tabs = [
     {
@@ -27,7 +41,7 @@ export function MobileTabBar() {
     {
       name: "Records",
       href: "/vault",
-      icon: FolderArchive,
+      icon: Folder,
       badge: "1",
       aliases: ["/timeline", "/summaries"],
     },
@@ -35,136 +49,161 @@ export function MobileTabBar() {
       name: "Copilot",
       href: "/assistant",
       icon: Stethoscope,
-      highlight: true,
+      isCenterCopilot: true,
     },
     {
-      name: "Health",
-      href: "/evaluation",
-      icon: HeartPulse,
-      aliases: ["/metrics", "/medications", "/chronic-care", "/appointments", "/doctors"],
+      name: "Meds",
+      href: "/medications",
+      icon: Pill,
     },
     {
-      name: "Care Hub",
-      icon: LayoutGrid,
-      isAction: true,
-      onClick: openDrawer,
-      isActive: isDrawerOpen,
+      name: "Chronic Care",
+      href: "/chronic-care",
+      icon: ShieldCheck,
+      aliases: ["/evaluation"],
     },
   ];
 
+  // SVG Geometry for the custom continuous outline with smooth center dome
+  const H = 76;
+  const topBaseline = 22;
+  const bottom = 74;
+  const capRadius = (bottom - topBaseline) / 2; // 26
+  const cx = width / 2;
+  const domeHalf = 48; // width of dome base from center
+  const domePeakY = 3; // peak elevation of dome
+
+  // Continuous smooth SVG path with horizontal tangents at junctions and peak
+  const svgPath = `
+    M ${capRadius}, ${topBaseline}
+    L ${cx - domeHalf}, ${topBaseline}
+    C ${cx - 24}, ${topBaseline} ${cx - 22}, ${domePeakY} ${cx}, ${domePeakY}
+    C ${cx + 22}, ${domePeakY} ${cx + 24}, ${topBaseline} ${cx + domeHalf}, ${topBaseline}
+    L ${width - capRadius}, ${topBaseline}
+    A ${capRadius} ${capRadius} 0 0 1 ${width - capRadius}, ${bottom}
+    L ${capRadius}, ${bottom}
+    A ${capRadius} ${capRadius} 0 0 1 ${capRadius}, ${topBaseline}
+    Z
+  `.replace(/\s+/g, " ").trim();
+
   return (
-    <nav className="fixed bottom-4 left-3 right-3 z-50 mx-auto max-w-md pointer-events-none lg:hidden">
-      <div className="pointer-events-auto flex h-[68px] items-center justify-around rounded-[28px] border border-white/10 bg-[var(--forest)]/95 px-2 shadow-[0_16px_48px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
-        {tabs.map((tab) => {
-          const isActive =
-            tab.isAction
-              ? tab.isActive
-              : (tab.matchExact && pathname === tab.href) ||
-                (!tab.matchExact &&
-                  !tab.highlight &&
-                  (pathname === tab.href ||
-                    (tab.aliases &&
-                      tab.aliases.some((alias) => pathname.startsWith(alias))))) ||
-                (tab.highlight && pathname.startsWith(tab.href!));
+    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-md px-3 pointer-events-none lg:hidden">
+      <div
+        ref={containerRef}
+        className="pointer-events-auto relative w-full h-[78px] select-none"
+      >
+        {/* Custom SVG Background with Continuous Dark Border & Center Dome */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
+          width={width}
+          height={H}
+          viewBox={`0 0 ${width} ${H}`}
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d={svgPath}
+            fill="#ffffff"
+            stroke="#334155"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        </svg>
 
-          const Icon = tab.icon;
+        {/* 5 Tab Navigation Items */}
+        <div className="relative z-10 grid grid-cols-5 h-full items-end pb-2 pt-1 px-1">
+          {tabs.map((tab) => {
+            const isActive =
+              (tab.matchExact && pathname === tab.href) ||
+              (!tab.matchExact &&
+                !tab.isCenterCopilot &&
+                (pathname === tab.href ||
+                  (tab.aliases &&
+                    tab.aliases.some((alias) => pathname.startsWith(alias))))) ||
+              (tab.isCenterCopilot && pathname.startsWith(tab.href!));
 
-          if (tab.highlight) {
+            const Icon = tab.icon;
+
+            // Center Copilot Button with circular green gradient inside the dome
+            if (tab.isCenterCopilot) {
+              return (
+                <div key={tab.name} className="flex flex-col items-center justify-end pb-0.5">
+                  <Link
+                    href={tab.href!}
+                    aria-label="Chronic AI Copilot"
+                    className="group -mt-8 flex flex-col items-center justify-center transition-transform active:scale-95"
+                  >
+                    <div
+                      className={cn(
+                        "flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 text-white shadow-[0_6px_16px_rgba(16,185,129,0.42)] transition-all",
+                        isActive
+                          ? "ring-2 ring-emerald-400 ring-offset-2 ring-offset-white scale-105"
+                          : "group-hover:scale-105"
+                      )}
+                    >
+                      <Icon className="h-6 w-6 stroke-[2.2] text-white" />
+                    </div>
+                    <span
+                      className={cn(
+                        "mt-1 text-[11px] font-medium leading-none tracking-tight",
+                        isActive ? "text-emerald-700 font-semibold" : "text-slate-600"
+                      )}
+                    >
+                      Copilot
+                    </span>
+                  </Link>
+                </div>
+              );
+            }
+
+            // Normal Tab (Home, Records, Meds, Chronic Care)
             return (
               <Link
                 key={tab.name}
                 href={tab.href!}
-                className="group -mt-7 flex flex-col items-center justify-center"
-              >
-                <div
-                  className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-400 to-green-600 text-white shadow-lg shadow-emerald-500/40 transition-transform active:scale-95",
-                    isActive ? "ring-4 ring-emerald-400/30 scale-105" : "hover:scale-105"
-                  )}
-                >
-                  <Icon className="h-6 w-6 stroke-[2.2]" />
-                </div>
-                <span
-                  className={cn(
-                    "mt-1 text-[10px] font-bold tracking-tight",
-                    isActive ? "text-emerald-400" : "text-white/70"
-                  )}
-                >
-                  Copilot
-                </span>
-              </Link>
-            );
-          }
-
-          if (tab.isAction) {
-            return (
-              <button
-                key={tab.name}
-                type="button"
-                onClick={tab.onClick}
                 className={cn(
-                  "relative flex flex-col items-center justify-center px-2 sm:px-3 py-1 text-center transition-all cursor-pointer",
+                  "relative flex flex-col items-center justify-center py-1 transition-all group",
                   isActive
-                    ? "text-white font-bold"
-                    : "text-white/45 hover:text-white/90"
+                    ? "text-emerald-600 font-semibold"
+                    : "text-slate-600 hover:text-slate-900"
                 )}
               >
-                <div className="relative">
+                <div className="relative flex items-center justify-center">
                   <Icon
                     className={cn(
                       "h-5 w-5 transition-transform",
-                      isActive ? "scale-110 stroke-[2.3]" : "stroke-[1.8]"
+                      isActive
+                        ? "stroke-[2.2] text-emerald-600 scale-105"
+                        : "stroke-[1.8] text-slate-700 group-hover:scale-105"
                     )}
                   />
-                  <span className="absolute -right-1 -top-1 flex h-2 w-2 rounded-full bg-emerald-400" />
+
+                  {/* Badge (e.g. green circle '1' on Records) */}
+                  {tab.badge && (
+                    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white shadow-sm ring-1 ring-white">
+                      {tab.badge}
+                    </span>
+                  )}
                 </div>
 
-                <span className="mt-1 text-[10px] font-medium leading-none">
+                <span
+                  className={cn(
+                    "mt-1 text-[11px] leading-tight text-center tracking-tight",
+                    isActive ? "font-semibold text-emerald-600" : "font-medium text-slate-600"
+                  )}
+                >
                   {tab.name}
                 </span>
 
+                {/* Active Indicator Bar (rounded pill like in screenshot) */}
                 {isActive && (
-                  <span className="absolute -bottom-0.5 h-1 w-4 rounded-full bg-emerald-400" />
+                  <span className="mt-0.5 h-1 w-4 rounded-full bg-emerald-500 shadow-sm" />
                 )}
-              </button>
+              </Link>
             );
-          }
-
-          return (
-            <Link
-              key={tab.name}
-              href={tab.href!}
-              className={cn(
-                "relative flex flex-col items-center justify-center px-2 sm:px-3 py-1 text-center transition-all",
-                isActive
-                  ? "text-white font-bold"
-                  : "text-white/45 hover:text-white/90"
-              )}
-            >
-              <div className="relative">
-                <Icon
-                  className={cn(
-                    "h-5 w-5 transition-transform",
-                    isActive ? "scale-110 stroke-[2.3]" : "stroke-[1.8]"
-                  )}
-                />
-                {tab.badge && (
-                  <span className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-extrabold text-white">
-                    {tab.badge}
-                  </span>
-                )}
-              </div>
-
-              <span className="mt-1 text-[10px] font-medium leading-none">
-                {tab.name}
-              </span>
-
-              {isActive && (
-                <span className="absolute -bottom-0.5 h-1 w-4 rounded-full bg-emerald-400" />
-              )}
-            </Link>
-          );
-        })}
+          })}
+        </div>
       </div>
     </nav>
   );

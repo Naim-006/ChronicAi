@@ -11,7 +11,6 @@ import {
 import { mockTimelineEvents } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { TimelineEvent, TimelineEventType } from "@/types/medical";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -76,18 +75,20 @@ export default function TimelinePage() {
   };
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="History"
-        title="Patient Timeline"
-        description={`Chronological journey across ${events.length} documented milestones`}
-        actions={
-          <Button onClick={() => setShowAddModal(true)} size="sm">
-            <Plus className="h-3.5 w-3.5" />
-            Add event
-          </Button>
-        }
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold text-[var(--foreground)]">Timeline</h1>
+          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
+            Chronological journey across {events.length} documented milestones
+          </p>
+        </div>
+        <Button onClick={() => setShowAddModal(true)} size="sm">
+          <Plus className="h-3.5 w-3.5" />
+          Add event
+        </Button>
+      </div>
 
       {showAddModal && (
         <div className="soft-card-lift space-y-4 border-emerald-200 p-5">

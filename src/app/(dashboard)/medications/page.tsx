@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Pill, Plus, Check, X, ShieldAlert, ShieldCheck, AlertTriangle, Search, Stethoscope } from "lucide-react";
 import { mockMedications } from "@/lib/mock-data";
 import { Medication } from "@/types/medical";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -124,19 +123,20 @@ export default function MedicationsPage() {
   const matrixMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"];
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Treatment"
-        title="Medications"
-        description={`${medications.length} active prescriptions · ${adherence}% logged today`}
-        actions={
-          <Button onClick={() => setShowAddModal(true)} size="sm">
-            <Plus className="h-3.5 w-3.5" />
-            Add med
-          </Button>
-        }
-        className="lg:mb-2"
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold text-[var(--foreground)]">Medications</h1>
+          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
+            {medications.length} active prescriptions · {adherence}% logged today
+          </p>
+        </div>
+        <Button onClick={() => setShowAddModal(true)} size="sm">
+          <Plus className="h-3.5 w-3.5" />
+          Add med
+        </Button>
+      </div>
 
       {/* Soft emerald summary banner */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 p-5 text-white shadow-[var(--shadow-lift)] sm:p-6">

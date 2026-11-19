@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,19 +15,25 @@ import {
   User,
   ShieldCheck,
   Settings,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navSections = [
   {
-    title: "Care",
+    title: "Main",
     items: [
       { name: "Home", href: "/dashboard", icon: Home },
-      { name: "Records", href: "/vault", icon: FileText, badge: "1" },
-      { name: "Timeline", href: "/timeline", icon: Clock },
       { name: "Copilot", href: "/assistant", icon: Stethoscope, highlight: true },
+    ],
+  },
+  {
+    title: "Records",
+    items: [
+      { name: "Medical Records", href: "/vault", icon: FileText },
+      { name: "Timeline", href: "/timeline", icon: Clock },
     ],
   },
   {
@@ -41,9 +47,9 @@ const navSections = [
     ],
   },
   {
-    title: "You",
+    title: "Account",
     items: [
-      { name: "Notifications", href: "/notifications", icon: Bell, badge: "3" },
+      { name: "Notifications", href: "/notifications", icon: Bell },
       { name: "Profile", href: "/profile", icon: User },
       { name: "Settings", href: "/settings", icon: Settings },
     ],
@@ -52,33 +58,57 @@ const navSections = [
 
 export function DesktopNavRail() {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <aside className="hidden lg:flex w-[272px] shrink-0 flex-col border-r border-[var(--border)]/80 bg-white/90 backdrop-blur-xl select-none">
-      <div className="flex h-[72px] items-center px-5 border-b border-[var(--border)]/70">
+    <aside className={cn(
+      "hidden lg:flex shrink-0 flex-col border-r border-[var(--border)] bg-white/95 backdrop-blur-xl select-none transition-all duration-300",
+      isCollapsed ? "w-[72px]" : "w-[280px]"
+    )}>
+      <div className="flex h-[72px] items-center px-5 border-b border-[var(--border)]">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-600/25 transition-transform group-hover:scale-[1.03]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-transform group-hover:scale-[1.02]">
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <div>
-            <span className="block text-[15px] font-extrabold tracking-tight text-[var(--foreground)] leading-none">
-              ChronicAI
-            </span>
-            <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">
-              Lifelong Care
-            </span>
-          </div>
+          {!isCollapsed && (
+            <div>
+              <span className="block text-[15px] font-extrabold tracking-tight text-[var(--foreground)] leading-none">
+                ChronicAI
+              </span>
+              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">
+                Lifelong Care
+              </span>
+            </div>
+          )}
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-5 space-y-6">
-        {navSections.map((sec) => (
-          <div key={sec.title}>
-            <span className="mb-2 block px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
-              {sec.title}
-            </span>
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        {navSections.map((section) => (
+          <div key={section.title}>
+            <div className="flex items-center justify-between mb-2 px-3">
+              {!isCollapsed && (
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
+                  {section.title}
+                </span>
+              )}
+              {section.title === "Main" && (
+                <button
+                  type="button"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+                  title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {isCollapsed ? (
+                    <PanelLeftOpen className="h-4 w-4" />
+                  ) : (
+                    <PanelLeftClose className="h-4 w-4" />
+                  )}
+                </button>
+              )}
+            </div>
             <div className="space-y-1">
-              {sec.items.map((item) => {
+              {section.items.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -89,31 +119,19 @@ export function DesktopNavRail() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center justify-between rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all group",
+                      "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all group",
                       isActive
-                        ? "bg-emerald-50 text-emerald-900 shadow-sm ring-1 ring-emerald-100"
-                        : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                        ? "bg-emerald-50 text-emerald-900 shadow-sm"
+                        : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)]",
+                      isCollapsed && "justify-center px-2.5"
                     )}
+                    title={isCollapsed ? item.name : undefined}
                   >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={cn(
-                          "flex h-8 w-8 items-center justify-center rounded-xl transition-colors",
-                          isActive
-                            ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-600/20"
-                            : "bg-[var(--muted)] text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span>{item.name}</span>
-                    </div>
-
-                    {item.badge && (
-                      <span className="rounded-lg bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        {item.badge}
-                      </span>
-                    )}
+                    <Icon className={cn(
+                      "h-4.5 w-4.5",
+                      isActive ? "text-emerald-600" : "text-[var(--muted-foreground)]"
+                    )} />
+                    {!isCollapsed && <span>{item.name}</span>}
                   </Link>
                 );
               })}
@@ -122,25 +140,28 @@ export function DesktopNavRail() {
         ))}
       </div>
 
-      <div className="border-t border-[var(--border)]/70 p-4">
+      <div className="border-t border-[var(--border)] p-4">
         <Link
           href="/profile"
-          className="soft-inset flex items-center justify-between rounded-2xl p-2.5 transition-all hover:bg-white group"
+          className={cn(
+            "flex items-center gap-3 rounded-xl p-2.5 transition-all hover:bg-[var(--secondary)]",
+            isCollapsed && "justify-center"
+          )}
+          title={isCollapsed ? "Profile" : undefined}
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-bold text-white shadow-sm">
-              EV
-            </div>
-            <div>
-              <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/20">
+            EV
+          </div>
+          {!isCollapsed && (
+            <div className="flex-1">
+              <span className="block text-xs font-semibold text-[var(--foreground)] leading-tight">
                 Elena Vance
               </span>
               <span className="block text-[10px] text-[var(--muted-foreground)]">
-                Age 48 · Managed care
+                Profile
               </span>
             </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)] transition-transform group-hover:translate-x-0.5" />
+          )}
         </Link>
       </div>
     </aside>
