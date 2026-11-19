@@ -1,0 +1,31 @@
+# ============================================================
+# ChronicAI — Development Dockerfile
+# Used by: docker compose --profile dev up
+# ============================================================
+
+FROM node:20-alpine
+
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install all dependencies (including devDependencies)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Disable telemetry
+ENV NEXT_TELEMETRY_DISABLED=1
+
+EXPOSE 3000
+
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000
+
+# Start in dev mode with hot-reload
+CMD ["npm", "run", "dev"]
+
