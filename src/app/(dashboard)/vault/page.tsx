@@ -32,7 +32,7 @@ import { MedicalDocument, ExtractedRecord, DocumentCategory } from "@/types/medi
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { getDocuments, createDocumentRecord, createExtractedRecord as dbCreateExtracted } from "@/lib/supabase/services/documents";
-import { uploadMedicalDocument } from "@/lib/supabase/storage";
+import { uploadMedicalDocument, getMedicalDocumentSignedUrl } from "@/lib/supabase/storage";
 import { useRealtimeTables } from "@/hooks/useRealtime";
 
 const iconTones = [
@@ -118,6 +118,25 @@ export default function VaultPage() {
     extractedRecords.find((r) => r.status === "pending") || null
   );
   const [notification, setNotification] = useState<string | null>(null);
+  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
+  const [isSavingRecord, setIsSavingRecord] = useState(false);
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null);
+
+  const handleViewOriginalDocument = async (doc: MedicalDocument) => {
+    setOpeningDocId(doc.id);
+    try {
+      const url = await getMedicalDocumentSignedUrl(doc.file_path, 3600);
+      if (url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      } else {
+        setNotification(`Could not generate secure view URL for "${doc.file_name}"`);
+      }
+    } catch {
+      setNotification("Failed to open document file.");
+    } finally {
+      setOpeningDocId(null);
+    }
+  };
 
   // Cleanup camera stream when modal closes
   const stopCameraStream = () => {
@@ -232,6 +251,8 @@ export default function VaultPage() {
   const handleCameraFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSelectedUploadFile(file);
+    setEditFileName(file.name || `Mobile_Capture_${Date.now()}.jpg`);
     const url = URL.createObjectURL(file);
     setIsScannerOpen(true);
     handleCaptureAndRunOCR(url);
@@ -264,6 +285,8 @@ export default function VaultPage() {
   };
 
   const processFileDirect = (file: File) => {
+    setSelectedUploadFile(file);
+    setEditFileName(file.name);
     const url = URL.createObjectURL(file);
     setIsScannerOpen(true);
     handleCaptureAndRunOCR(url);
@@ -271,65 +294,87 @@ export default function VaultPage() {
 
   // Final Manual Verification Confirmation
   const handleSaveVerifiedRecord = async () => {
-    const fileName = editFileName.trim() || `Report_${Date.now()}.pdf`;
-    
-    // Save to Supabase database (with storage reference)
-    const savedDoc = await createDocumentRecord({
-      user_id: effectiveUserId,
-      file_name: fileName,
-      file_path: `medical-records/${effectiveUserId}/${fileName}`,
-      file_type: "application/pdf",
-      file_size: 1024 * 145,
-      category: editCategory,
-      document_date: editDate || new Date().toISOString().split("T")[0],
-      facility_name: editFacility || "Verified Clinical Center",
-      doctor_name: editDoctor || "Dr. Staff Physician, MD",
-      status: "verified",
-      summary: editSummary,
-      tags: ["Verified Record", "OCR Extracted", "AI Analyzed"],
-    });
+    if (!effectiveUserId) return;
+    setIsSavingRecord(true);
+    try {
+      const fileName = editFileName.trim() || selectedUploadFile?.name || `Report_${Date.now()}.pdf`;
+      let storedPath = `medical-records/${effectiveUserId}/${fileName}`;
+      let fileSize = selectedUploadFile?.size || 1024 * 145;
+      let fileType = selectedUploadFile?.type || "application/pdf";
 
-    const savedExtracted = await dbCreateExtracted({
-      document_id: savedDoc.id,
-      user_id: effectiveUserId,
-      confidence_score: ocrConfidence / 100,
-      status: "confirmed",
-      raw_extracted: {
-        document_type: editCategory,
-        date: savedDoc.document_date,
-        facility: savedDoc.facility_name,
-        doctor: savedDoc.doctor_name,
-        diagnoses: [editSummary.slice(0, 48)],
-        lab_results: editLabs.map((l) => ({
-          test_name: l.test_name,
-          value: Number(l.value) || 0,
-          unit: l.unit,
-          reference_range: l.reference_range,
-          is_abnormal: l.is_abnormal,
-        })),
-        instructions: ["You confirmed this record. It is now part of your health timeline."],
-      },
-      confirmed_data: {
-        document_type: editCategory,
-        date: savedDoc.document_date,
-        facility: savedDoc.facility_name,
-        doctor: savedDoc.doctor_name,
-        diagnoses: [editSummary.slice(0, 48)],
-        lab_results: editLabs.map((l) => ({
-          test_name: l.test_name,
-          value: Number(l.value) || 0,
-          unit: l.unit,
-          reference_range: l.reference_range,
-          is_abnormal: l.is_abnormal,
-        })),
-      },
-    });
+      // If a real file was uploaded, store it directly in Supabase Storage
+      if (selectedUploadFile) {
+        const uploadRes = await uploadMedicalDocument(selectedUploadFile, effectiveUserId);
+        if (uploadRes.path) {
+          storedPath = uploadRes.path;
+        }
+      }
 
-    setDocuments((prev) => [savedDoc, ...prev]);
-    setExtractedRecords((prev) => [savedExtracted, ...prev]);
-    handleCloseScanner();
-    setNotification(`Successfully verified and saved "${savedDoc.file_name}" into your health records!`);
-    setTimeout(() => setNotification(null), 5000);
+      // Save to Supabase database (with authentic storage reference)
+      const savedDoc = await createDocumentRecord({
+        user_id: effectiveUserId,
+        file_name: fileName,
+        file_path: storedPath,
+        file_type: fileType,
+        file_size: fileSize,
+        category: editCategory,
+        document_date: editDate || new Date().toISOString().split("T")[0],
+        facility_name: editFacility || "Verified Clinical Center",
+        doctor_name: editDoctor || "Dr. Staff Physician, MD",
+        status: "verified",
+        summary: editSummary,
+        tags: ["Verified Record", "OCR Extracted", "AI Analyzed"],
+      });
+
+      const savedExtracted = await dbCreateExtracted({
+        document_id: savedDoc.id,
+        user_id: effectiveUserId,
+        confidence_score: ocrConfidence / 100,
+        status: "confirmed",
+        raw_extracted: {
+          document_type: editCategory,
+          date: savedDoc.document_date,
+          facility: savedDoc.facility_name,
+          doctor: savedDoc.doctor_name,
+          diagnoses: [editSummary.slice(0, 48)],
+          lab_results: editLabs.map((l) => ({
+            test_name: l.test_name,
+            value: Number(l.value) || 0,
+            unit: l.unit,
+            reference_range: l.reference_range,
+            is_abnormal: l.is_abnormal,
+          })),
+          instructions: ["You confirmed this record. It is now part of your health timeline."],
+        },
+        confirmed_data: {
+          document_type: editCategory,
+          date: savedDoc.document_date,
+          facility: savedDoc.facility_name,
+          doctor: savedDoc.doctor_name,
+          diagnoses: [editSummary.slice(0, 48)],
+          lab_results: editLabs.map((l) => ({
+            test_name: l.test_name,
+            value: Number(l.value) || 0,
+            unit: l.unit,
+            reference_range: l.reference_range,
+            is_abnormal: l.is_abnormal,
+          })),
+        },
+      });
+
+      setDocuments((prev) => [savedDoc, ...prev]);
+      setExtractedRecords((prev) => [savedExtracted, ...prev]);
+      setSelectedUploadFile(null);
+      handleCloseScanner();
+      setNotification(`Successfully uploaded and verified "${savedDoc.file_name}" in your secure storage!`);
+      setTimeout(() => setNotification(null), 5000);
+    } catch (err) {
+      console.error("Failed to upload/verify record:", err);
+      setNotification("Error uploading file to storage. Please try again.");
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsSavingRecord(false);
+    }
   };
 
   const filteredDocs = documents.filter((doc) => {
@@ -577,6 +622,21 @@ export default function VaultPage() {
               )}
 
               <div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--border)]">
+                {activeReviewDoc.file_path && (
+                  <button
+                    type="button"
+                    onClick={() => handleViewOriginalDocument(activeReviewDoc)}
+                    disabled={openingDocId === activeReviewDoc.id}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-100/60 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-200/80 transition-colors disabled:opacity-50"
+                  >
+                    {openingDocId === activeReviewDoc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    )}
+                    View Original File
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setActiveReviewDoc(null)}
@@ -756,19 +816,37 @@ export default function VaultPage() {
                       </span>
                     </td>
                     <td className="py-3.5 pr-6 text-right">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveReviewDoc(doc);
-                          setReviewRecord(
-                            extractedRecords.find((r) => r.document_id === doc.id) || null
-                          );
-                        }}
-                        className="inline-flex items-center gap-1 text-emerald-600 font-bold hover:underline"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        Inspect
-                      </button>
+                      <div className="inline-flex items-center justify-end gap-2">
+                        {doc.file_path && (
+                          <button
+                            type="button"
+                            onClick={() => handleViewOriginalDocument(doc)}
+                            disabled={openingDocId === doc.id}
+                            title="View / Download stored original document"
+                            className="inline-flex items-center gap-1 text-slate-500 hover:text-emerald-700 font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+                          >
+                            {openingDocId === doc.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            )}
+                            <span className="hidden sm:inline">File</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveReviewDoc(doc);
+                            setReviewRecord(
+                              extractedRecords.find((r) => r.document_id === doc.id) || null
+                            );
+                          }}
+                          className="inline-flex items-center gap-1 text-emerald-600 font-bold hover:underline"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Inspect
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -832,19 +910,37 @@ export default function VaultPage() {
                 <span className="text-[11px] font-semibold text-[var(--muted-foreground)]">
                   {formatDate(doc.document_date)}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveReviewDoc(doc);
-                    setReviewRecord(
-                      extractedRecords.find((r) => r.document_id === doc.id) || null
-                    );
-                  }}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-800"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                  Inspect Record
-                </button>
+                <div className="inline-flex items-center gap-2">
+                  {doc.file_path && (
+                    <button
+                      type="button"
+                      onClick={() => handleViewOriginalDocument(doc)}
+                      disabled={openingDocId === doc.id}
+                      title="View / Download stored original document"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+                    >
+                      {openingDocId === doc.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <ExternalLink className="h-3 w-3" />
+                      )}
+                      <span>File</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveReviewDoc(doc);
+                      setReviewRecord(
+                        extractedRecords.find((r) => r.document_id === doc.id) || null
+                      );
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-800"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Inspect Record
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1170,11 +1266,21 @@ export default function VaultPage() {
                   </button>
                   <button
                     type="button"
+                    disabled={isSavingRecord}
                     onClick={handleSaveVerifiedRecord}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:brightness-105 active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:brightness-105 active:scale-95 disabled:opacity-60"
                   >
-                    <Check className="h-4 w-4" />
-                    Save & Verify Record
+                    {isSavingRecord ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Uploading to Storage...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Save & Verify Record
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

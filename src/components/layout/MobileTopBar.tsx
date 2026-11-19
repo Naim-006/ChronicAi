@@ -48,20 +48,36 @@ function ProfileDropdown() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 dark:ring-emerald-900/50 transition-transform active:scale-95 hover:scale-105 cursor-pointer"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 dark:ring-emerald-900/50 transition-transform active:scale-95 hover:scale-105 cursor-pointer overflow-hidden"
         title={`${displayName} (${userEmail})`}
         aria-label="User Profile Menu"
         aria-expanded={isOpen}
       >
-        {initials || "PT"}
+        {profile?.avatar_url ? (
+          <img
+            src={profile.avatar_url}
+            alt={displayName}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          initials || "PT"
+        )}
       </button>
 
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-72 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 text-left">
           {/* User Details Header */}
           <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[var(--secondary)] border border-[var(--border)]">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-extrabold text-white shadow-sm">
-              {initials || "PT"}
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-extrabold text-white shadow-sm overflow-hidden">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={displayName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                initials || "PT"
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <span className="block truncate text-xs font-extrabold text-[var(--foreground)]">

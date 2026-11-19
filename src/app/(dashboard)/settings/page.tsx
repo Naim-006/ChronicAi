@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Settings,
   Bell,
@@ -14,23 +14,55 @@ import {
   Laptop,
   Sparkles,
   ShieldCheck,
+  Camera,
+  User as UserIcon,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useLanguage, Language } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { updateHealthProfile } from "@/lib/supabase/services/profile";
+import { uploadAvatar } from "@/lib/supabase/storage";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const { effectiveUserId, profile, refreshProfile } = useAuth();
+  const { user, effectiveUserId, profile, refreshProfile } = useAuth();
 
   const [aiDepth, setAiDepth] = useState<"simple" | "balanced" | "detailed">("balanced");
   const [notifMeds, setNotifMeds] = useState(true);
   const [notifApts, setNotifApts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !effectiveUserId) return;
+    setAvatarUploading(true);
+    setAvatarError(null);
+    setAvatarSuccess(null);
+    try {
+      const { url, error } = await uploadAvatar(file, effectiveUserId);
+      if (error || !url) {
+        setAvatarError(error || "Failed to upload avatar image");
+      } else {
+        await updateHealthProfile(effectiveUserId, { avatar_url: url });
+        await refreshProfile();
+        setAvatarSuccess("Profile photo updated and saved to storage!");
+        setTimeout(() => setAvatarSuccess(null), 4000);
+      }
+    } catch {
+      setAvatarError("An unexpected error occurred while uploading.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (profile?.preferences) {
@@ -135,6 +167,93 @@ export default function SettingsPage() {
           {t("action.saved", "Settings successfully saved.")}
         </div>
       )}
+
+      {/* Profile Photo & Storage Sync */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
+          Profile Photo & Cloud Storage
+        </span>
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col sm:flex-row items-center sm:items-start justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              {profile?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name || "Profile"}
+                  className="h-16 w-16 rounded-full object-cover ring-2 ring-emerald-500/30 shadow-xs"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-extrabold text-xl shadow-xs ring-2 ring-emerald-500/20">
+                  {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <UserIcon className="h-8 w-8" />}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarUploading}
+                title="Change Photo"
+                className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-white dark:ring-slate-900 transition-transform active:scale-90"
+              >
+                {avatarUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                {profile?.full_name || "Patient Account"}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {user?.email || "Connected via Supabase Auth"}
+              </p>
+              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                <ShieldCheck className="h-3 w-3" />
+                Supabase Avatars Bucket Connected
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-60 cursor-pointer"
+            >
+              {avatarUploading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+                  <span>Uploading to Storage...</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Upload New Photo</span>
+                </>
+              )}
+            </button>
+            {avatarError && (
+              <p className="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {avatarError}
+              </p>
+            )}
+            {avatarSuccess && (
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {avatarSuccess}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Feature 1: Theme & Dark Mode Selection */}
       <div>

@@ -31,6 +31,7 @@ export interface HealthProfile {
   id: string;
   user_id: string;
   full_name: string;
+  avatar_url?: string;
   date_of_birth?: string;
   sex?: Sex;
   blood_group?: BloodGroup;
