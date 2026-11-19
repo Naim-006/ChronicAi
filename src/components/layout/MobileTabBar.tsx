@@ -64,21 +64,21 @@ export function MobileTabBar() {
     },
   ];
 
-  // Precise geometry matching reference image
-  const H = 78;
-  const topBaseline = 24;
-  const bottom = 76;
-  const capRadius = (bottom - topBaseline) / 2; // 26px rounded stadium pill ends
+  // Exact geometric parameters derived from reference design
+  const H = 88;
+  const topBaseline = 22;
+  const bottom = 86;
+  const capRadius = (bottom - topBaseline) / 2; // 32px smooth stadium ends
   const cx = width / 2;
-  const domeHalf = 44; // width of dome from center
-  const domePeakY = 2; // apex of center dome
+  const domeHalf = 48; // balanced dome spread around 50px circle
+  const domePeakY = 4; // rounded dome apex
 
-  // Smooth C1-continuous SVG path with horizontal tangents
+  // Continuous C1-smooth curve with horizontal tangents at baseline and apex
   const svgPath = `
     M ${capRadius}, ${topBaseline}
     L ${cx - domeHalf}, ${topBaseline}
-    C ${cx - 24}, ${topBaseline} ${cx - 22}, ${domePeakY} ${cx}, ${domePeakY}
-    C ${cx + 22}, ${domePeakY} ${cx + 24}, ${topBaseline} ${cx + domeHalf}, ${topBaseline}
+    C ${cx - 28}, ${topBaseline} ${cx - 24}, ${domePeakY} ${cx}, ${domePeakY}
+    C ${cx + 24}, ${domePeakY} ${cx + 28}, ${topBaseline} ${cx + domeHalf}, ${topBaseline}
     L ${width - capRadius}, ${topBaseline}
     A ${capRadius} ${capRadius} 0 0 1 ${width - capRadius}, ${bottom}
     L ${capRadius}, ${bottom}
@@ -87,14 +87,14 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-[410px] px-3 pointer-events-none lg:hidden">
+    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-[420px] px-3 pointer-events-none lg:hidden">
       <div
         ref={containerRef}
-        className="pointer-events-auto relative w-full h-[78px] select-none"
+        className="pointer-events-auto relative w-full h-[88px] select-none"
       >
         {/* Custom SVG Background with Continuous Dark Navy Border & Center Dome */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_25px_rgba(30,41,59,0.14)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_12px_28px_rgba(30,41,59,0.14)]"
           width="100%"
           height={H}
           viewBox={`0 0 ${width} ${H}`}
@@ -105,13 +105,13 @@ export function MobileTabBar() {
             d={svgPath}
             fill="#ffffff"
             stroke="#2B364A"
-            strokeWidth="2"
+            strokeWidth="2.2"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
         </svg>
 
-        {/* 5 Tab Navigation Items in strict aligned columns */}
+        {/* 5 Tab Navigation Items mathematically aligned on the same baseline */}
         <div className="relative z-10 grid grid-cols-5 h-full w-full">
           {tabs.map((tab) => {
             const isActive =
@@ -130,7 +130,7 @@ export function MobileTabBar() {
               return (
                 <div
                   key={tab.name}
-                  className="flex flex-col items-center justify-end h-full pb-2 relative"
+                  className="flex flex-col items-center justify-end h-full pb-[7px]"
                 >
                   <Link
                     href={tab.href!}
@@ -139,23 +139,23 @@ export function MobileTabBar() {
                   >
                     <div
                       className={cn(
-                        "flex h-[46px] w-[46px] items-center justify-center rounded-full bg-gradient-to-tr from-[#059669] to-[#10b981] text-white shadow-[0_6px_16px_rgba(16,185,129,0.38)] transition-all mb-1",
+                        "flex h-[50px] w-[50px] items-center justify-center rounded-full bg-gradient-to-tr from-[#059669] via-[#059669] to-[#10b981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.38)] transition-all mb-[2px]",
                         isActive
                           ? "ring-2 ring-emerald-400 ring-offset-2 scale-105"
                           : "group-hover:scale-105"
                       )}
                     >
-                      <Icon className="h-5 w-5 stroke-[2.3] text-white" />
+                      <Icon className="h-6 w-6 stroke-[2.2] text-white" />
                     </div>
                     <span
                       className={cn(
-                        "text-[10.5px] leading-none tracking-tight",
+                        "text-[11px] leading-tight tracking-tight whitespace-nowrap mb-[2px]",
                         isActive ? "font-semibold text-[#059669]" : "font-medium text-[#475569]"
                       )}
                     >
                       Copilot
                     </span>
-                    <span className="mt-1 h-[3px] w-3.5 rounded-full bg-transparent" />
+                    <span className="h-[3px] w-3.5 rounded-full bg-transparent" />
                   </Link>
                 </div>
               );
@@ -165,16 +165,16 @@ export function MobileTabBar() {
             return (
               <div
                 key={tab.name}
-                className="flex flex-col items-center justify-end h-full pb-2"
+                className="flex flex-col items-center justify-end h-full pb-[7px]"
               >
                 <Link
                   href={tab.href!}
                   className="flex flex-col items-center justify-center w-full group active:scale-95 transition-transform"
                 >
-                  <div className="h-[24px] flex items-center justify-center relative mb-1">
+                  <div className="h-[22px] w-[22px] flex items-center justify-center relative mb-[5px]">
                     <Icon
                       className={cn(
-                        "h-5 w-5 transition-transform",
+                        "h-[22px] w-[22px] transition-transform",
                         isActive
                           ? "stroke-[2.2] text-[#059669] scale-105"
                           : "stroke-[1.8] text-[#475569] group-hover:scale-105"
@@ -183,7 +183,7 @@ export function MobileTabBar() {
 
                     {/* Notification badge on Records */}
                     {tab.badge && (
-                      <span className="absolute -top-1 -right-2 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-[#059669] px-0.5 text-[8.5px] font-bold text-white shadow-sm ring-1 ring-white">
+                      <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#059669] px-0.5 text-[9px] font-bold text-white shadow-sm ring-1.5 ring-white">
                         {tab.badge}
                       </span>
                     )}
@@ -191,7 +191,7 @@ export function MobileTabBar() {
 
                   <span
                     className={cn(
-                      "text-[10.5px] leading-none tracking-tight text-center whitespace-nowrap",
+                      "text-[11px] leading-tight tracking-tight text-center whitespace-nowrap mb-[2px]",
                       isActive ? "font-semibold text-[#059669]" : "font-medium text-[#475569]"
                     )}
                   >
@@ -201,7 +201,7 @@ export function MobileTabBar() {
                   {/* Active Indicator Bar */}
                   <span
                     className={cn(
-                      "mt-1 h-[3px] w-3.5 rounded-full transition-colors",
+                      "h-[3px] w-3.5 rounded-full transition-colors",
                       isActive ? "bg-[#059669]" : "bg-transparent"
                     )}
                   />
