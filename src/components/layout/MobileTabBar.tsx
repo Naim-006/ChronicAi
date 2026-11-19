@@ -190,9 +190,9 @@ export function MobileTabBar() {
           waveState.active && "animate-liquid-wave"
         )}
       >
-        {/* Clean Glass Backdrop Layer with Minimized Blurriness */}
+        {/* Clean Crisp Solid/Translucent White Background (Zero Blurriness Haze) */}
         <div
-          className="absolute inset-0 pointer-events-none backdrop-blur-[2px] bg-white/90"
+          className="absolute inset-0 pointer-events-none bg-white/95 shadow-sm"
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,
@@ -237,10 +237,10 @@ export function MobileTabBar() {
         >
           <path
             d={svgPath}
-            fill="rgba(255, 255, 255, 0.40)"
-            stroke="#475569"
-            strokeWidth="0.95"
-            strokeOpacity="0.65"
+            fill="rgba(255, 255, 255, 0.95)"
+            stroke="#64748b"
+            strokeWidth="0.7"
+            strokeOpacity="0.45"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
