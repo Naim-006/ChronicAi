@@ -16,7 +16,7 @@ export function MobileTabBar() {
   const pathname = usePathname();
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(400);
+  const [width, setWidth] = useState(420);
 
   // Swipe gesture & wavy transition state
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -89,7 +89,7 @@ export function MobileTabBar() {
       (tab.isCenterCopilot && pathname.startsWith(tab.href!))
   );
 
-  // Handle touch events for smooth horizontal swipe gestures
+  // Touch handlers for horizontal swipe navigation
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = {
       x: e.touches[0].clientX,
@@ -102,9 +102,7 @@ export function MobileTabBar() {
     const deltaX = e.touches[0].clientX - touchStartRef.current.x;
     const deltaY = e.touches[0].clientY - touchStartRef.current.y;
 
-    // Only respond to predominantly horizontal swipes
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      // Apply subtle elastic drag resistance
       const clamped = Math.max(-40, Math.min(40, deltaX * 0.4));
       setDragOffset(clamped);
     }
@@ -117,29 +115,24 @@ export function MobileTabBar() {
     touchStartRef.current = null;
     setDragOffset(0);
 
-    // Swipe threshold in pixels
     const SWIPE_THRESHOLD = 36;
     if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
       const activeIdx = currentIndex >= 0 ? currentIndex : 0;
       let targetIndex = activeIdx;
 
       if (deltaX < -SWIPE_THRESHOLD) {
-        // Swiped Left -> Move to Next Tab
         targetIndex = Math.min(tabs.length - 1, activeIdx + 1);
       } else if (deltaX > SWIPE_THRESHOLD) {
-        // Swiped Right -> Move to Previous Tab
         targetIndex = Math.max(0, activeIdx - 1);
       }
 
       if (targetIndex !== activeIdx) {
-        // Trigger glassy wavy shimmer transition
         setWaveState({
           active: true,
           direction: deltaX < 0 ? "left" : "right",
           key: Date.now(),
         });
 
-        // Trigger light haptic feedback if supported on mobile device
         if (typeof window !== "undefined" && "vibrate" in navigator) {
           try {
             navigator.vibrate(12);
@@ -148,7 +141,6 @@ export function MobileTabBar() {
 
         router.push(tabs[targetIndex].href);
 
-        // Auto reset wave animation after duration
         setTimeout(() => {
           setWaveState((prev) => ({ ...prev, active: false }));
         }, 600);
@@ -156,21 +148,25 @@ export function MobileTabBar() {
     }
   };
 
-  // Exact geometric parameters derived from reference design
-  const H = 88;
-  const topBaseline = 22;
-  const bottom = 86;
-  const capRadius = (bottom - topBaseline) / 2; // 32px smooth stadium ends
+  // Exact geometric parameters derived from reference design:
+  // - Stadium pill shape with curved ends (height 62px from y=28 to y=90)
+  // - Smooth curved hump over center Copilot button (spread = 72px, apex at y=6)
+  const H = 94;
+  const topBaseline = 28;
+  const bottom = 90;
+  const capRadius = 31; // (90 - 28) / 2
   const cx = width / 2;
-  const domeHalf = 48; // balanced dome spread around 50px circle
-  const domePeakY = 4; // rounded dome apex
+  const spread = 72; // width where curve begins curving up
+  const cpSpread = 44; // baseline control point
+  const cpPeak = 24; // apex control point
+  const domePeakY = 6; // apex of dome
 
-  // Continuous C1-smooth curve with horizontal tangents at baseline and apex
+  // Continuous C1-smooth SVG path with horizontal tangents at baseline and apex
   const svgPath = `
     M ${capRadius}, ${topBaseline}
-    L ${cx - domeHalf}, ${topBaseline}
-    C ${cx - 28}, ${topBaseline} ${cx - 24}, ${domePeakY} ${cx}, ${domePeakY}
-    C ${cx + 24}, ${domePeakY} ${cx + 28}, ${topBaseline} ${cx + domeHalf}, ${topBaseline}
+    L ${cx - spread}, ${topBaseline}
+    C ${cx - cpSpread}, ${topBaseline} ${cx - cpPeak}, ${domePeakY} ${cx}, ${domePeakY}
+    C ${cx + cpPeak}, ${domePeakY} ${cx + cpSpread}, ${topBaseline} ${cx + spread}, ${topBaseline}
     L ${width - capRadius}, ${topBaseline}
     A ${capRadius} ${capRadius} 0 0 1 ${width - capRadius}, ${bottom}
     L ${capRadius}, ${bottom}
@@ -179,27 +175,27 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav className="fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[84%] max-w-3xl pointer-events-none lg:hidden transition-all duration-200">
+    <nav className="fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-200">
       <div
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={cn(
-          "pointer-events-auto relative w-full h-[88px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
+          "pointer-events-auto relative w-full h-[94px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
           waveState.active && "animate-liquid-wave"
         )}
       >
-        {/* Crisp Glass Background Layer (Subtle Feather Blur, No Muddy Haze) */}
+        {/* Frosted Translucent Glass Layer with soft blur */}
         <div
-          className="absolute inset-0 pointer-events-none backdrop-blur-[2px] bg-white/85"
+          className="absolute inset-0 pointer-events-none backdrop-blur-[5px] bg-white/92"
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,
           }}
         />
 
-        {/* Dynamic Glassy Wavy Shimmer Light Beam (Sweeps on Swipe) */}
+        {/* Dynamic Glassy Wavy Shimmer on Swipe */}
         {waveState.active && (
           <div
             key={waveState.key}
@@ -217,18 +213,18 @@ export function MobileTabBar() {
               }, 
                 transparent 0%, 
                 rgba(255, 255, 255, 0.05) 15%, 
-                rgba(16, 185, 129, 0.35) 45%, 
+                rgba(0, 184, 107, 0.35) 45%, 
                 rgba(255, 255, 255, 0.9) 50%, 
-                rgba(16, 185, 129, 0.35) 55%, 
+                rgba(0, 184, 107, 0.35) 55%, 
                 rgba(255, 255, 255, 0.05) 85%, 
                 transparent 100%)`,
             }}
           />
         )}
 
-        {/* Custom SVG Outline with Reduced Border Boldness & Center Dome */}
+        {/* Crisp Border and Smooth Dome Silhouette */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(30,41,59,0.10)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(15,23,42,0.10)]"
           width="100%"
           height={H}
           viewBox={`0 0 ${width} ${H}`}
@@ -237,23 +233,23 @@ export function MobileTabBar() {
         >
           <path
             d={svgPath}
-            fill="rgba(255, 255, 255, 0.50)"
+            fill="rgba(255, 255, 255, 0.65)"
             stroke="#475569"
-            strokeWidth="0.95"
-            strokeOpacity="0.65"
+            strokeWidth="1.25"
+            strokeOpacity="0.75"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
         </svg>
 
-        {/* 5 Tab Navigation Items mathematically aligned on the same baseline */}
+        {/* 5 Tab Items */}
         <div
           className="relative z-10 grid grid-cols-5 h-full w-full transition-transform duration-150 ease-out"
           style={{
             transform: dragOffset !== 0 ? `translateX(${dragOffset}px)` : undefined,
           }}
         >
-          {tabs.map((tab, idx) => {
+          {tabs.map((tab) => {
             const isActive =
               (tab.matchExact && pathname === tab.href) ||
               (!tab.matchExact &&
@@ -265,37 +261,42 @@ export function MobileTabBar() {
 
             const Icon = tab.icon;
 
-            // Center Copilot Tab: Elevated green circular button framed inside the dome
+            // Center Copilot Button: Elevated floating green circle in dome
             if (tab.isCenterCopilot) {
               return (
                 <div
                   key={tab.name}
-                  className="flex flex-col items-center justify-end h-full pb-[7px]"
+                  className="flex flex-col items-center justify-start h-full pt-[11px]"
                 >
                   <Link
                     href={tab.href!}
                     aria-label="Chronic AI Copilot"
                     className="flex flex-col items-center justify-center group active:scale-95 transition-transform"
                   >
+                    {/* Floating Green Circle */}
                     <div
                       className={cn(
-                        "flex h-[50px] w-[50px] items-center justify-center rounded-full bg-gradient-to-tr from-[#059669] via-[#059669] to-[#10b981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.38)] transition-all mb-[2px]",
+                        "flex h-[54px] w-[54px] items-center justify-center rounded-full bg-gradient-to-b from-[#00d07e] to-[#00b86b] text-white shadow-[0_8px_20px_rgba(0,184,107,0.38)] transition-all",
                         isActive
-                          ? "ring-2 ring-emerald-400 ring-offset-2 scale-105"
+                          ? "ring-2 ring-[#00b86b] ring-offset-2 scale-105"
                           : "group-hover:scale-105"
                       )}
                     >
-                      <Icon className="h-6 w-6 stroke-[2.2] text-white" />
+                      <Icon className="h-6 w-6 stroke-[2.3] text-white" />
                     </div>
+
+                    {/* Copilot Text */}
                     <span
                       className={cn(
-                        "text-[11px] sm:text-[12px] leading-tight tracking-tight whitespace-nowrap mb-[2px]",
-                        isActive ? "font-semibold text-[#059669]" : "font-medium text-[#475569]"
+                        "text-[12px] leading-tight tracking-tight whitespace-nowrap mt-[5px]",
+                        isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569]"
                       )}
                     >
                       Copilot
                     </span>
-                    <span className="h-[3px] w-3.5 rounded-full bg-transparent" />
+
+                    {/* Spacer to align with tab indicators */}
+                    <span className="h-[3.5px] w-4 rounded-full bg-transparent mt-[3px]" />
                   </Link>
                 </div>
               );
@@ -305,44 +306,46 @@ export function MobileTabBar() {
             return (
               <div
                 key={tab.name}
-                className="flex flex-col items-center justify-end h-full pb-[7px]"
+                className="flex flex-col items-center justify-start h-full pt-[39px]"
               >
                 <Link
                   href={tab.href!}
                   className="flex flex-col items-center justify-center w-full group active:scale-95 transition-transform"
                 >
-                  <div className="h-[22px] w-[22px] sm:h-[24px] sm:w-[24px] flex items-center justify-center relative mb-[5px]">
+                  {/* Tab Icon */}
+                  <div className="h-[26px] w-[26px] flex items-center justify-center relative">
                     <Icon
                       className={cn(
-                        "h-[22px] w-[22px] sm:h-[24px] sm:w-[24px] transition-transform",
+                        "h-[24px] w-[24px] transition-transform",
                         isActive
-                          ? "stroke-[2.2] text-[#059669] scale-105"
+                          ? "stroke-[2.2] text-[#00b86b] scale-105"
                           : "stroke-[1.8] text-[#475569] group-hover:scale-105"
                       )}
                     />
 
                     {/* Notification badge on Records */}
                     {tab.badge && (
-                      <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#059669] px-0.5 text-[9px] font-bold text-white shadow-sm ring-1.5 ring-white">
+                      <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#00b86b] px-1 text-[9px] font-bold text-white shadow-sm ring-1 ring-white">
                         {tab.badge}
                       </span>
                     )}
                   </div>
 
+                  {/* Tab Label */}
                   <span
                     className={cn(
-                      "text-[11px] sm:text-[12px] leading-tight tracking-tight text-center whitespace-nowrap mb-[2px]",
-                      isActive ? "font-semibold text-[#059669]" : "font-medium text-[#475569]"
+                      "text-[12px] leading-tight tracking-tight text-center whitespace-nowrap mt-[5px]",
+                      isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569]"
                     )}
                   >
                     {tab.name}
                   </span>
 
-                  {/* Active Indicator Bar */}
+                  {/* Active Indicator Pill */}
                   <span
                     className={cn(
-                      "h-[3px] w-3.5 rounded-full transition-colors",
-                      isActive ? "bg-[#059669]" : "bg-transparent"
+                      "h-[3.5px] w-4 rounded-full mt-[3px] transition-colors",
+                      isActive ? "bg-[#00b86b]" : "bg-transparent"
                     )}
                   />
                 </Link>

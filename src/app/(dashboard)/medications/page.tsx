@@ -1,14 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Pill, Plus, Check, X, ShieldAlert, ShieldCheck, AlertTriangle, Search, Stethoscope } from "lucide-react";
 import { mockMedications } from "@/lib/mock-data";
 import { Medication } from "@/types/medical";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
+import { getMedications, createMedication, logMedicationAdherence } from "@/lib/supabase/services/medications";
 
 export default function MedicationsPage() {
+  const { effectiveUserId } = useAuth();
   const [medications, setMedications] = useState<Medication[]>(mockMedications);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMeds() {
+      try {
+        const fetched = await getMedications(effectiveUserId);
+        if (isMounted && fetched && fetched.length > 0) {
+          setMedications(fetched);
+        }
+      } catch {}
+    }
+    loadMeds();
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveUserId]);
   const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({
     "med-1": true,
     "med-2": true,

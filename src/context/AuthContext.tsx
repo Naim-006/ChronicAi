@@ -1,0 +1,126 @@
+"use client";
+
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { HealthProfile } from "@/types/medical";
+import { mockProfile } from "@/lib/mock-data";
+import { getHealthProfile } from "@/lib/supabase/services/profile";
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  profile: HealthProfile | null;
+  isLoading: boolean;
+  isConfigured: boolean;
+  effectiveUserId: string;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<HealthProfile | null>(mockProfile);
+  const [isLoading, setIsLoading] = useState(true);
+  const isConfigured = isSupabaseConfigured();
+
+  // If user is logged in, use their real auth.users uuid; otherwise fall back to demo patient id
+  const effectiveUserId = user?.id || "user-elena-vance";
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const p = await getHealthProfile(userId);
+      setProfile(p);
+    } catch {
+      setProfile(mockProfile);
+    }
+  };
+
+  useEffect(() => {
+    if (!isConfigured) {
+      setUser(null);
+      setSession(null);
+      setProfile(mockProfile);
+      setIsLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      } else {
+        setProfile(mockProfile);
+      }
+      setIsLoading(false);
+    });
+
+    // Listen to auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      } else {
+        setProfile(mockProfile);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [isConfigured]);
+
+  const signOut = async () => {
+    if (isConfigured) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
+    setUser(null);
+    setSession(null);
+    setProfile(mockProfile);
+    router.push("/login");
+    router.refresh();
+  };
+
+  const refreshProfile = async () => {
+    await loadUserProfile(effectiveUserId);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        isLoading,
+        isConfigured,
+        effectiveUserId,
+        signOut,
+        refreshProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}

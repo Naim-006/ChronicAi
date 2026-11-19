@@ -30,6 +30,9 @@ import { mockDocuments, mockExtractedRecords } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { MedicalDocument, ExtractedRecord, DocumentCategory } from "@/types/medical";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
+import { getDocuments, createDocumentRecord, createExtractedRecord as dbCreateExtracted } from "@/lib/supabase/services/documents";
+import { uploadMedicalDocument } from "@/lib/supabase/storage";
 
 const iconTones = [
   "bg-rose-50 text-rose-600 border-rose-100",
@@ -47,12 +50,30 @@ interface ExtractedLabItem {
 }
 
 export default function VaultPage() {
+  const { effectiveUserId } = useAuth();
   const [documents, setDocuments] = useState<MedicalDocument[]>(mockDocuments);
   const [extractedRecords, setExtractedRecords] =
     useState<ExtractedRecord[]>(mockExtractedRecords);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+
+  // Load documents from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDocs() {
+      try {
+        const fetched = await getDocuments(effectiveUserId);
+        if (isMounted && fetched && fetched.length > 0) {
+          setDocuments(fetched);
+        }
+      } catch {}
+    }
+    loadDocs();
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveUserId]);
 
   // Drag & Drop State
   const [isDragging, setIsDragging] = useState(false);
@@ -235,36 +256,35 @@ export default function VaultPage() {
   };
 
   // Final Manual Verification Confirmation
-  const handleSaveVerifiedRecord = () => {
-    const newDocId = `doc-${Date.now()}`;
-    const newDoc: MedicalDocument = {
-      id: newDocId,
-      user_id: "user-elena-vance",
-      file_name: editFileName.trim() || `Report_${Date.now()}.pdf`,
-      file_path: `/vault/${editFileName}`,
+  const handleSaveVerifiedRecord = async () => {
+    const fileName = editFileName.trim() || `Report_${Date.now()}.pdf`;
+    
+    // Save to Supabase database (with storage reference)
+    const savedDoc = await createDocumentRecord({
+      user_id: effectiveUserId,
+      file_name: fileName,
+      file_path: `medical-records/${effectiveUserId}/${fileName}`,
       file_type: "application/pdf",
       file_size: 1024 * 145,
-      category: editCategory as MedicalDocument["category"],
+      category: editCategory,
       document_date: editDate || new Date().toISOString().split("T")[0],
       facility_name: editFacility || "Verified Clinical Center",
       doctor_name: editDoctor || "Dr. Staff Physician, MD",
       status: "verified",
       summary: editSummary,
       tags: ["Verified Record", "OCR Extracted", "AI Analyzed"],
-      created_at: new Date().toISOString(),
-    };
+    });
 
-    const newExtracted: ExtractedRecord = {
-      id: `ext-${Date.now()}`,
-      document_id: newDocId,
-      user_id: "user-elena-vance",
+    const savedExtracted = await dbCreateExtracted({
+      document_id: savedDoc.id,
+      user_id: effectiveUserId,
       confidence_score: ocrConfidence / 100,
       status: "confirmed",
       raw_extracted: {
         document_type: editCategory,
-        date: newDoc.document_date,
-        facility: newDoc.facility_name,
-        doctor: newDoc.doctor_name,
+        date: savedDoc.document_date,
+        facility: savedDoc.facility_name,
+        doctor: savedDoc.doctor_name,
         diagnoses: [editSummary.slice(0, 48)],
         lab_results: editLabs.map((l) => ({
           test_name: l.test_name,
@@ -275,13 +295,26 @@ export default function VaultPage() {
         })),
         instructions: ["Record manually confirmed and integrated into health intelligence timeline."],
       },
-      created_at: new Date().toISOString(),
-    };
+      confirmed_data: {
+        document_type: editCategory,
+        date: savedDoc.document_date,
+        facility: savedDoc.facility_name,
+        doctor: savedDoc.doctor_name,
+        diagnoses: [editSummary.slice(0, 48)],
+        lab_results: editLabs.map((l) => ({
+          test_name: l.test_name,
+          value: Number(l.value) || 0,
+          unit: l.unit,
+          reference_range: l.reference_range,
+          is_abnormal: l.is_abnormal,
+        })),
+      },
+    });
 
-    setDocuments((prev) => [newDoc, ...prev]);
-    setExtractedRecords((prev) => [newExtracted, ...prev]);
+    setDocuments((prev) => [savedDoc, ...prev]);
+    setExtractedRecords((prev) => [savedExtracted, ...prev]);
     handleCloseScanner();
-    setNotification(`Successfully verified and saved "${newDoc.file_name}" into your health records!`);
+    setNotification(`Successfully verified and saved "${savedDoc.file_name}" into your health records!`);
     setTimeout(() => setNotification(null), 5000);
   };
 

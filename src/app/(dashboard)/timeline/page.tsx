@@ -81,7 +81,7 @@ export default function TimelinePage() {
         <div>
           <h1 className="text-xl font-extrabold text-[var(--foreground)]">Timeline</h1>
           <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
-            Chronological journey across {events.length} documented milestones
+            {events.length} health events in order, newest first
           </p>
         </div>
         <Button onClick={() => setShowAddModal(true)} size="sm">
