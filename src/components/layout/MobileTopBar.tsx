@@ -1,12 +1,117 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, User, Settings, LogOut } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+
+function ProfileDropdown() {
+  const { user, profile, signOut } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const displayName =
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "Patient User";
+  const userEmail = user?.email || "patient@chronicai.health";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 dark:ring-emerald-900/50 transition-transform active:scale-95 hover:scale-105 cursor-pointer"
+        title={`${displayName} (${userEmail})`}
+        aria-label="User Profile Menu"
+        aria-expanded={isOpen}
+      >
+        {initials || "PT"}
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-72 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3.5 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 text-left">
+          {/* User Details Header */}
+          <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[var(--secondary)] border border-[var(--border)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-extrabold text-white shadow-sm">
+              {initials || "PT"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block truncate text-xs font-extrabold text-[var(--foreground)]">
+                {displayName}
+              </span>
+              <span className="block truncate text-[11px] text-[var(--muted-foreground)]">
+                {userEmail}
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Menu Links */}
+          <div className="mt-2 space-y-1">
+            <Link
+              href="/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
+            >
+              <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Medical Profile & ID</span>
+            </Link>
+            <Link
+              href="/settings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
+            >
+              <Settings className="h-4 w-4 text-[var(--muted-foreground)]" />
+              <span>Settings & Preferences</span>
+            </Link>
+          </div>
+
+          <div className="my-2 border-t border-[var(--border)]" />
+
+          {/* Logout Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              signOut();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Log Out</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
   "/dashboard": { title: "Home" },
@@ -105,14 +210,7 @@ export function MobileTopBar() {
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </Link>
 
-          <Link
-            href="/profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 transition-transform active:scale-95"
-            title="Profile & Medical ID"
-            aria-label="Profile"
-          >
-            EV
-          </Link>
+          <ProfileDropdown />
         </div>
       </header>
 
@@ -149,14 +247,7 @@ export function MobileTopBar() {
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </Link>
 
-          <Link
-            href="/profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 transition-transform hover:scale-105"
-            title={`${displayName} · Profile`}
-            aria-label="Profile"
-          >
-            {initials || "PT"}
-          </Link>
+          <ProfileDropdown />
         </div>
       </header>
     </>
