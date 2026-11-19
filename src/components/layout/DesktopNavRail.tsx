@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Settings,
   ChevronRight,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,15 +33,17 @@ const navSections = [
   {
     title: "Health",
     items: [
+      { name: "Evaluation", href: "/evaluation", icon: HeartPulse },
       { name: "Analytics", href: "/metrics", icon: Activity },
       { name: "Medications", href: "/medications", icon: Pill },
       { name: "Appointments", href: "/appointments", icon: Calendar },
-      { name: "Chronic Care", href: "/chronic-care", icon: HeartPulse },
+      { name: "Chronic Care", href: "/chronic-care", icon: ShieldCheck },
     ],
   },
   {
     title: "You",
     items: [
+      { name: "Notifications", href: "/notifications", icon: Bell, badge: "3" },
       { name: "Profile", href: "/profile", icon: User },
       { name: "Settings", href: "/settings", icon: Settings },
     ],

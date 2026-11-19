@@ -263,3 +263,26 @@ export interface AIConversation {
   created_at: string;
   updated_at: string;
 }
+
+export type NotificationType =
+  | "critical_alert"
+  | "verification_required"
+  | "medication_reminder"
+  | "appointment_reminder"
+  | "care_insight"
+  | "preventive_care";
+
+export interface ClinicalNotification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  severity: "critical" | "warning" | "info" | "success";
+  source_trigger: string;
+  link_href?: string;
+  link_label?: string;
+  is_read: boolean;
+  is_dismissed?: boolean;
+  created_at: string;
+}

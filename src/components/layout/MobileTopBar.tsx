@@ -14,6 +14,8 @@ const pageTitles: Record<string, { title: string; parent?: string }> = {
   "/medications": { title: "Medications", parent: "/dashboard" },
   "/metrics": { title: "Health Analytics", parent: "/dashboard" },
   "/chronic-care": { title: "Chronic Care", parent: "/dashboard" },
+  "/evaluation": { title: "Health Evaluation", parent: "/dashboard" },
+  "/notifications": { title: "Notifications", parent: "/dashboard" },
   "/profile": { title: "Profile", parent: "/dashboard" },
   "/summaries": { title: "Summaries", parent: "/dashboard" },
   "/settings": { title: "Settings", parent: "/dashboard" },
@@ -77,9 +79,9 @@ export function MobileTopBar() {
           )}
 
           <Link
-            href="/vault"
+            href="/notifications"
             className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)]"
-            title="Notifications"
+            title="Notifications & Alerts"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
@@ -121,9 +123,9 @@ export function MobileTopBar() {
           )}
 
           <Link
-            href="/vault"
+            href="/notifications"
             className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
-            title="Notifications"
+            title="Notifications & Alerts"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
