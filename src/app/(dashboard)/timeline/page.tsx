@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Clock,
   Search,
@@ -191,67 +192,110 @@ export default function TimelinePage() {
       )}
 
       {/* Featured Clinical Lab Result Card with Visual Gradient Spectrum Slider (Exact design from Image 7) */}
-      <div className="rounded-3xl bg-white border border-slate-100/90 p-5 sm:p-6 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.06)] space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-6 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.06)] space-y-4">
+        <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
             <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 block">
-              Featured Diagnostic Lab Screening
+              Featured Diagnostic Lab Screening · Quest Diagnostics
             </span>
             <h2 className="text-base font-extrabold text-slate-900 mt-0.5">
-              Fasting Plasma Glucose & Metabolic Panel
+              Glucose in Serum or Plasma [Mass/volume]
             </h2>
-            <span className="text-[11px] text-slate-400 block mt-0.5">
-              November 2, 2026 • Quest Diagnostics • Dr. Catherine Wei, MD
+            <span className="text-xs text-slate-500 block mt-0.5">
+              November 2, 2026 · Facility: Boulder Community Health · Provider: Simon Jones, MD
             </span>
           </div>
 
           <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
-            Normal / Optimal
+            Normal Result
           </span>
         </div>
 
-        {/* Spectrum Slider Container (Exact replica of Image 7) */}
-        <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-3">
+        {/* Current Result Spectrum Slider (Image 7 style: 91 mg/dL) */}
+        <div className="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3">
           <div className="flex items-baseline justify-between">
             <div>
               <span className="text-xs font-semibold text-slate-500 block">
-                Glucose in Serum or Plasma [Mass/volume]
+                Fasting Serum Glucose
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-extrabold text-slate-900">118</span>
+                <span className="text-2xl font-extrabold text-slate-900">91</span>
                 <span className="text-xs text-slate-500 font-bold">mg/dL</span>
               </div>
             </div>
             <span className="text-xs font-bold text-emerald-600">
-              ● Controlled Fasting Range
+              ● Normal / Ideal Range
             </span>
           </div>
 
-          {/* Color Gradient Spectrum Bar (Blue -> Emerald -> Yellow -> Red) with Indicator Pin */}
+          {/* Color Gradient Spectrum Bar (Blue -> Emerald -> Yellow -> Red) with Indicator Pin at 91 */}
           <div className="relative pt-3 pb-1">
-            <div className="h-3 w-full rounded-full bg-gradient-to-r from-blue-400 via-emerald-400 via-amber-400 to-red-500 relative">
-              {/* Position indicator dot for 118 mg/dL (on a 0-160 scale ~ 65%) */}
+            <div className="h-3.5 w-full rounded-full bg-gradient-to-r from-blue-400 via-emerald-400 via-amber-400 to-rose-500 relative shadow-inner">
+              {/* Pin indicator at 91 mg/dL on 0-150 scale ~ 60% */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-emerald-700 shadow-md ring-2 ring-emerald-200"
-                style={{ left: "62%" }}
-                title="Your Value: 118 mg/dL"
+                style={{ left: "59%" }}
+                title="Measured Value: 91 mg/dL"
               />
             </div>
-            <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1 px-1">
+            <div className="flex justify-between text-[11px] text-slate-400 font-bold mt-1.5 px-1">
               <span>0</span>
-              <span>70 (Low)</span>
-              <span>100 (Normal)</span>
-              <span>130 (Goal)</span>
-              <span>160+</span>
+              <span>50</span>
+              <span>100</span>
+              <span>150+</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] pt-1">
+          <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
             <span className="text-slate-500">
-              Target Range in Managed Diabetes: <strong>70 – 130 mg/dL</strong>
+              Ideal Clinical Range: <strong>70 – 100 mg/dL</strong>
+            </span>
+            <Link href="/assistant" className="text-emerald-700 font-bold hover:underline">
+              ↑ Learn More with Copilot
+            </Link>
+          </div>
+        </div>
+
+        {/* Prior Baseline Result Comparison (Image 7 style: 145 mg/dL) */}
+        <div className="p-4 rounded-2xl bg-rose-50/40 border border-rose-100 space-y-3">
+          <div className="flex items-baseline justify-between">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 block">
+                Prior Screening (May 14, 2026)
+              </span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-extrabold text-slate-900">145</span>
+                <span className="text-xs text-slate-500 font-bold">mg/dL</span>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-rose-600">
+              ● Abnormal Result (Elevated)
+            </span>
+          </div>
+
+          {/* Color Gradient Spectrum Bar with Pin at 145 near red end */}
+          <div className="relative pt-3 pb-1">
+            <div className="h-3.5 w-full rounded-full bg-gradient-to-r from-blue-400 via-emerald-400 via-amber-400 to-rose-500 relative shadow-inner">
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-rose-600 shadow-md ring-2 ring-rose-200"
+                style={{ left: "94%" }}
+                title="Measured Value: 145 mg/dL"
+              />
+            </div>
+            <div className="flex justify-between text-[11px] text-slate-400 font-bold mt-1.5 px-1">
+              <span>0</span>
+              <span>50</span>
+              <span>100</span>
+              <span>150+</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs pt-1 border-t border-rose-100/60">
+            <span className="text-slate-500">
+              Improvement: <strong>-54 mg/dL reduction</strong> since starting Metformin regimen.
             </span>
             <span className="text-emerald-700 font-bold">
-              Down from 126 mg/dL in May
+              Marked Clinical Progress
             </span>
           </div>
         </div>
