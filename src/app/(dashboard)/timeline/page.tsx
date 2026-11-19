@@ -1,24 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus,
   FileText,
   Building,
   X,
+  History,
+  Loader2,
 } from "lucide-react";
-import { mockTimelineEvents } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { TimelineEvent, TimelineEventType } from "@/types/medical";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getTimelineEvents,
+  createTimelineEvent,
+} from "@/lib/supabase/services/timeline";
 
 export default function TimelinePage() {
-  const [events, setEvents] = useState<TimelineEvent[]>(mockTimelineEvents);
+  const { effectiveUserId } = useAuth();
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -26,6 +35,26 @@ export default function TimelinePage() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [facility, setFacility] = useState("");
   const [desc, setDesc] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+    if (effectiveUserId) {
+      setIsLoading(true);
+      getTimelineEvents(effectiveUserId)
+        .then((data) => {
+          if (isMounted) setEvents(data);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    } else {
+      setEvents([]);
+      setIsLoading(false);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveUserId]);
 
   const filteredEvents = events.filter((ev) => {
     const matchesSearch =
@@ -36,39 +65,42 @@ export default function TimelinePage() {
     return matchesSearch && matchesType;
   });
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
+    if (!title || !effectiveUserId) return;
 
-    const newEv: TimelineEvent = {
-      id: `ev-${Date.now()}`,
-      user_id: "user-elena-vance",
-      event_type: type,
-      title,
-      description: desc,
-      event_date: date,
-      facility_or_doctor: facility || "Self-Reported",
-      is_verified: true,
-      created_at: new Date().toISOString(),
-    };
+    setIsSubmitting(true);
+    try {
+      const newEv = await createTimelineEvent({
+        user_id: effectiveUserId,
+        event_type: type,
+        title,
+        description: desc || undefined,
+        event_date: date,
+        facility_or_doctor: facility || "Self-Reported",
+        is_verified: true,
+      });
 
-    setEvents((prev) => [newEv, ...prev]);
-    setShowAddModal(false);
-    setTitle("");
-    setDesc("");
-    setFacility("");
+      setEvents((prev) => [newEv, ...prev]);
+      setShowAddModal(false);
+      setTitle("");
+      setDesc("");
+      setFacility("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getEventBadge = (t: TimelineEventType) => {
     switch (t) {
       case "visit":
-        return { label: "DOCTOR VISIT", color: "bg-sky-50 text-sky-700 border-sky-100" };
+        return { label: "DOCTOR VISIT", color: "bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border-sky-100 dark:border-sky-900" };
       case "lab_test":
-        return { label: "LAB REPORT", color: "bg-emerald-50 text-emerald-700 border-emerald-100" };
+        return { label: "LAB REPORT", color: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900" };
       case "medication_start":
-        return { label: "MEDICATION REFILL", color: "bg-amber-50 text-amber-700 border-amber-100" };
+        return { label: "MEDICATION REFILL", color: "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-100 dark:border-amber-900" };
       case "diagnosis":
-        return { label: "DIAGNOSIS CONFIRMED", color: "bg-rose-50 text-rose-700 border-rose-100" };
+        return { label: "DIAGNOSIS CONFIRMED", color: "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-100 dark:border-rose-900" };
       default:
         return { label: "CLINICAL RECORD", color: "bg-[var(--muted)] text-[var(--muted-foreground)] border-[var(--border)]" };
     }
@@ -91,7 +123,7 @@ export default function TimelinePage() {
       </div>
 
       {showAddModal && (
-        <div className="soft-card-lift space-y-4 border-emerald-200 p-5">
+        <div className="soft-card-lift space-y-4 border-emerald-200 dark:border-emerald-800 p-5">
           <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
             <span className="text-sm font-extrabold text-[var(--foreground)]">
               Add timeline entry
@@ -99,7 +131,7 @@ export default function TimelinePage() {
             <button
               type="button"
               onClick={() => setShowAddModal(false)}
-              className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -118,24 +150,21 @@ export default function TimelinePage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block font-bold text-[var(--foreground)]">
-                  Category
-                </label>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">Category</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as TimelineEventType)}
-                  className="flex h-11 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                  className="w-full h-10 rounded-xl border border-[var(--border)] bg-transparent px-3 text-xs text-[var(--foreground)]"
                 >
-                  <option value="visit">Doctor Visit</option>
-                  <option value="lab_test">Lab Report</option>
-                  <option value="diagnosis">Diagnosis</option>
-                  <option value="medication_start">Medication</option>
+                  <option value="visit" className="bg-[var(--card)] text-[var(--foreground)]">Doctor Visit</option>
+                  <option value="lab_test" className="bg-[var(--card)] text-[var(--foreground)]">Lab Report</option>
+                  <option value="medication_start" className="bg-[var(--card)] text-[var(--foreground)]">Medication Refill</option>
+                  <option value="diagnosis" className="bg-[var(--card)] text-[var(--foreground)]">Diagnosis</option>
+                  <option value="other" className="bg-[var(--card)] text-[var(--foreground)]">Other Record</option>
                 </select>
               </div>
               <div>
-                <label className="mb-1 block font-bold text-[var(--foreground)]">
-                  Event date
-                </label>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">Date</label>
                 <Input
                   type="date"
                   value={date}
@@ -145,212 +174,52 @@ export default function TimelinePage() {
             </div>
             <div>
               <label className="mb-1 block font-bold text-[var(--foreground)]">
-                Facility / clinician
+                Doctor / Facility
               </label>
               <Input
-                placeholder="e.g. Quest Diagnostics / Dr. Catherine Wei"
+                placeholder="e.g. City Eye Center"
                 value={facility}
                 onChange={(e) => setFacility(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-1 block font-bold text-[var(--foreground)]">
-                Clinical notes
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Diagnostic findings, lab values, or instructions..."
+              <label className="mb-1 block font-bold text-[var(--foreground)]">Notes</label>
+              <Input
+                placeholder="Brief summary of findings or instructions"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full rounded-2xl border border-[var(--border)] bg-white p-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
               />
             </div>
-            <div className="flex justify-end gap-2.5 border-t border-[var(--border)] pt-3">
+            <div className="flex justify-end gap-2.5 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Save to timeline</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving…" : "Save entry"}
+              </Button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Featured lab result */}
-      <div className="soft-card space-y-4 p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)]/80 pb-3">
+      {/* Hero Overview */}
+      <section className="soft-card forest-surface overflow-hidden p-6 sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Featured diagnostic · Quest Diagnostics
+            <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+              Longitudinal EMR Timeline
             </span>
-            <h2 className="mt-0.5 text-base font-extrabold text-[var(--foreground)]">
-              Glucose in Serum or Plasma [Mass/volume]
+            <h2 className="mt-1 text-2xl font-extrabold text-white">
+              {events.length} Health Milestones
             </h2>
-            <span className="mt-0.5 block text-xs text-[var(--muted-foreground)]">
-              November 2, 2026 · Boulder Community Health · Simon Jones, MD
+            <p className="mt-1 text-xs text-white/80">
+              Chronological record of lab tests, prescriptions, doctor encounters, and vital alerts.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-lg bg-emerald-800 text-white px-2.5 py-1 text-[11px] font-bold shadow-xs">
+              LIVE DATA FEED
             </span>
-          </div>
-          <span className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-            Normal
-          </span>
-        </div>
-
-        <div className="soft-inset space-y-3 p-4">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <span className="block text-xs font-semibold text-[var(--muted-foreground)]">
-                Fasting Serum Glucose
-              </span>
-              <div className="mt-0.5 flex items-baseline gap-1.5">
-                <span className="text-2xl font-extrabold text-[var(--foreground)]">91</span>
-                <span className="text-xs font-bold text-[var(--muted-foreground)]">mg/dL</span>
-              </div>
-            </div>
-            <span className="text-xs font-bold text-emerald-600">● Normal / Ideal</span>
-          </div>
-
-          <div className="relative pb-1 pt-3">
-            <div className="relative h-3.5 w-full rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 via-amber-400 to-rose-500 shadow-inner">
-              <div
-                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-emerald-700 bg-white shadow-md ring-2 ring-emerald-200"
-                style={{ left: "59%" }}
-                title="Measured Value: 91 mg/dL"
-              />
-            </div>
-            <div className="mt-1.5 flex justify-between px-1 text-[11px] font-bold text-[var(--muted-foreground)]">
-              <span>0</span>
-              <span>50</span>
-              <span>100</span>
-              <span>150+</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-[var(--border)]/60 pt-2 text-xs">
-            <span className="text-[var(--muted-foreground)]">
-              Ideal range: <strong className="text-[var(--foreground)]">70 – 100 mg/dL</strong>
-            </span>
-            <Link href="/assistant" className="font-bold text-emerald-700 hover:underline">
-              Learn more
-            </Link>
-          </div>
-        </div>
-
-        <div className="space-y-3 rounded-2xl border border-rose-100 bg-rose-50/40 p-4">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <span className="block text-xs font-semibold text-[var(--muted-foreground)]">
-                Prior Screening (May 14, 2026)
-              </span>
-              <div className="mt-0.5 flex items-baseline gap-1.5">
-                <span className="text-2xl font-extrabold text-[var(--foreground)]">145</span>
-                <span className="text-xs font-bold text-[var(--muted-foreground)]">mg/dL</span>
-              </div>
-            </div>
-            <span className="text-xs font-bold text-rose-600">● Elevated</span>
-          </div>
-
-          <div className="relative pb-1 pt-3">
-            <div className="relative h-3.5 w-full rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 via-amber-400 to-rose-500 shadow-inner">
-              <div
-                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-rose-600 bg-white shadow-md ring-2 ring-rose-200"
-                style={{ left: "94%" }}
-                title="Measured Value: 145 mg/dL"
-              />
-            </div>
-            <div className="mt-1.5 flex justify-between px-1 text-[11px] font-bold text-[var(--muted-foreground)]">
-              <span>0</span>
-              <span>50</span>
-              <span>100</span>
-              <span>150+</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-rose-100/60 pt-2 text-xs">
-            <span className="text-[var(--muted-foreground)]">
-              Improvement: <strong className="text-[var(--foreground)]">−54 mg/dL</strong> since Metformin
-            </span>
-            <span className="font-bold text-emerald-700">Marked progress</span>
-          </div>
-        </div>
-      </div>
-
-      {/* CareSight Multi-Tier Horizontal Branched Timeline (Image 4 Replica) */}
-      <section className="rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)] space-y-4 max-w-full overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div className="min-w-0">
-            <h2 className="text-sm font-extrabold text-[var(--foreground)] leading-tight truncate">
-              CareSight Longitudinal Trajectory
-            </h2>
-            <span className="text-[11px] text-[var(--muted-foreground)] block">
-              Multi-tier clinical milestone branch: Inpatient events, care orders, and active EMR feeds.
-            </span>
-          </div>
-
-          {/* Quick Date Range Selectors */}
-          <div className="flex items-center gap-1 text-[10px] font-bold overflow-x-auto pb-1 max-w-full hide-scrollbar">
-            {["Last 30 Days", "Last 90 Days", "Last Year", "Last 5 Years", "All History"].map((r, i) => (
-              <span
-                key={r}
-                className={`px-2.5 py-1 rounded-full cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
-                  i === 2
-                    ? "bg-[#18261F] text-white shadow-2xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {r}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Visual Branched SVG / Node Spine */}
-        <div className="relative py-4 overflow-x-auto max-w-full">
-          <div className="min-w-[620px] relative px-4">
-            {/* Top Branch: Inpatient & SNF Badges */}
-            <div className="flex justify-between items-center pb-3 text-[10px] font-bold">
-              <span className="rounded-lg bg-amber-100 text-amber-900 px-2 py-0.5 border border-amber-200">
-                ADMISSION SNF · Valley
-              </span>
-              <span className="rounded-lg bg-rose-100 text-rose-900 px-2 py-0.5 border border-rose-200">
-                HOSPITALIZATION · St. Jude
-              </span>
-              <span className="rounded-lg bg-amber-100 text-amber-900 px-2 py-0.5 border border-amber-200">
-                ADMISSION SNF · Rehab
-              </span>
-            </div>
-
-            {/* Central Timeline Spine Line */}
-            <div className="relative h-2 w-full bg-slate-200 rounded-full my-3 flex items-center justify-between px-6">
-              {/* Connected Dots */}
-              {["2022", "2023", "2024", "2025", "2026"].map((yr, idx) => (
-                <div key={yr} className="relative flex flex-col items-center">
-                  <span
-                    className={`h-4 w-4 rounded-full border-2 border-white shadow-sm ring-2 ${
-                      idx === 4
-                        ? "bg-emerald-500 ring-emerald-300"
-                        : idx === 3
-                        ? "bg-teal-500 ring-teal-200"
-                        : "bg-slate-400 ring-slate-200"
-                    }`}
-                  />
-                  <span className="absolute -bottom-5 text-[10px] font-bold text-slate-500">
-                    {yr}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Bottom Branch: Orders & Prescriptions */}
-            <div className="flex justify-between items-center pt-5 text-[10px] font-bold">
-              <span className="rounded-lg bg-slate-800 text-white px-2 py-0.5 shadow-xs">
-                NEW MED: Lisinopril
-              </span>
-              <span className="rounded-lg bg-teal-800 text-white px-2 py-0.5 shadow-xs">
-                NEW ORDER: HbA1c Panel
-              </span>
-              <span className="rounded-lg bg-emerald-800 text-white px-2 py-0.5 shadow-xs">
-                ACTIVE EMR DATA FEED
-              </span>
-            </div>
           </div>
         </div>
       </section>
@@ -371,7 +240,7 @@ export default function TimelinePage() {
             className={`cursor-pointer whitespace-nowrap rounded-2xl px-4 py-1.5 text-xs font-bold transition-all ${
               typeFilter === cat.id
                 ? "bg-[var(--forest)] text-white shadow-sm"
-                : "border border-[var(--border)] bg-white text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
+                : "border border-[var(--border)] bg-white dark:bg-[var(--card)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
             }`}
           >
             {cat.label}
@@ -381,49 +250,65 @@ export default function TimelinePage() {
 
       {/* Event feed */}
       <div className="space-y-3.5">
-        {filteredEvents.map((ev) => {
-          const badge = getEventBadge(ev.event_type);
-          return (
-            <article
-              key={ev.id}
-              className="soft-card space-y-3 p-5 transition-all hover:border-emerald-200"
-            >
-              <div className="flex flex-col justify-between gap-2 border-b border-[var(--border)]/80 pb-3 sm:flex-row sm:items-center">
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${badge.color}`}
-                  >
-                    {badge.label}
+        {isLoading ? (
+          <div className="soft-card flex items-center justify-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+          </div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="soft-card p-12 text-center space-y-2">
+            <History className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
+            <h3 className="text-sm font-bold text-[var(--foreground)]">No timeline events found</h3>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Upload medical documents or click &quot;Add event&quot; to build your health history.
+            </p>
+          </div>
+        ) : (
+          filteredEvents.map((ev) => {
+            const badge = getEventBadge(ev.event_type);
+            return (
+              <article
+                key={ev.id}
+                className="soft-card space-y-3 p-5 transition-all hover:border-emerald-200 dark:hover:border-emerald-800"
+              >
+                <div className="flex flex-col justify-between gap-2 border-b border-[var(--border)]/80 pb-3 sm:flex-row sm:items-center">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${badge.color}`}
+                    >
+                      {badge.label}
+                    </span>
+                    <h3 className="text-sm font-extrabold text-[var(--foreground)]">
+                      {ev.title}
+                    </h3>
+                  </div>
+                  <span className="text-xs font-bold text-[var(--muted-foreground)]">
+                    {formatDate(ev.event_date)}
                   </span>
-                  <h3 className="text-sm font-extrabold text-[var(--foreground)]">
-                    {ev.title}
-                  </h3>
                 </div>
-                <span className="text-xs font-bold text-[var(--muted-foreground)]">
-                  {formatDate(ev.event_date)}
-                </span>
-              </div>
 
-              <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
-                {ev.description}
-              </p>
-
-              <div className="flex items-center justify-between pt-1 text-[11px]">
-                <span className="flex items-center gap-1 font-semibold text-[var(--foreground)]">
-                  <Building className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                  {ev.facility_or_doctor}
-                </span>
-
-                {ev.document_id && (
-                  <span className="flex items-center gap-1 font-bold text-emerald-700">
-                    <FileText className="h-3.5 w-3.5" />
-                    Source linked
-                  </span>
+                {ev.description && (
+                  <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
+                    {ev.description}
+                  </p>
                 )}
-              </div>
-            </article>
-          );
-        })}
+
+                <div className="flex items-center justify-between pt-1 text-[11px]">
+                  <span className="flex items-center gap-1 font-semibold text-[var(--foreground)]">
+                    <Building className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                    {ev.facility_or_doctor || "Self-Reported"}
+                  </span>
+
+                  {ev.document_id && (
+                    <span className="flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400">
+                      <FileText className="h-3.5 w-3.5" />
+                      Source linked
+                    </span>
+                  )}
+                </div>
+              </article>
+            );
+          })
+        )}
       </div>
     </div>
   );

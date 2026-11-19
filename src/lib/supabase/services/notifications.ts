@@ -1,10 +1,9 @@
 import { createClient, isSupabaseConfigured } from "../client";
 import { ClinicalNotification } from "@/types/medical";
-import { mockNotifications } from "@/lib/mock-data";
 
 export async function getClinicalNotifications(userId: string): Promise<ClinicalNotification[]> {
-  if (!isSupabaseConfigured()) {
-    return mockNotifications;
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -14,8 +13,8 @@ export async function getClinicalNotifications(userId: string): Promise<Clinical
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    return mockNotifications;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((n: any) => ({

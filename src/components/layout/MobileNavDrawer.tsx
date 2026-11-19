@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -130,6 +131,15 @@ const navGroups: NavGroup[] = [
 export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { user, profile } = useAuth();
+
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const getLocalizedName = (href: string, fallback: string) => {
     switch (href) {
@@ -276,11 +286,11 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
             className="flex items-center gap-2.5 rounded-xl p-2 transition-all hover:bg-white hover:shadow-xs border border-transparent hover:border-slate-200"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-[11px] font-bold text-white shadow-xs ring-2 ring-emerald-100 shrink-0">
-              EV
+              {initials || "PT"}
             </div>
             <div className="flex-1 min-w-0">
               <span className="block text-xs font-bold text-slate-900 leading-tight truncate">
-                Elena Vance
+                {displayName}
               </span>
               <span className="block text-[10px] text-slate-500 font-medium">
                 Verified Medical ID

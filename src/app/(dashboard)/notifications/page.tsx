@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -18,13 +18,41 @@ import {
   HeartPulse,
   Filter,
   X,
+  Loader2,
 } from "lucide-react";
-import { mockNotifications } from "@/lib/mock-data";
 import { ClinicalNotification } from "@/types/medical";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getClinicalNotifications,
+  markNotificationRead,
+  dismissNotification as dismissNotifService,
+} from "@/lib/supabase/services/notifications";
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<ClinicalNotification[]>(mockNotifications);
+  const { effectiveUserId } = useAuth();
+  const [notifications, setNotifications] = useState<ClinicalNotification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread" | "critical" | "action">("all");
+
+  useEffect(() => {
+    let isMounted = true;
+    if (effectiveUserId) {
+      setIsLoading(true);
+      getClinicalNotifications(effectiveUserId)
+        .then((data) => {
+          if (isMounted) setNotifications(data);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    } else {
+      setNotifications([]);
+      setIsLoading(false);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveUserId]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -36,18 +64,25 @@ export default function NotificationsPage() {
     return true;
   });
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    for (const notif of notifications) {
+      if (!notif.is_read) {
+        await markNotificationRead(notif.id);
+      }
+    }
   };
 
-  const toggleRead = (id: string) => {
+  const toggleRead = async (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: !n.is_read } : n))
     );
+    await markNotificationRead(id);
   };
 
-  const dismissNotification = (id: string) => {
+  const dismissNotification = async (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await dismissNotifService(id);
   };
 
   const getSeverityBadge = (severity: ClinicalNotification["severity"]) => {
@@ -55,198 +90,222 @@ export default function NotificationsPage() {
       case "critical":
         return {
           label: "Critical Clinical Alert",
-          badgeClass: "bg-red-100 text-red-800 border-red-200",
+          badgeClass: "bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border-red-200 dark:border-red-900",
           icon: AlertTriangle,
-          iconColor: "text-red-600",
-          cardBorder: "border-red-200 hover:border-red-300",
-          bgLight: "bg-red-50/40",
+          iconColor: "text-red-600 dark:text-red-400",
         };
       case "warning":
         return {
-          label: "Action Required",
-          badgeClass: "bg-amber-100 text-amber-800 border-amber-200",
-          icon: Clock,
-          iconColor: "text-amber-600",
-          cardBorder: "border-amber-200/90 hover:border-amber-300",
-          bgLight: "bg-amber-50/30",
+          label: "Clinical Warning",
+          badgeClass: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900",
+          icon: AlertTriangle,
+          iconColor: "text-amber-600 dark:text-amber-400",
         };
       case "success":
         return {
-          label: "Target Achieved",
-          badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
+          label: "Confirmed / Normal",
+          badgeClass: "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900",
           icon: CheckCircle2,
-          iconColor: "text-emerald-600",
-          cardBorder: "border-emerald-200 hover:border-emerald-300",
-          bgLight: "bg-emerald-50/30",
+          iconColor: "text-emerald-600 dark:text-emerald-400",
         };
       default:
         return {
-          label: "Care Update",
-          badgeClass: "bg-slate-100 text-slate-800 border-slate-200",
-          icon: ShieldCheck,
-          iconColor: "text-slate-600",
-          cardBorder: "border-slate-200 hover:border-slate-300",
-          bgLight: "bg-white",
+          label: "Informational",
+          badgeClass: "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900",
+          icon: Bell,
+          iconColor: "text-blue-600 dark:text-blue-400",
         };
     }
   };
 
-  const formatTimestamp = (isoDate: string) => {
-    const diffHours = Math.round(
-      (new Date("2026-11-19T12:00:00Z").getTime() - new Date(isoDate).getTime()) /
-        (1000 * 60 * 60)
-    );
-    if (diffHours < 24) {
-      return `${Math.max(1, diffHours)}h ago`;
+  const getTypeIcon = (type: ClinicalNotification["type"]) => {
+    switch (type) {
+      case "medication_reminder":
+        return Pill;
+      case "appointment_reminder":
+        return Calendar;
+      case "verification_required":
+        return FileText;
+      case "critical_alert":
+      case "care_insight":
+      case "preventive_care":
+        return HeartPulse;
+      default:
+        return Bell;
     }
-    const days = Math.round(diffHours / 24);
-    return `${days}d ago`;
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-[var(--foreground)]">Notifications</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
-            {unreadCount === 0 ? "All caught up" : `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`}
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
+              Clinical Alerts & Notifications
+            </h1>
+            {unreadCount > 0 && (
+              <span className="flex h-5 items-center justify-center rounded-full bg-emerald-600 px-2 text-[10px] font-bold text-white">
+                {unreadCount} new
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+            Automated alerts, medication schedules, and clinical review tasks.
           </p>
         </div>
+
         {unreadCount > 0 && (
           <button
             type="button"
             onClick={markAllAsRead}
-            className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--muted)] cursor-pointer"
+            className="self-start sm:self-auto flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-white dark:bg-[var(--card)] px-3.5 py-1.5 text-xs font-semibold text-[var(--foreground)] shadow-xs hover:bg-[var(--muted)] cursor-pointer"
           >
-            <Check className="h-4 w-4 text-emerald-600" />
-            Mark all read
+            <Check className="h-3.5 w-3.5 text-emerald-600" />
+            <span>Mark all read</span>
           </button>
         )}
       </div>
 
-      {/* Filter Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
-        <button
-          type="button"
-          onClick={() => setFilter("all")}
-          className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition-all ${
-            filter === "all"
-              ? "bg-[var(--foreground)] text-white"
-              : "bg-white border border-[var(--border)] text-[var(--muted-foreground)] hover:border-emerald-300"
-          }`}
-        >
-          All
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter("unread")}
-          className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition-all ${
-            filter === "unread"
-              ? "bg-[var(--foreground)] text-white"
-              : "bg-white border border-[var(--border)] text-[var(--muted-foreground)] hover:border-emerald-300"
-          }`}
-        >
-          Unread {unreadCount > 0 && <span className="ml-1.5 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-white">{unreadCount}</span>}
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter("critical")}
-          className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition-all ${
-            filter === "critical"
-              ? "bg-rose-600 text-white"
-              : "bg-white border border-[var(--border)] text-[var(--muted-foreground)] hover:border-rose-300"
-          }`}
-        >
-          Critical
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter("action")}
-          className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition-all ${
-            filter === "action"
-              ? "bg-amber-500 text-white"
-              : "bg-white border border-[var(--border)] text-[var(--muted-foreground)] hover:border-amber-300"
-          }`}
-        >
-          Action Needed
-        </button>
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-[var(--border)] pb-2 text-xs font-semibold hide-scrollbar">
+        {[
+          { id: "all", label: "All Alerts", count: notifications.length },
+          { id: "unread", label: "Unread", count: unreadCount },
+          {
+            id: "critical",
+            label: "Critical",
+            count: notifications.filter((n) => n.severity === "critical").length,
+          },
+          {
+            id: "action",
+            label: "Action Needed",
+            count: notifications.filter(
+              (n) => n.type === "verification_required" || n.type === "critical_alert"
+            ).length,
+          },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setFilter(tab.id as any)}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all cursor-pointer ${
+              filter === tab.id
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                filter === tab.id
+                  ? "bg-white/20 text-white"
+                  : "bg-[var(--muted)] text-[var(--muted-foreground)]"
+              }`}
+            >
+              {tab.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Notifications List */}
-      <div className="space-y-2">
-        {filteredNotifications.length === 0 ? (
-          <div className="soft-card p-12 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 mb-4">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <h3 className="text-sm font-bold text-[var(--foreground)] mb-1">
-              All caught up
-            </h3>
+      <div className="space-y-3">
+        {isLoading ? (
+          <div className="soft-card flex items-center justify-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+          </div>
+        ) : filteredNotifications.length === 0 ? (
+          <div className="soft-card p-12 text-center space-y-2">
+            <Bell className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
+            <h3 className="text-sm font-bold text-[var(--foreground)]">No notifications</h3>
             <p className="text-xs text-[var(--muted-foreground)]">
-              No notifications to show
+              You are all caught up! There are no alerts matching this filter.
             </p>
           </div>
         ) : (
-          filteredNotifications.map((n) => {
-            const config = getSeverityBadge(n.severity);
-            const Icon = config.icon;
+          filteredNotifications.map((notif) => {
+            const badge = getSeverityBadge(notif.severity);
+            const IconComponent = getTypeIcon(notif.type);
 
             return (
-              <article
-                key={n.id}
-                className={`group relative p-4 rounded-2xl border transition-all cursor-pointer hover:shadow-md ${
-                  !n.is_read ? "bg-white border-emerald-200" : "bg-white border-[var(--border)] hover:border-emerald-200"
+              <div
+                key={notif.id}
+                className={`soft-card relative p-4 transition-all hover:border-emerald-200 dark:hover:border-emerald-800 ${
+                  !notif.is_read ? "border-l-4 border-l-emerald-600 bg-emerald-50/20 dark:bg-emerald-950/20" : ""
                 }`}
-                onClick={() => !n.is_read && toggleRead(n.id)}
               >
-                <div className="flex items-start gap-3">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${config.badgeClass.replace('border-', 'bg-').replace('text-', 'text-')}`}>
-                    <Icon className={`h-5 w-5 ${config.iconColor}`} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {!n.is_read && (
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      )}
-                      <span className="text-[11px] font-semibold text-[var(--muted-foreground)]">
-                        {formatTimestamp(n.created_at)}
-                      </span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${badge.badgeClass}`}
+                    >
+                      <IconComponent className={`h-4 w-4 ${badge.iconColor}`} />
                     </div>
 
-                    <h3 className="text-sm font-semibold text-[var(--foreground)] leading-snug mb-1">
-                      {n.title}
-                    </h3>
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold ${badge.badgeClass}`}
+                        >
+                          {badge.label}
+                        </span>
+                        <span className="text-[11px] text-[var(--muted-foreground)]">
+                          {new Date(notif.created_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
 
-                    <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
-                      {n.message}
-                    </p>
-
-                    {n.link_href && (
-                      <Link
-                        href={n.link_href}
-                        className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700"
-                        onClick={(e) => e.stopPropagation()}
+                      <h3
+                        className={`text-sm font-bold leading-snug ${
+                          notif.is_read ? "text-[var(--foreground)]/80" : "text-[var(--foreground)]"
+                        }`}
                       >
-                        {n.link_label || "View"}
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    )}
+                        {notif.title}
+                      </h3>
+
+                      <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
+                        {notif.message}
+                      </p>
+
+                      {notif.link_href && (
+                        <div className="pt-2">
+                          <Link
+                            href={notif.link_href}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline"
+                          >
+                            <span>{notif.link_label || "View details"}</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      dismissNotification(n.id);
-                    }}
-                    className="shrink-0 p-1.5 text-[var(--muted-foreground)] hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleRead(notif.id)}
+                      className="p-1.5 text-[var(--muted-foreground)] hover:text-emerald-600 rounded-lg hover:bg-[var(--muted)] cursor-pointer"
+                      title={notif.is_read ? "Mark unread" : "Mark read"}
+                    >
+                      <Check className={`h-4 w-4 ${notif.is_read ? "opacity-40" : "text-emerald-600 font-bold"}`} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => dismissNotification(notif.id)}
+                      className="p-1.5 text-[var(--muted-foreground)] hover:text-red-600 rounded-lg hover:bg-[var(--muted)] cursor-pointer"
+                      title="Dismiss"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-              </article>
+              </div>
             );
           })
         )}

@@ -25,8 +25,8 @@ import {
   Clock,
   ChevronRight,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
-import { mockDocuments, mockExtractedRecords } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { MedicalDocument, ExtractedRecord, DocumentCategory } from "@/types/medical";
 import { Input } from "@/components/ui/input";
@@ -51,9 +51,9 @@ interface ExtractedLabItem {
 
 export default function VaultPage() {
   const { effectiveUserId } = useAuth();
-  const [documents, setDocuments] = useState<MedicalDocument[]>(mockDocuments);
-  const [extractedRecords, setExtractedRecords] =
-    useState<ExtractedRecord[]>(mockExtractedRecords);
+  const [documents, setDocuments] = useState<MedicalDocument[]>([]);
+  const [extractedRecords, setExtractedRecords] = useState<ExtractedRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
@@ -62,12 +62,22 @@ export default function VaultPage() {
   useEffect(() => {
     let isMounted = true;
     async function loadDocs() {
+      if (!effectiveUserId) {
+        setDocuments([]);
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
       try {
         const fetched = await getDocuments(effectiveUserId);
-        if (isMounted && fetched && fetched.length > 0) {
-          setDocuments(fetched);
+        if (isMounted) {
+          setDocuments(fetched || []);
         }
-      } catch {}
+      } catch {
+        if (isMounted) setDocuments([]);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     }
     loadDocs();
     return () => {
@@ -150,7 +160,7 @@ export default function VaultPage() {
   // Run OCR Extraction Process
   const handleCaptureAndRunOCR = (imageSource?: string) => {
     stopCameraStream();
-    const snap = imageSource || capturedImage || "/mock-report-scan.jpg";
+    const snap = imageSource || capturedImage || "";
     setCapturedImage(snap);
     setScannerStep("processing");
 
@@ -667,7 +677,19 @@ export default function VaultPage() {
       </div>
 
       {/* Document Library (Cards / Table) */}
-      {viewMode === "table" ? (
+      {isLoading ? (
+        <div className="soft-card flex items-center justify-center p-16">
+          <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+        </div>
+      ) : filteredDocs.length === 0 ? (
+        <div className="soft-card p-12 text-center space-y-2">
+          <FileText className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
+          <h3 className="text-sm font-bold text-[var(--foreground)]">No medical records found</h3>
+          <p className="text-xs text-[var(--muted-foreground)]">
+            Upload a medical report or scan with your camera to begin OCR extraction.
+          </p>
+        </div>
+      ) : viewMode === "table" ? (
         <div className="soft-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[580px] text-left text-xs">

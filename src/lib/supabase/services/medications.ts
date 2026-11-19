@@ -1,10 +1,9 @@
 import { createClient, isSupabaseConfigured } from "../client";
 import { Medication, MedicationLog } from "@/types/medical";
-import { mockMedications } from "@/lib/mock-data";
 
 export async function getMedications(userId: string): Promise<Medication[]> {
-  if (!isSupabaseConfigured()) {
-    return mockMedications;
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -14,8 +13,8 @@ export async function getMedications(userId: string): Promise<Medication[]> {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    return mockMedications;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((m: any) => ({

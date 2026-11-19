@@ -1,10 +1,9 @@
 import { createClient, isSupabaseConfigured } from "../client";
 import { Appointment, Doctor } from "@/types/medical";
-import { mockAppointments, mockDoctors } from "@/lib/mock-data";
 
 export async function getAppointments(userId: string): Promise<Appointment[]> {
-  if (!isSupabaseConfigured()) {
-    return mockAppointments;
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -14,8 +13,8 @@ export async function getAppointments(userId: string): Promise<Appointment[]> {
     .eq("user_id", userId)
     .order("appointment_date", { ascending: true });
 
-  if (error || !data || data.length === 0) {
-    return mockAppointments;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((a: any) => ({
@@ -37,8 +36,8 @@ export async function getAppointments(userId: string): Promise<Appointment[]> {
 }
 
 export async function getDoctors(userId: string): Promise<Doctor[]> {
-  if (!isSupabaseConfigured()) {
-    return mockDoctors;
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -48,8 +47,8 @@ export async function getDoctors(userId: string): Promise<Doctor[]> {
     .eq("user_id", userId)
     .order("name", { ascending: true });
 
-  if (error || !data || data.length === 0) {
-    return mockDoctors;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((d: any) => ({
@@ -64,6 +63,50 @@ export async function getDoctors(userId: string): Promise<Doctor[]> {
     notes: d.notes || undefined,
     created_at: d.created_at,
   }));
+}
+
+export async function createDoctor(
+  doc: Omit<Doctor, "id" | "created_at">
+): Promise<Doctor> {
+  const newId = `doc-${Date.now()}`;
+  const now = new Date().toISOString();
+
+  if (!isSupabaseConfigured()) {
+    return { ...doc, id: newId, created_at: now };
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("doctors")
+    .insert({
+      user_id: doc.user_id,
+      name: doc.name,
+      specialty: doc.specialty,
+      clinic_name: doc.clinic_name,
+      phone: doc.phone,
+      email: doc.email,
+      address: doc.address,
+      notes: doc.notes,
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    return { ...doc, id: newId, created_at: now };
+  }
+
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    name: data.name,
+    specialty: data.specialty,
+    clinic_name: data.clinic_name || undefined,
+    phone: data.phone || undefined,
+    email: data.email || undefined,
+    address: data.address || undefined,
+    notes: data.notes || undefined,
+    created_at: data.created_at,
+  };
 }
 
 export async function createAppointment(

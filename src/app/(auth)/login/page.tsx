@@ -135,14 +135,6 @@ export default function LoginPage() {
               Create one free
             </Link>
           </p>
-          <p>
-            <Link
-              href="/dashboard"
-              className="text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-            >
-              Explore the demo without an account →
-            </Link>
-          </p>
         </div>
       </CardContent>
     </Card>

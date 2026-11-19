@@ -1,10 +1,9 @@
 import { createClient, isSupabaseConfigured } from "../client";
 import { TimelineEvent } from "@/types/medical";
-import { mockTimelineEvents } from "@/lib/mock-data";
 
 export async function getTimelineEvents(userId: string): Promise<TimelineEvent[]> {
-  if (!isSupabaseConfigured()) {
-    return mockTimelineEvents;
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -14,8 +13,8 @@ export async function getTimelineEvents(userId: string): Promise<TimelineEvent[]
     .eq("user_id", userId)
     .order("event_date", { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    return mockTimelineEvents;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((e: any) => ({

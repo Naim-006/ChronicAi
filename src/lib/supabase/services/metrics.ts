@@ -1,15 +1,12 @@
 import { createClient, isSupabaseConfigured } from "../client";
 import { HealthMetric, MetricType } from "@/types/medical";
-import { mockHealthMetrics } from "@/lib/mock-data";
 
 export async function getHealthMetrics(
   userId: string,
   metricType?: MetricType
 ): Promise<HealthMetric[]> {
-  if (!isSupabaseConfigured()) {
-    return metricType
-      ? mockHealthMetrics.filter((m: HealthMetric) => m.metric_type === metricType)
-      : mockHealthMetrics;
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -25,10 +22,8 @@ export async function getHealthMetrics(
 
   const { data, error } = await query;
 
-  if (error || !data || data.length === 0) {
-    return metricType
-      ? mockHealthMetrics.filter((m: HealthMetric) => m.metric_type === metricType)
-      : mockHealthMetrics;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((m: any) => ({

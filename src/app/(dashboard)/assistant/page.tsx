@@ -27,9 +27,16 @@ import {
   BookmarkPlus,
   Sliders,
 } from "lucide-react";
-import { mockMessages, mockDocuments, mockConversations } from "@/lib/mock-data";
 import { AIMessage, AICitation, AIConversation, MedicalDocument } from "@/types/medical";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { getDocuments } from "@/lib/supabase/services/documents";
+import {
+  getConversations,
+  getMessages,
+  createConversation,
+  saveMessage,
+} from "@/lib/supabase/services/copilot";
 
 interface ChatSession {
   id: string;
@@ -38,104 +45,39 @@ interface ChatSession {
   messages: AIMessage[];
 }
 
-const initialSessions: ChatSession[] = [
-  {
-    id: "conv-1",
-    title: "Comparing HbA1c & Glucose Trajectory",
-    date: "Today, 10:00 AM",
-    messages: mockMessages,
-  },
-  {
-    id: "conv-2",
-    title: "Metformin & Lisinopril Safety Review",
-    date: "Nov 16, 2026",
-    messages: [
-      {
-        id: "m-201",
-        conversation_id: "conv-2",
-        role: "user",
-        content: "Are there any interactions between Metformin 1000mg and Lisinopril 20mg?",
-        created_at: "2026-11-16T14:20:00Z",
-      },
-      {
-        id: "m-202",
-        conversation_id: "conv-2",
-        role: "assistant",
-        content: `### Clinical Interaction Analysis: Metformin + Lisinopril
-
-**Safety Assessment:** Safe & Standard Practice (No Adverse Drug Interaction).
-
-1. **Cardio-Renal Synergy:** 
-   - **Metformin** suppresses hepatic gluconeogenesis to maintain glycemic control without causing hypoglycemia.
-   - **Lisinopril** acts as an ACE inhibitor, reducing intraglomerular pressure and slowing diabetic nephropathy progression.
-2. **Renal Monitoring:**
-   - Both medications require adequate renal clearance. Your latest eGFR on Nov 2, 2026 was **68 mL/min/1.73m²** (Creatinine 1.04 mg/dL), confirming stable Stage 2 CKD with no contraindication.
-3. **Recommendation:**
-   - Continue morning and evening schedule as prescribed. Stay adequately hydrated, especially during acute gastrointestinal illnesses.`,
-        citations: [
-          {
-            document_id: "doc-103",
-            document_title: "Active_Rx_Metformin_Lisinopril.pdf",
-            date: "2026-06-12",
-            page: 1,
-            snippet: "Metformin 1000mg BID + Lisinopril 20mg daily. Verified drug profile.",
-          },
-        ],
-        created_at: "2026-11-16T14:20:18Z",
-      },
-    ],
-  },
-  {
-    id: "conv-3",
-    title: "Pre-Visit Preparation for Dr. Catherine Wei",
-    date: "Nov 12, 2026",
-    messages: [
-      {
-        id: "m-301",
-        conversation_id: "conv-3",
-        role: "user",
-        content: "Help me prepare 3 clinical questions for my appointment with Dr. Wei on December 8.",
-        created_at: "2026-11-12T09:15:00Z",
-      },
-      {
-        id: "m-302",
-        conversation_id: "conv-3",
-        role: "assistant",
-        content: `### Consultation Briefing: Dr. Catherine Wei (Dec 8, 2026)
-
-Based on your November lab results and medication adherence logs, here are the 3 most pertinent clinical checkpoints:
-
-1. **HbA1c Target Achievement (6.8%):**
-   - Note that your HbA1c dropped below 7.0% for the first time in 18 months. Ask: *"Should we maintain the current 1000mg Metformin dose or consider tapering?"*
-2. **Kidney Filtration Checkpoint (eGFR 68):**
-   - Confirm that your annual urine microalbumin-to-creatinine ratio is scheduled for Q1 2027 to verify continued renal stability.
-3. **Retinal Screening Follow-up:**
-   - Provide the Valley Eye Center screening report (Nov 14, 2026) confirming zero diabetic retinopathy findings.`,
-        citations: [
-          {
-            document_id: "doc-101",
-            document_title: "Metabolic_Lipid_Panel_Nov2026.pdf",
-            date: "2026-11-02",
-            page: 1,
-            snippet: "HbA1c: 6.8% | eGFR: 68 mL/min | Fasting Glucose: 118 mg/dL",
-          },
-        ],
-        created_at: "2026-11-12T09:15:22Z",
-      },
-    ],
-  },
-];
-
 const promptSuggestions = [
   { text: "Compare my HbA1c from May to November", category: "Labs", icon: Activity },
   { text: "Are there any interactions with Metformin and Lisinopril?", category: "Meds", icon: Pill },
-  { text: "What key questions should I ask Dr. Catherine Wei?", category: "Visits", icon: Calendar },
+  { text: "What key questions should I ask my doctor?", category: "Visits", icon: Calendar },
   { text: "Explain what my eGFR of 68 mL/min means", category: "Kidney", icon: FileText },
 ];
 
 export default function AssistantPage() {
-  const [sessions, setSessions] = useState<ChatSession[]>(initialSessions);
-  const [activeSessionId, setActiveSessionId] = useState<string>("conv-1");
+  const { profile, user, effectiveUserId } = useAuth();
+  const [userDocs, setUserDocs] = useState<MedicalDocument[]>([]);
+  const patientName =
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "there";
+
+  const [sessions, setSessions] = useState<ChatSession[]>([
+    {
+      id: "conv-initial",
+      title: "Health Consultation",
+      date: "Today",
+      messages: [
+        {
+          id: "msg-welcome",
+          conversation_id: "conv-initial",
+          role: "assistant",
+          content: "Hello! I am your Clinical Assistant, grounded directly in your verified medical records and health vitals.\n\nHow can I assist you with your health records, lab panels, or medication schedule today?",
+          created_at: new Date().toISOString(),
+        },
+      ],
+    },
+  ]);
+  const [activeSessionId, setActiveSessionId] = useState<string>("conv-initial");
   const [showHistoryMobile, setShowHistoryMobile] = useState(false);
   const [explanationDepth, setExplanationDepth] = useState<"plain" | "clinical">("plain");
 
@@ -160,22 +102,81 @@ export default function AssistantPage() {
     scrollToBottom();
   }, [currentSession.messages, isTyping]);
 
-  const handleCreateNewSession = () => {
-    const newSession: ChatSession = {
-      id: `conv-${Date.now()}`,
-      title: "New Health Consultation",
-      date: "Just now",
-      messages: [
-        {
-          id: `msg-welcome-${Date.now()}`,
-          conversation_id: `conv-${Date.now()}`,
-          role: "assistant",
-          content: `Hello Elena. I am your Clinical Copilot, grounded directly in your verified medical records from Quest Diagnostics, Valley Eye Center, and St. Jude Heart Institute.
+  useEffect(() => {
+    let isMounted = true;
+    if (effectiveUserId) {
+      getDocuments(effectiveUserId).then((docs) => {
+        if (isMounted) setUserDocs(docs || []);
+      });
+      getConversations(effectiveUserId).then(async (convs) => {
+        if (!isMounted) return;
+        if (convs && convs.length > 0) {
+          const loaded: ChatSession[] = await Promise.all(
+            convs.map(async (c) => {
+              const msgs = await getMessages(c.id);
+              return {
+                id: c.id,
+                title: c.title,
+                date: formatDate(c.updated_at),
+                messages: msgs,
+              };
+            })
+          );
+          if (isMounted && loaded.length > 0) {
+            setSessions(loaded);
+            setActiveSessionId(loaded[0].id);
+          }
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveUserId]);
+
+  const handleCreateNewSession = async () => {
+    const welcomeMsg: AIMessage = {
+      id: `msg-welcome-${Date.now()}`,
+      conversation_id: `conv-${Date.now()}`,
+      role: "assistant",
+      content: `Hello ${patientName}. I am your Clinical Assistant, grounded directly in your verified medical records and health vitals.
 
 How can I assist you with your health records, lab panels, or medication schedule today?`,
-          created_at: new Date().toISOString(),
-        },
-      ],
+      created_at: new Date().toISOString(),
+    };
+
+    if (effectiveUserId) {
+      try {
+        const createdConv = await createConversation(
+          effectiveUserId,
+          "New Health Consultation"
+        );
+        welcomeMsg.conversation_id = createdConv.id;
+        await saveMessage({
+          ...welcomeMsg,
+          userId: effectiveUserId,
+        });
+        const newSession: ChatSession = {
+          id: createdConv.id,
+          title: createdConv.title,
+          date: "Just now",
+          messages: [welcomeMsg],
+        };
+        setSessions((prev) => [newSession, ...prev]);
+        setActiveSessionId(newSession.id);
+        setShowHistoryMobile(false);
+        setAttachedDoc(null);
+        return;
+      } catch {}
+    }
+
+    const localId = `conv-${Date.now()}`;
+    welcomeMsg.conversation_id = localId;
+    const newSession: ChatSession = {
+      id: localId,
+      title: "New Health Consultation",
+      date: "Just now",
+      messages: [welcomeMsg],
     };
 
     setSessions((prev) => [newSession, ...prev]);
@@ -456,7 +457,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
               </h1>
               <span className="text-[10px] sm:text-[11px] text-emerald-700 font-bold truncate flex items-center gap-1 mt-0.5">
                 <ShieldCheck className="h-3 w-3 text-emerald-600 shrink-0 inline" />
-                <span className="truncate">Elena Vance Verified Labs</span>
+                <span className="truncate">{patientName} Verified Records</span>
               </span>
             </div>
           </div>
@@ -732,22 +733,28 @@ Would you like me to generate a 1-page summary of these findings to bring to you
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto">
-              {mockDocuments.map((doc) => (
-                <button
-                  key={doc.id}
-                  type="button"
-                  onClick={() => {
-                    setAttachedDoc(doc);
-                    setShowAttachMenu(false);
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-left transition-colors"
-                >
-                  <FileText className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span className="text-xs font-bold text-slate-800 truncate">
-                    {doc.file_name.replace(".pdf", "").replace(/_/g, " ")}
-                  </span>
-                </button>
-              ))}
+              {userDocs.length === 0 ? (
+                <div className="col-span-full p-4 text-center text-xs text-[var(--muted-foreground)]">
+                  No documents in Vault yet. Upload a report to attach.
+                </div>
+              ) : (
+                userDocs.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    onClick={() => {
+                      setAttachedDoc(doc);
+                      setShowAttachMenu(false);
+                    }}
+                    className="flex items-center gap-2 p-2 rounded-xl border border-[var(--border)] hover:border-emerald-300 hover:bg-emerald-50/50 text-left transition-colors cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span className="text-xs font-bold text-[var(--foreground)] truncate">
+                      {doc.file_name.replace(".pdf", "").replace(/_/g, " ")}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         )}

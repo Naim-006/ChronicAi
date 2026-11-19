@@ -438,7 +438,7 @@ export default function LandingPage() {
                 className="h-12 w-full rounded-full border-[var(--border)] bg-white/70 px-8 text-base backdrop-blur sm:w-auto"
                 asChild
               >
-                <Link href="/dashboard">See how it works</Link>
+                <a href="#how-it-works">See how it works</a>
               </Button>
             </motion.div>
           </motion.div>

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 const navSections = [
   {
@@ -61,6 +62,15 @@ export function DesktopNavRail() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { t } = useLanguage();
+  const { user, profile } = useAuth();
+
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const getLocalizedName = (href: string, fallback: string) => {
     switch (href) {
@@ -170,12 +180,12 @@ export function DesktopNavRail() {
           title={isCollapsed ? "Profile" : undefined}
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/20">
-            EV
+            {initials || "PT"}
           </div>
           {!isCollapsed && (
-            <div className="flex-1">
-              <span className="block text-xs font-semibold text-[var(--foreground)] leading-tight">
-                Elena Vance
+            <div className="flex-1 min-w-0">
+              <span className="block truncate text-xs font-semibold text-[var(--foreground)] leading-tight">
+                {displayName}
               </span>
               <span className="block text-[10px] text-[var(--muted-foreground)]">
                 Profile

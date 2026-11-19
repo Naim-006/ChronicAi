@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
@@ -14,19 +14,27 @@ import {
   MoreVertical,
   ClipboardList,
   Check,
+  Loader2,
 } from "lucide-react";
-import { mockAppointments } from "@/lib/mock-data";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Appointment } from "@/types/medical";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getAppointments,
+  createAppointment,
+} from "@/lib/supabase/services/appointments";
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const { effectiveUserId } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"today" | "all" | "past">("today");
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [docName, setDocName] = useState("");
   const [specialty, setSpecialty] = useState("");
@@ -35,36 +43,59 @@ export default function AppointmentsPage() {
   const [reason, setReason] = useState("");
   const [loc, setLoc] = useState("");
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!docName || !date || !reason) return;
-
-    const newApt: Appointment = {
-      id: `apt-${Date.now()}`,
-      user_id: "user-elena-vance",
-      doctor_name: docName,
-      specialty: specialty || "General Medical Checkup",
-      clinic_or_hospital: loc || "Metro Health Center",
-      appointment_date: date,
-      appointment_time: time || "15:30:00",
-      reason,
-      location: loc,
-      status: "upcoming",
-      preparation_questions: [
-        `Review recent biometric changes regarding ${reason}.`,
-        "Confirm current medication dosages and tolerance.",
-      ],
-      created_at: new Date().toISOString(),
+  useEffect(() => {
+    let isMounted = true;
+    if (effectiveUserId) {
+      setIsLoading(true);
+      getAppointments(effectiveUserId)
+        .then((data) => {
+          if (isMounted) setAppointments(data);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    } else {
+      setAppointments([]);
+      setIsLoading(false);
+    }
+    return () => {
+      isMounted = false;
     };
+  }, [effectiveUserId]);
 
-    setAppointments((prev) => [newApt, ...prev]);
-    setShowAddModal(false);
-    setDocName("");
-    setSpecialty("");
-    setDate("");
-    setTime("");
-    setReason("");
-    setLoc("");
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!docName || !date || !reason || !effectiveUserId) return;
+
+    setIsSubmitting(true);
+    try {
+      const created = await createAppointment({
+        user_id: effectiveUserId,
+        doctor_name: docName,
+        specialty: specialty || "General Medical Checkup",
+        clinic_or_hospital: loc || "Metro Health Center",
+        appointment_date: date,
+        appointment_time: time || "15:30:00",
+        reason,
+        location: loc,
+        status: "upcoming",
+        preparation_questions: [
+          `Review recent biometric changes regarding ${reason}.`,
+          "Confirm current medication dosages and tolerance.",
+        ],
+      });
+
+      setAppointments((prev) => [created, ...prev]);
+      setShowAddModal(false);
+      setDocName("");
+      setSpecialty("");
+      setDate("");
+      setTime("");
+      setReason("");
+      setLoc("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredAppointments = appointments.filter((apt) => {
@@ -142,7 +173,7 @@ export default function AppointmentsPage() {
           </div>
           <button
             type="button"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-white dark:bg-[var(--card)] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]"
             title="Filters"
           >
             <SlidersHorizontal className="h-4 w-4" />
@@ -151,7 +182,11 @@ export default function AppointmentsPage() {
       </section>
 
       <div className="grid gap-3.5 lg:grid-cols-2">
-        {filteredAppointments.length === 0 ? (
+        {isLoading ? (
+          <div className="soft-card col-span-full flex items-center justify-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+          </div>
+        ) : filteredAppointments.length === 0 ? (
           <div className="soft-card col-span-full space-y-2 p-10 text-center">
             <Calendar className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
             <h3 className="text-sm font-bold text-[var(--foreground)]">No appointments found</h3>
@@ -167,7 +202,7 @@ export default function AppointmentsPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3.5">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50 text-sm font-extrabold text-emerald-800">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-100 dark:border-emerald-900 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 text-sm font-extrabold text-emerald-800 dark:text-emerald-300">
                     {apt.doctor_name
                       .replace("Dr. ", "")
                       .split(" ")
@@ -195,7 +230,6 @@ export default function AppointmentsPage() {
                 <button
                   type="button"
                   className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                  title="Actions"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </button>
@@ -227,9 +261,9 @@ export default function AppointmentsPage() {
               </div>
 
               {apt.preparation_questions && apt.preparation_questions.length > 0 && (
-                <div className="space-y-1.5 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950">
-                    <ClipboardList className="h-3.5 w-3.5 text-emerald-700" />
+                <div className="space-y-1.5 rounded-2xl border border-emerald-100 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950 dark:text-emerald-200">
+                    <ClipboardList className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
                     Prep checkpoints
                   </div>
                   <ul className="list-disc space-y-1 pl-4 text-xs text-[var(--foreground)]/80">
@@ -324,7 +358,16 @@ export default function AppointmentsPage() {
                 <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Confirm</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Confirm"
+                  )}
+                </Button>
               </div>
             </form>
           </div>

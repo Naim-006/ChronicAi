@@ -9,19 +9,27 @@ import {
   Share2,
   UserCheck,
   Settings,
+  ShieldAlert,
+  HeartPulse,
 } from "lucide-react";
-import { mockProfile } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useAuth } from "@/context/AuthContext";
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(mockProfile);
+  const { profile, user } = useAuth();
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const allergies = profile?.allergies || [];
+  const conditions = profile?.chronic_conditions || [];
 
   return (
     <div className="space-y-5">
@@ -34,23 +42,23 @@ export default function ProfilePage() {
       {/* Profile identity */}
       <section className="soft-card flex items-center gap-3.5 p-4 sm:p-5">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--forest)] text-lg font-extrabold text-white shadow-md">
-          EV
+          {initials || "PT"}
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-extrabold leading-tight text-[var(--foreground)]">
-            {profile.full_name}
+            {displayName}
           </h2>
           <span className="mt-0.5 block text-xs text-[var(--muted-foreground)]">
-            DOB: {formatDate(profile.date_of_birth)} (Age 64)
+            {profile?.date_of_birth ? `DOB: ${formatDate(profile.date_of_birth)}` : user?.email}
           </span>
-          <span className="mt-0.5 block text-[11px] font-semibold text-emerald-700">
-            Blood Type: {profile.blood_group} · {profile.height_cm} cm · {profile.weight_kg} kg
+          <span className="mt-0.5 block text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+            Blood Type: {profile?.blood_group || "Unknown"} · {profile?.height_cm ? `${profile.height_cm} cm` : "Height unrecorded"} · {profile?.weight_kg ? `${profile.weight_kg} kg` : "Weight unrecorded"}
           </span>
         </div>
       </section>
 
       {saved && (
-        <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           Health profile changes successfully updated.
         </div>
@@ -61,32 +69,36 @@ export default function ProfilePage() {
         <span className="mb-2 block px-1 text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
           Emergency health card
         </span>
-        <div className="space-y-2.5 rounded-2xl border border-rose-200 bg-rose-50/40 p-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-rose-200/60 pb-2">
-            <span className="text-xs font-semibold text-rose-900">Blood group</span>
-            <span className="text-sm font-extrabold text-rose-700">{profile.blood_group}</span>
+        <div className="space-y-2.5 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-rose-200/60 dark:border-rose-900/40 pb-2">
+            <span className="text-xs font-semibold text-rose-900 dark:text-rose-200">Blood group</span>
+            <span className="text-sm font-extrabold text-rose-700 dark:text-rose-400">
+              {profile?.blood_group || "Not recorded"}
+            </span>
           </div>
 
-          <div className="flex items-center justify-between border-b border-rose-200/60 pb-2">
+          <div className="flex items-center justify-between border-b border-rose-200/60 dark:border-rose-900/40 pb-2">
             <div>
               <span className="block text-xs font-bold text-[var(--foreground)]">
-                {profile.emergency_contact?.name}
+                {profile?.emergency_contact?.name || "No emergency contact specified"}
               </span>
               <span className="text-[11px] text-[var(--muted-foreground)]">
-                {profile.emergency_contact?.relationship}
+                {profile?.emergency_contact?.relationship || "Add contact in settings"}
               </span>
             </div>
-            <a
-              href={`tel:${profile.emergency_contact?.phone}`}
-              className="flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-rose-700"
-            >
-              <Phone className="h-3 w-3" />
-              Call
-            </a>
+            {profile?.emergency_contact?.phone && (
+              <a
+                href={`tel:${profile.emergency_contact.phone}`}
+                className="flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-rose-700"
+              >
+                <Phone className="h-3 w-3" />
+                Call
+              </a>
+            )}
           </div>
 
-          <div className="text-[11px] text-rose-800">
-            <strong>Critical alert:</strong> Severe Penicillin allergy. Carries MedicAlert identifier.
+          <div className="text-[11px] text-rose-800 dark:text-rose-300">
+            <strong>Critical status:</strong> {allergies.length > 0 ? `${allergies.length} documented drug sensitivities on file.` : "No critical medication contraindications on file."}
           </div>
         </div>
       </div>
@@ -97,17 +109,23 @@ export default function ProfilePage() {
           Documented drug allergies
         </span>
         <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden p-0">
-          {profile.allergies.map((a) => (
-            <div key={a.id} className="flex items-center justify-between p-3.5">
-              <div>
-                <span className="block text-xs font-bold text-[var(--foreground)]">{a.substance}</span>
-                <span className="mt-0.5 block text-[11px] font-semibold text-rose-700">{a.reaction}</span>
-              </div>
-              <span className="rounded-full border border-rose-100 bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700">
-                {a.severity}
-              </span>
+          {allergies.length === 0 ? (
+            <div className="p-5 text-center text-xs text-[var(--muted-foreground)]">
+              No documented allergies recorded.
             </div>
-          ))}
+          ) : (
+            allergies.map((a) => (
+              <div key={a.id} className="flex items-center justify-between p-3.5">
+                <div>
+                  <span className="block text-xs font-bold text-[var(--foreground)]">{a.substance}</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-rose-700 dark:text-rose-400">{a.reaction}</span>
+                </div>
+                <span className="rounded-full border border-rose-100 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                  {a.severity}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -117,17 +135,27 @@ export default function ProfilePage() {
           Active chronic conditions
         </span>
         <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden p-0">
-          {profile.chronic_conditions.map((c) => (
-            <div key={c.id} className="space-y-1 p-3.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[var(--foreground)]">{c.name}</span>
-                <span className="text-[10px] font-semibold text-[var(--muted-foreground)]">
-                  ICD: {c.icd10}
-                </span>
-              </div>
-              <p className="text-[11px] leading-relaxed text-[var(--muted-foreground)]">{c.notes}</p>
+          {conditions.length === 0 ? (
+            <div className="p-5 text-center text-xs text-[var(--muted-foreground)]">
+              No active chronic conditions recorded.
             </div>
-          ))}
+          ) : (
+            conditions.map((c) => (
+              <div key={c.id} className="space-y-1 p-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--foreground)]">{c.name}</span>
+                  {c.icd10 && (
+                    <span className="text-[10px] font-semibold text-[var(--muted-foreground)]">
+                      ICD: {c.icd10}
+                    </span>
+                  )}
+                </div>
+                {c.notes && (
+                  <p className="text-[11px] leading-relaxed text-[var(--muted-foreground)]">{c.notes}</p>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -142,7 +170,7 @@ export default function ProfilePage() {
             className="flex items-center justify-between p-3.5 transition-colors hover:bg-[var(--muted)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400">
                 <UserCheck className="h-4 w-4" />
               </div>
               <div>
@@ -150,7 +178,7 @@ export default function ProfilePage() {
                   Healthcare providers
                 </span>
                 <span className="text-[11px] text-[var(--muted-foreground)]">
-                  Dr. Wei, Dr. Vance, Dr. Jenkins
+                  Consulting doctors directory &amp; phone contacts
                 </span>
               </div>
             </div>
@@ -162,7 +190,7 @@ export default function ProfilePage() {
             className="flex items-center justify-between p-3.5 transition-colors hover:bg-[var(--muted)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400">
                 <Share2 className="h-4 w-4" />
               </div>
               <div>
@@ -190,7 +218,7 @@ export default function ProfilePage() {
                   Preferences &amp; data export
                 </span>
                 <span className="text-[11px] text-[var(--muted-foreground)]">
-                  AI depth, units, download JSON
+                  Language, Dark mode, AI depth &amp; session security
                 </span>
               </div>
             </div>

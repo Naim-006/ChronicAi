@@ -5,7 +5,6 @@ import { User, Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { HealthProfile } from "@/types/medical";
-import { mockProfile } from "@/lib/mock-data";
 import { getHealthProfile } from "@/lib/supabase/services/profile";
 
 interface AuthContextType {
@@ -25,19 +24,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<HealthProfile | null>(mockProfile);
+  const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isConfigured = isSupabaseConfigured();
 
-  // If user is logged in, use their real auth.users uuid; otherwise fall back to demo patient id
-  const effectiveUserId = user?.id || "user-elena-vance";
+  // If user is logged in, use their real Supabase auth uuid; otherwise empty string
+  const effectiveUserId = user?.id || "";
 
   const loadUserProfile = async (userId: string) => {
+    if (!userId) {
+      setProfile(null);
+      return;
+    }
     try {
       const p = await getHealthProfile(userId);
       setProfile(p);
     } catch {
-      setProfile(mockProfile);
+      setProfile(null);
     }
   };
 
@@ -45,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isConfigured) {
       setUser(null);
       setSession(null);
-      setProfile(mockProfile);
+      setProfile(null);
       setIsLoading(false);
       return;
     }
@@ -55,11 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserProfile(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        loadUserProfile(currentUser.id);
       } else {
-        setProfile(mockProfile);
+        setProfile(null);
       }
       setIsLoading(false);
     });
@@ -69,11 +73,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserProfile(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        loadUserProfile(currentUser.id);
       } else {
-        setProfile(mockProfile);
+        setProfile(null);
       }
       setIsLoading(false);
     });
@@ -90,13 +95,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setSession(null);
-    setProfile(mockProfile);
+    setProfile(null);
     router.push("/login");
     router.refresh();
   };
 
   const refreshProfile = async () => {
-    await loadUserProfile(effectiveUserId);
+    if (effectiveUserId) {
+      await loadUserProfile(effectiveUserId);
+    }
   };
 
   return (

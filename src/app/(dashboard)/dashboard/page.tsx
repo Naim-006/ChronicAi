@@ -17,11 +17,12 @@ import {
   Heart,
   X,
 } from "lucide-react";
-import {
-  mockMedications,
-  mockAppointments,
-  mockDocuments,
-} from "@/lib/mock-data";
+import { useAuth } from "@/context/AuthContext";
+import { Medication, Appointment, MedicalDocument, HealthMetric } from "@/types/medical";
+import { getMedications, logMedicationAdherence } from "@/lib/supabase/services/medications";
+import { getAppointments } from "@/lib/supabase/services/appointments";
+import { getDocuments } from "@/lib/supabase/services/documents";
+import { getHealthMetrics, logHealthMetric } from "@/lib/supabase/services/metrics";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -70,12 +71,12 @@ function ProgressRing({
 }
 
 export default function DashboardPage() {
-  const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({
-    "med-1": true,
-    "med-2": true,
-    "med-3": true,
-    "med-4": false,
-  });
+  const { profile, effectiveUserId } = useAuth();
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [documents, setDocuments] = useState<MedicalDocument[]>([]);
+  const [metrics, setMetrics] = useState<HealthMetric[]>([]);
+  const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
   const [vitals, setVitals] = useState({
@@ -91,24 +92,73 @@ export default function DashboardPage() {
   const [glucoseType, setGlucoseType] = useState<"fasting" | "postprandial">("fasting");
   const [logAlert, setLogAlert] = useState<string | null>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+    if (effectiveUserId) {
+      Promise.all([
+        getMedications(effectiveUserId),
+        getAppointments(effectiveUserId),
+        getDocuments(effectiveUserId),
+        getHealthMetrics(effectiveUserId),
+      ])
+        .then(([meds, apts, docs, mets]) => {
+          if (!isMounted) return;
+          setMedications(meds);
+          setAppointments(apts);
+          setDocuments(docs);
+          setMetrics(mets);
+
+          const latestGlucose = mets.find((m) => m.metric_type === "glucose");
+          const latestBP = mets.find((m) => m.metric_type === "blood_pressure");
+          const latestHR = mets.find((m) => m.metric_type === "heart_rate");
+
+          setVitals((prev) => ({
+            glucose: latestGlucose ? latestGlucose.value_primary : prev.glucose,
+            systolic: latestBP ? latestBP.value_primary : prev.systolic,
+            diastolic: latestBP?.value_secondary ? latestBP.value_secondary : prev.diastolic,
+            heartRate: latestHR ? latestHR.value_primary : prev.heartRate,
+          }));
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    } else {
+      setMedications([]);
+      setAppointments([]);
+      setDocuments([]);
+      setMetrics([]);
+      setIsLoading(false);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveUserId]);
+
   const nextAppointment =
-    mockAppointments.find((a) => a.status === "upcoming") || mockAppointments[0];
-  const pendingReviewDocs = mockDocuments.filter((d) => d.status === "needs_review");
+    appointments.find((a) => a.status === "upcoming") || null;
+  const pendingReviewDocs = documents.filter((d) => d.status === "needs_review");
   const takenCount = Object.values(loggedMeds).filter(Boolean).length;
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const toggleMed = (medId: string) => {
+  const toggleMed = async (medId: string) => {
+    const nextState = !loggedMeds[medId];
     setLoggedMeds((prev) => ({
       ...prev,
-      [medId]: !prev[medId],
+      [medId]: nextState,
     }));
+    if (effectiveUserId) {
+      try {
+        await logMedicationAdherence({
+          user_id: effectiveUserId,
+          medication_id: medId,
+          scheduled_time: new Date().toISOString(),
+          recorded_time: new Date().toISOString(),
+          status: nextState ? "taken" : "missed",
+        });
+      } catch {}
+    }
   };
 
-  const handleSaveVitals = (e: React.FormEvent) => {
+  const handleSaveVitals = async (e: React.FormEvent) => {
     e.preventDefault();
     const g = parseInt(glucoseInput) || vitals.glucose;
     const s = parseInt(sysInput) || vitals.systolic;
@@ -122,6 +172,39 @@ export default function DashboardPage() {
       heartRate: hr,
     });
     setShowVitalsModal(false);
+
+    if (effectiveUserId) {
+      try {
+        await Promise.all([
+          logHealthMetric({
+            user_id: effectiveUserId,
+            metric_type: "glucose",
+            value_primary: g,
+            unit: "mg/dL",
+            context: glucoseType,
+            recorded_at: new Date().toISOString(),
+          }),
+          logHealthMetric({
+            user_id: effectiveUserId,
+            metric_type: "blood_pressure",
+            value_primary: s,
+            value_secondary: d,
+            unit: "mmHg",
+            recorded_at: new Date().toISOString(),
+          }),
+          logHealthMetric({
+            user_id: effectiveUserId,
+            metric_type: "heart_rate",
+            value_primary: hr,
+            unit: "bpm",
+            recorded_at: new Date().toISOString(),
+          }),
+        ]);
+      } catch (err) {
+        console.error("Failed to log metrics:", err);
+      }
+    }
+
     setLogAlert(`Vitals recorded! Fasting Glucose updated to ${g} mg/dL and BP to ${s}/${d} mmHg.`);
     setTimeout(() => setLogAlert(null), 4000);
   };
@@ -491,90 +574,120 @@ export default function DashboardPage() {
       </section>
 
           {/* Appointment Card */}
-          <div className="soft-card flex items-center justify-between gap-4 p-5">
-            <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-sm font-extrabold text-white shadow-md shadow-emerald-500/20">
-                CW
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-extrabold text-[var(--foreground)]">
-                    {nextAppointment.doctor_name}
-                  </span>
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+          {nextAppointment ? (
+            <div className="soft-card flex items-center justify-between gap-4 p-5">
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-sm font-extrabold text-white shadow-md shadow-emerald-500/20">
+                  {nextAppointment.doctor_name
+                    .replace("Dr. ", "")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
                 </div>
-                <span className="block truncate text-xs font-medium text-[var(--muted-foreground)]">
-                  {nextAppointment.specialty} · {nextAppointment.clinic_or_hospital}
-                </span>
-                <span className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 truncate">
-                  <Clock className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">
-                    {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-extrabold text-[var(--foreground)]">
+                      {nextAppointment.doctor_name}
+                    </span>
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                  </div>
+                  <span className="block truncate text-xs font-medium text-[var(--muted-foreground)]">
+                    {nextAppointment.specialty} · {nextAppointment.clinic_or_hospital}
                   </span>
-                </span>
+                  <span className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">
+                      {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
+                    </span>
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <Link
-              href="/appointments"
-              className="shrink-0 rounded-xl bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
-            >
-              Prep
-            </Link>
-          </div>
+              <Link
+                href="/appointments"
+                className="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 transition-colors hover:bg-emerald-100"
+              >
+                Prep
+              </Link>
+            </div>
+          ) : (
+            <div className="soft-card flex items-center justify-between gap-4 p-5">
+              <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+                <Calendar className="h-5 w-5 text-emerald-600 shrink-0" />
+                <span>No upcoming consultations scheduled.</span>
+              </div>
+              <Link
+                href="/appointments"
+                className="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 transition-colors hover:bg-emerald-100"
+              >
+                Book
+              </Link>
+            </div>
+          )}
 
           {/* Medications Card */}
-          <div className="soft-card divide-y divide-[var(--border)] overflow-hidden">
-            {mockMedications.slice(0, 3).map((med) => {
-              const isTaken = loggedMeds[med.id];
-              return (
-                <button
-                  key={med.id}
-                  type="button"
-                  onClick={() => toggleMed(med.id)}
-                  className="flex w-full cursor-pointer items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-[var(--secondary)]"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all ${
-                        isTaken
-                          ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                          : "border-[var(--border)] bg-white"
-                      }`}
-                    >
-                      {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`truncate text-xs font-bold ${
-                            isTaken
-                              ? "text-[var(--muted-foreground)] line-through"
-                              : "text-[var(--foreground)]"
-                          }`}
-                        >
-                          {med.name}
-                        </span>
-                        <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                          {med.strength}
+          {medications.length === 0 ? (
+            <div className="soft-card p-6 text-center text-xs text-[var(--muted-foreground)]">
+              <Pill className="mx-auto h-6 w-6 text-emerald-600/60 mb-1.5" />
+              <span>No daily medications prescribed yet.</span>
+            </div>
+          ) : (
+            <div className="soft-card divide-y divide-[var(--border)] overflow-hidden">
+              {medications.slice(0, 3).map((med) => {
+                const isTaken = loggedMeds[med.id];
+                return (
+                  <button
+                    key={med.id}
+                    type="button"
+                    onClick={() => toggleMed(med.id)}
+                    className="flex w-full cursor-pointer items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-[var(--secondary)]"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all ${
+                          isTaken
+                            ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
+                            : "border-[var(--border)] bg-white dark:bg-[var(--card)]"
+                        }`}
+                      >
+                        {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`truncate text-xs font-bold ${
+                              isTaken
+                                ? "text-[var(--muted-foreground)] line-through"
+                                : "text-[var(--foreground)]"
+                            }`}
+                          >
+                            {med.name}
+                          </span>
+                          {med.strength && (
+                            <span className="rounded-lg bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                              {med.strength}
+                            </span>
+                          )}
+                        </div>
+                        <span className="mt-0.5 block truncate text-[11px] text-[var(--muted-foreground)]">
+                          {med.instructions || med.frequency}
                         </span>
                       </div>
-                      <span className="mt-0.5 block truncate text-[11px] text-[var(--muted-foreground)]">
-                        {med.frequency}
-                      </span>
                     </div>
-                  </div>
-                  <span
-                    className={`shrink-0 text-[11px] font-bold ${
-                      isTaken ? "text-emerald-600" : "text-[var(--muted-foreground)]"
-                    }`}
-                  >
-                    {isTaken ? "Logged" : "Tap"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className={`shrink-0 text-[11px] font-bold ${
+                        isTaken ? "text-emerald-600" : "text-[var(--muted-foreground)]"
+                      }`}
+                    >
+                      {isTaken ? "Logged" : "Tap"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
@@ -620,7 +733,7 @@ export default function DashboardPage() {
                     Log Daily Biometrics
                   </h3>
                   <span className="text-[11px] text-slate-400">
-                    Encrypted patient entry · Elena Vance
+                    Encrypted personal health entry
                   </span>
                 </div>
               </div>
@@ -677,7 +790,7 @@ export default function DashboardPage() {
                   <span className="text-xs font-bold text-slate-400">mg/dL</span>
                 </div>
                 <span className="text-[10px] text-slate-400 block">
-                  Target for Elena: 70–130 mg/dL (HbA1c &lt; 7.0%)
+                  Target: 70–130 mg/dL (HbA1c &lt; 7.0%)
                 </span>
               </div>
 

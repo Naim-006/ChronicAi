@@ -15,7 +15,6 @@ import {
   Sparkles,
   ShieldCheck,
 } from "lucide-react";
-import { mockProfile } from "@/lib/mock-data";
 import { useTheme } from "@/context/ThemeContext";
 import { useLanguage, Language } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -71,7 +70,7 @@ export default function SettingsPage() {
 
   const handleExportData = () => {
     const exportPayload = {
-      profile: profile || mockProfile,
+      profile: profile || null,
       exported_at: new Date().toISOString(),
       app_version: "ChronicAI v2.0",
       compliance: "HIPAA / HL7 FHIR Compatible Structure",

@@ -17,6 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -37,6 +38,8 @@ const navItems = [
 
 export function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const pathname = usePathname();
+  const { user, profile } = useAuth();
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
 
   if (!isOpen) return null;
 
@@ -89,7 +92,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
         </div>
 
         <div className="pt-4 border-t border-slate-200 text-xs text-slate-500">
-          Elena Vance • Logged in
+          {displayName} • Logged in
         </div>
       </div>
     </div>

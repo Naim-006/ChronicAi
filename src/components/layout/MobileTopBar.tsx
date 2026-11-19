@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Bell, Search } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
   "/dashboard": { title: "Home" },
@@ -28,6 +29,15 @@ export function MobileTopBar() {
   const pathname = usePathname();
   const { openDrawer } = useMobileNav();
   const { t } = useLanguage();
+  const { user, profile } = useAuth();
+
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const localizedTitles: Record<string, string> = {
     "/dashboard": t("nav.home", "Home"),
@@ -142,10 +152,10 @@ export function MobileTopBar() {
           <Link
             href="/profile"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 transition-transform hover:scale-105"
-            title="Elena Vance · Profile"
+            title={`${displayName} · Profile`}
             aria-label="Profile"
           >
-            EV
+            {initials || "PT"}
           </Link>
         </div>
       </header>

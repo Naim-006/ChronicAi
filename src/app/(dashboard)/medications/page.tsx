@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Pill, Plus, Check, X, ShieldAlert, ShieldCheck, AlertTriangle, Search, Stethoscope } from "lucide-react";
-import { mockMedications } from "@/lib/mock-data";
+import { Pill, Plus, Check, X, ShieldAlert, ShieldCheck, AlertTriangle, Search, Stethoscope, Loader2 } from "lucide-react";
 import { Medication } from "@/types/medical";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,29 +10,35 @@ import { getMedications, createMedication, logMedicationAdherence } from "@/lib/
 
 export default function MedicationsPage() {
   const { effectiveUserId } = useAuth();
-  const [medications, setMedications] = useState<Medication[]>(mockMedications);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     async function loadMeds() {
+      if (!effectiveUserId) {
+        setMedications([]);
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
       try {
         const fetched = await getMedications(effectiveUserId);
-        if (isMounted && fetched && fetched.length > 0) {
-          setMedications(fetched);
+        if (isMounted) {
+          setMedications(fetched || []);
         }
-      } catch {}
+      } catch {
+        if (isMounted) setMedications([]);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     }
     loadMeds();
     return () => {
       isMounted = false;
     };
   }, [effectiveUserId]);
-  const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({
-    "med-1": true,
-    "med-2": true,
-    "med-3": true,
-    "med-4": false,
-  });
+  const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({});
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [testDrugInput, setTestDrugInput] = useState("");
@@ -43,13 +48,7 @@ export default function MedicationsPage() {
     interactingWith?: string;
     mechanism: string;
     alternative?: string;
-  } | null>({
-    drug: "Ibuprofen (Advil)",
-    level: "moderate",
-    interactingWith: "Lisinopril 20mg & Jardiance 10mg",
-    mechanism: "NSAIDs inhibit renal prostaglandins, which blunts Lisinopril's antihypertensive action and causes acute decreases in glomerular filtration (eGFR).",
-    alternative: "Acetaminophen (Tylenol) 500mg as needed is safer for renal protection.",
-  });
+  } | null>(null);
 
   const checkDrugInteraction = (drugName: string) => {
     const q = drugName.toLowerCase().trim();
@@ -76,7 +75,7 @@ export default function MedicationsPage() {
         drug: drugName,
         level: "severe",
         interactingWith: "Patient Allergy Profile",
-        mechanism: "Severe anaphylactic allergy documented on Elena's Emergency Medical Card. Beta-lactam antibiotics are strictly contraindicated.",
+        mechanism: "Severe anaphylactic allergy documented on your Emergency Medical Card. Beta-lactam antibiotics are strictly contraindicated.",
         alternative: "Azithromycin (Macrolide) or Doxycycline as approved by Dr. Catherine Wei.",
       });
     } else if (q.includes("aspirin")) {
@@ -101,39 +100,53 @@ export default function MedicationsPage() {
   const [doc, setDoc] = useState("");
   const [notes, setNotes] = useState("");
 
-  const toggleMed = (medId: string) => {
+  const toggleMed = async (medId: string) => {
+    const nextState = !loggedMeds[medId];
     setLoggedMeds((prev) => ({
       ...prev,
-      [medId]: !prev[medId],
+      [medId]: nextState,
     }));
+    if (effectiveUserId) {
+      try {
+        await logMedicationAdherence({
+          user_id: effectiveUserId,
+          medication_id: medId,
+          scheduled_time: new Date().toISOString(),
+          recorded_time: new Date().toISOString(),
+          status: nextState ? "taken" : "missed",
+        });
+      } catch {}
+    }
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !dose) return;
+    if (!name || !dose || !effectiveUserId) return;
 
-    const newMed: Medication = {
-      id: `med-${Date.now()}`,
-      user_id: "user-elena-vance",
-      name,
-      strength: dose,
-      dosage: dose,
-      frequency: freq || "Once daily",
-      instructions: notes || "Take as prescribed with water.",
-      start_date: new Date().toISOString().split("T")[0],
-      prescribing_doctor: doc || "Dr. Catherine Wei, MD",
-      related_condition: "General Care",
-      status: "active",
-      created_at: new Date().toISOString(),
-    };
+    try {
+      const newMed = await createMedication({
+        user_id: effectiveUserId,
+        name,
+        strength: dose,
+        dosage: dose,
+        frequency: freq || "Once daily",
+        instructions: notes || "Take as prescribed with water.",
+        start_date: new Date().toISOString().split("T")[0],
+        prescribing_doctor: doc || "Consulting Physician",
+        related_condition: "General Care",
+        status: "active",
+      });
 
-    setMedications((prev) => [newMed, ...prev]);
-    setShowAddModal(false);
-    setName("");
-    setDose("");
-    setFreq("");
-    setDoc("");
-    setNotes("");
+      setMedications((prev) => [newMed, ...prev]);
+      setShowAddModal(false);
+      setName("");
+      setDose("");
+      setFreq("");
+      setDoc("");
+      setNotes("");
+    } catch (err) {
+      console.error("Failed to add medication", err);
+    }
   };
 
   const takenCount = Object.values(loggedMeds).filter(Boolean).length;
@@ -288,12 +301,12 @@ export default function MedicationsPage() {
                 Drug-Drug Interaction Safety Engine
               </h2>
               <span className="text-[11px] text-[var(--muted-foreground)] block">
-                Instant safety screening against Elena&apos;s 4 active prescriptions and allergies.
+                Instant safety screening against your active prescriptions and allergies.
               </span>
             </div>
           </div>
           <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-700 border border-emerald-100 hidden sm:inline">
-            4 Meds Cross-Referenced
+            {medications.length} Meds Cross-Referenced
           </span>
         </div>
 
@@ -404,57 +417,71 @@ export default function MedicationsPage() {
         </div>
 
         <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden">
-          {medications.map((med) => {
-            const isTaken = loggedMeds[med.id];
-            return (
-              <button
-                key={med.id}
-                type="button"
-                onClick={() => toggleMed(med.id)}
-                className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors hover:bg-[var(--muted)]/60"
-              >
-                <div className="flex min-w-0 items-center gap-3.5">
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all ${
-                      isTaken
-                        ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                        : "border-[var(--border)] bg-white"
-                    }`}
-                  >
-                    {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3
-                        className={`truncate text-sm font-extrabold ${
-                          isTaken
-                            ? "text-[var(--muted-foreground)] line-through"
-                            : "text-[var(--foreground)]"
-                        }`}
-                      >
-                        {med.name}
-                      </h3>
-                      <span className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                        {med.strength}
+          {isLoading ? (
+            <div className="flex items-center justify-center p-12">
+              <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
+            </div>
+          ) : medications.length === 0 ? (
+            <div className="p-10 text-center space-y-2">
+              <Pill className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
+              <h3 className="text-sm font-bold text-[var(--foreground)]">No medications added yet</h3>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Add your active prescriptions or extract them automatically from uploaded medical documents.
+              </p>
+            </div>
+          ) : (
+            medications.map((med) => {
+              const isTaken = loggedMeds[med.id];
+              return (
+                <button
+                  key={med.id}
+                  type="button"
+                  onClick={() => toggleMed(med.id)}
+                  className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors hover:bg-[var(--muted)]/60"
+                >
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all ${
+                        isTaken
+                          ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
+                          : "border-[var(--border)] bg-white"
+                      }`}
+                    >
+                      {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3
+                          className={`truncate text-sm font-extrabold ${
+                            isTaken
+                              ? "text-[var(--muted-foreground)] line-through"
+                              : "text-[var(--foreground)]"
+                          }`}
+                        >
+                          {med.name}
+                        </h3>
+                        <span className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                          {med.strength}
+                        </span>
+                      </div>
+                      <span className="mt-0.5 block truncate text-xs text-[var(--muted-foreground)]">
+                        {med.frequency} · {med.prescribing_doctor}
                       </span>
                     </div>
-                    <span className="mt-0.5 block truncate text-xs text-[var(--muted-foreground)]">
-                      {med.frequency} · {med.prescribing_doctor}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span
+                      className={`block text-xs font-bold ${
+                        isTaken ? "text-emerald-600" : "text-[var(--muted-foreground)]"
+                      }`}
+                    >
+                      {isTaken ? "Logged" : "Tap to log"}
                     </span>
                   </div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <span
-                    className={`block text-xs font-bold ${
-                      isTaken ? "text-emerald-600" : "text-[var(--muted-foreground)]"
-                    }`}
-                  >
-                    {isTaken ? "Logged" : "Tap to log"}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })
+          )}
         </div>
       </section>
 

@@ -1,10 +1,9 @@
 import { createClient, isSupabaseConfigured } from "../client";
 import { AIConversation, AIMessage } from "@/types/medical";
-import { mockConversations, mockMessages } from "@/lib/mock-data";
 
 export async function getConversations(userId: string): Promise<AIConversation[]> {
-  if (!isSupabaseConfigured()) {
-    return mockConversations;
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -14,8 +13,8 @@ export async function getConversations(userId: string): Promise<AIConversation[]
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    return mockConversations;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((c: any) => ({
@@ -28,8 +27,8 @@ export async function getConversations(userId: string): Promise<AIConversation[]
 }
 
 export async function getMessages(conversationId: string): Promise<AIMessage[]> {
-  if (!isSupabaseConfigured()) {
-    return mockMessages;
+  if (!conversationId || !isSupabaseConfigured()) {
+    return [];
   }
 
   const supabase = createClient();
@@ -39,8 +38,8 @@ export async function getMessages(conversationId: string): Promise<AIMessage[]> 
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
 
-  if (error || !data || data.length === 0) {
-    return mockMessages;
+  if (error || !data) {
+    return [];
   }
 
   return data.map((m: any) => ({

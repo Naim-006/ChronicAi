@@ -62,7 +62,7 @@ export default function HealthEvaluationPage() {
       setEvalResult({
         symptom: text,
         level: "low",
-        assessment: "Non-acute symptom evaluated against Elena's chronic health baseline.",
+        assessment: "Non-acute symptom evaluated against your chronic health baseline.",
         action: "Continue routine tracking and discuss during regular follow-up.",
       });
     }

@@ -15,14 +15,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
 
 interface AppHeaderProps {
   onToggleMobileMenu?: () => void;
 }
 
 export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
+  const { user, profile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 lg:px-8 backdrop-blur">
@@ -113,11 +123,11 @@ export function AppHeader({ onToggleMobileMenu }: AppHeaderProps) {
           className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1.5 pr-3 hover:bg-slate-100 transition-colors"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-700 text-white text-xs font-bold">
-            EV
+            {initials || "PT"}
           </div>
           <div className="hidden sm:block text-left">
-            <span className="text-xs font-semibold text-slate-900 block leading-none">Elena Vance</span>
-            <span className="text-[10px] text-slate-500 block leading-none mt-0.5">T2D • HTN • CKD2</span>
+            <span className="text-xs font-semibold text-slate-900 block leading-none">{displayName}</span>
+            <span className="text-[10px] text-slate-500 block leading-none mt-0.5">Health Profile</span>
           </div>
         </Link>
       </div>
