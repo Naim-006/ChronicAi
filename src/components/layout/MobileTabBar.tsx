@@ -87,7 +87,7 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-[460px] px-2.5 sm:px-4 pointer-events-none lg:hidden">
+    <nav className="fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[84%] max-w-3xl pointer-events-none lg:hidden transition-all duration-200">
       <div
         ref={containerRef}
         className="pointer-events-auto relative w-full h-[88px] select-none"
@@ -159,7 +159,7 @@ export function MobileTabBar() {
                     </div>
                     <span
                       className={cn(
-                        "text-[11px] leading-tight tracking-tight whitespace-nowrap mb-[2px]",
+                        "text-[11px] sm:text-[12px] leading-tight tracking-tight whitespace-nowrap mb-[2px]",
                         isActive ? "font-semibold text-[#059669]" : "font-medium text-[#475569]"
                       )}
                     >
@@ -181,10 +181,10 @@ export function MobileTabBar() {
                   href={tab.href!}
                   className="flex flex-col items-center justify-center w-full group active:scale-95 transition-transform"
                 >
-                  <div className="h-[22px] w-[22px] flex items-center justify-center relative mb-[5px]">
+                  <div className="h-[22px] w-[22px] sm:h-[24px] sm:w-[24px] flex items-center justify-center relative mb-[5px]">
                     <Icon
                       className={cn(
-                        "h-[22px] w-[22px] transition-transform",
+                        "h-[22px] w-[22px] sm:h-[24px] sm:w-[24px] transition-transform",
                         isActive
                           ? "stroke-[2.2] text-[#059669] scale-105"
                           : "stroke-[1.8] text-[#475569] group-hover:scale-105"
@@ -201,7 +201,7 @@ export function MobileTabBar() {
 
                   <span
                     className={cn(
-                      "text-[11px] leading-tight tracking-tight text-center whitespace-nowrap mb-[2px]",
+                      "text-[11px] sm:text-[12px] leading-tight tracking-tight text-center whitespace-nowrap mb-[2px]",
                       isActive ? "font-semibold text-[#059669]" : "font-medium text-[#475569]"
                     )}
                   >
