@@ -3,7 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Stethoscope, ChevronLeft, Search } from "lucide-react";
+import { Bell, Stethoscope, ChevronLeft, Search, LayoutGrid } from "lucide-react";
+import { useMobileNav } from "./MobileNavContext";
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
   "/dashboard": { title: "Home" },
@@ -24,6 +25,7 @@ const pageTitles: Record<string, { title: string; parent?: string }> = {
 
 export function MobileTopBar() {
   const pathname = usePathname();
+  const { openDrawer } = useMobileNav();
   const pageMeta = pageTitles[pathname] || { title: "ChronicAI" };
   const isDashboard = pathname === "/dashboard" || pathname === "/";
 
@@ -31,9 +33,9 @@ export function MobileTopBar() {
     <>
       {/* Mobile / tablet top bar */}
       <header className="sticky top-0 z-30 flex h-16 w-full max-w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/85 px-3.5 sm:px-6 backdrop-blur-xl lg:hidden">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           {!isDashboard ? (
-            <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2">
               <Link
                 href={pageMeta.parent || "/dashboard"}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)]"
@@ -67,7 +69,7 @@ export function MobileTopBar() {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {pathname !== "/assistant" && (
             <Link
               href="/assistant"
@@ -86,6 +88,16 @@ export function MobileTopBar() {
             <Bell className="h-4 w-4" />
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </Link>
+
+          <button
+            type="button"
+            onClick={openDrawer}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#18261F] text-white shadow-sm hover:bg-[#253D30] transition-transform active:scale-95 cursor-pointer"
+            title="Care Hub · All 14 Pages"
+            aria-label="Care Hub Menu"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
         </div>
       </header>
 
@@ -130,6 +142,16 @@ export function MobileTopBar() {
             <Bell className="h-4 w-4" />
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </Link>
+
+          <button
+            type="button"
+            onClick={openDrawer}
+            className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-3.5 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--muted)] cursor-pointer"
+            title="All Pages & Care Hub"
+          >
+            <LayoutGrid className="h-4 w-4 text-emerald-600" />
+            <span>Care Hub</span>
+          </button>
         </div>
       </header>
     </>

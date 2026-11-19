@@ -359,7 +359,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
   };
 
   return (
-    <div className="flex h-[calc(100vh-125px)] sm:h-[calc(100vh-140px)] max-w-6xl mx-auto gap-4">
+    <div className="flex h-[calc(100dvh-170px)] lg:h-[calc(100vh-140px)] max-w-6xl mx-auto gap-4">
       {/* 1. Left Sidebar: Chat History & Clinical Sessions (Desktop) */}
       <aside className="hidden md:flex w-72 flex-col rounded-3xl bg-white border border-slate-200/80 p-4 shadow-sm shrink-0">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -434,19 +434,19 @@ Would you like me to generate a 1-page summary of these findings to bring to you
       {/* 2. Main Chat Conversation Pane */}
       <section className="flex flex-1 flex-col rounded-3xl bg-white border border-slate-200/80 shadow-sm overflow-hidden min-w-0">
         {/* Top Header Row with Depth Toggle & Session Info */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 border-b border-slate-100 bg-white/95 backdrop-blur-md gap-3 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-slate-100 bg-white/95 backdrop-blur-md gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
             {/* Mobile History Toggle */}
             <button
               type="button"
-              onClick={() => setShowHistoryMobile(!showHistoryMobile)}
-              className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+              onClick={() => setShowHistoryMobile(true)}
+              className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
               title="View History"
             >
               <Clock className="h-4 w-4" />
             </button>
 
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#22C55E] to-[#16A34A] text-white shadow-md shadow-green-600/20 shrink-0">
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#22C55E] to-[#16A34A] text-white shadow-md shadow-green-600/20 shrink-0">
               <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
 
@@ -456,82 +456,103 @@ Would you like me to generate a 1-page summary of these findings to bring to you
               </h1>
               <span className="text-[10px] sm:text-[11px] text-emerald-700 font-bold truncate flex items-center gap-1 mt-0.5">
                 <ShieldCheck className="h-3 w-3 text-emerald-600 shrink-0 inline" />
-                <span className="truncate">Elena Vance Verified Records</span>
+                <span className="truncate">Elena Vance Verified Labs</span>
               </span>
             </div>
           </div>
 
-          {/* Right Action: Explanation Complexity Toggle */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-            <div className="flex items-center rounded-full bg-slate-100 p-0.5 sm:p-1 border border-slate-200 text-[10px] sm:text-[11px] font-bold">
+          {/* Right Action: Explanation Complexity Toggle & New Consultation */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center rounded-full bg-slate-100 p-0.5 border border-slate-200 text-[10px] sm:text-[11px] font-bold">
               <button
                 type="button"
                 onClick={() => setExplanationDepth("plain")}
-                className={`px-2.5 sm:px-3 py-1 rounded-full transition-all cursor-pointer ${
+                className={`px-2 sm:px-3 py-1 rounded-full transition-all cursor-pointer ${
                   explanationDepth === "plain"
-                    ? "bg-white text-slate-900 shadow-2xs"
+                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
-                Plain Language
+                Plain
               </button>
               <button
                 type="button"
                 onClick={() => setExplanationDepth("clinical")}
-                className={`px-2.5 sm:px-3 py-1 rounded-full transition-all cursor-pointer ${
+                className={`px-2 sm:px-3 py-1 rounded-full transition-all cursor-pointer ${
                   explanationDepth === "clinical"
-                    ? "bg-white text-slate-900 shadow-2xs"
+                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
-                Clinical Detail
+                Clinical
               </button>
             </div>
 
             <button
               type="button"
               onClick={handleCreateNewSession}
-              className="md:hidden flex h-8 w-8 items-center justify-center rounded-full bg-[#22C55E] text-white shrink-0 shadow-sm"
+              className="flex h-8 w-8 items-center justify-center rounded-xl sm:rounded-full bg-[#22C55E] text-white shrink-0 shadow-sm hover:bg-[#16A34A] transition-colors cursor-pointer"
               title="New Consultation"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 stroke-[3]" />
             </button>
           </div>
         </div>
 
-        {/* Mobile History Drawer Sheet (Collapsible) */}
+        {/* Mobile History Drawer Sheet (Bottom Sheet Modal) */}
         {showHistoryMobile && (
-          <div className="md:hidden p-3 border-b border-slate-200 bg-slate-50 space-y-2">
-            <div className="flex items-center justify-between pb-1">
-              <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                Recent Consultations
-              </span>
+          <div className="fixed inset-0 z-50 flex items-end lg:hidden bg-black/50 backdrop-blur-xs animate-in fade-in">
+            <div className="w-full max-h-[75vh] rounded-t-3xl bg-white p-4 space-y-3 border-t border-slate-200 shadow-2xl flex flex-col animate-in slide-in-from-bottom">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-emerald-600" />
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                    Consultation History ({sessions.length})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowHistoryMobile(false)}
+                  className="rounded-xl bg-slate-100 p-1.5 text-slate-500 hover:text-slate-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setShowHistoryMobile(false)}
-                className="text-xs text-slate-400 hover:text-slate-700"
+                onClick={() => {
+                  handleCreateNewSession();
+                  setShowHistoryMobile(false);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
               >
-                Close
+                <Plus className="h-4 w-4 stroke-[3]" />
+                <span>Start New Consultation</span>
               </button>
-            </div>
-            <div className="space-y-1.5 max-h-48 overflow-y-auto">
-              {sessions.map((sess) => (
-                <button
-                  key={sess.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveSessionId(sess.id);
-                    setShowHistoryMobile(false);
-                  }}
-                  className={`w-full text-left p-2.5 rounded-xl text-xs font-bold block ${
-                    sess.id === activeSessionId
-                      ? "bg-emerald-600 text-white"
-                      : "bg-white text-slate-700 border border-slate-200"
-                  }`}
-                >
-                  {sess.title}
-                </button>
-              ))}
+
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {sessions.map((sess) => (
+                  <button
+                    key={sess.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveSessionId(sess.id);
+                      setShowHistoryMobile(false);
+                    }}
+                    className={`w-full text-left p-3 rounded-2xl border text-xs transition-all ${
+                      sess.id === activeSessionId
+                        ? "bg-emerald-50 border-emerald-300 text-emerald-950 font-bold"
+                        : "bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span className="block truncate font-extrabold">{sess.title}</span>
+                    <span className="text-[10px] text-slate-400 block mt-1">
+                      {sess.date} · {sess.messages.length} messages
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -661,7 +682,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         </div>
 
         {/* Suggested Follow-Up Prompt Chips */}
-        <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/70 overflow-x-auto flex gap-2 no-scrollbar shrink-0">
+        <div className="px-3 py-1.5 border-t border-slate-100 bg-slate-50/70 overflow-x-auto flex gap-1.5 hide-scrollbar shrink-0 max-w-full">
           {promptSuggestions.map((q, idx) => {
             const Icon = q.icon;
             return (
@@ -669,7 +690,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                 key={idx}
                 type="button"
                 onClick={() => handleSend(q.text)}
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white border border-slate-200/90 px-3.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800 hover:bg-emerald-50/50 transition-all shadow-2xs shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white border border-slate-200/90 px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800 hover:bg-emerald-50/50 transition-all shadow-2xs shrink-0 cursor-pointer"
               >
                 <Icon className="h-3.5 w-3.5 text-emerald-600" />
                 <span>{q.text}</span>
@@ -680,15 +701,15 @@ Would you like me to generate a 1-page summary of these findings to bring to you
 
         {/* Active Attached Document Chip */}
         {attachedDoc && (
-          <div className="px-4 py-1.5 bg-emerald-50/80 border-t border-emerald-100 flex items-center justify-between text-xs font-bold text-emerald-900">
+          <div className="px-3 py-1.5 bg-emerald-50/80 border-t border-emerald-100 flex items-center justify-between text-xs font-bold text-emerald-900">
             <div className="flex items-center gap-2 truncate">
-              <FileText className="h-3.5 w-3.5 text-emerald-700" />
-              <span>Querying Attached: {attachedDoc.file_name}</span>
+              <FileText className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+              <span className="truncate">Attached: {attachedDoc.file_name}</span>
             </div>
             <button
               type="button"
               onClick={() => setAttachedDoc(null)}
-              className="text-slate-400 hover:text-slate-700 p-0.5"
+              className="text-slate-400 hover:text-slate-700 p-0.5 shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
@@ -732,7 +753,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         )}
 
         {/* Input Bar */}
-        <div className="p-3 border-t border-slate-200/90 bg-white shrink-0">
+        <div className="p-2.5 sm:p-3 border-t border-slate-200/90 bg-white shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -744,7 +765,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
             <button
               type="button"
               onClick={() => setShowAttachMenu(!showAttachMenu)}
-              className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition-colors shrink-0 cursor-pointer ${
+              className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border transition-colors shrink-0 cursor-pointer ${
                 attachedDoc
                   ? "bg-emerald-50 border-emerald-300 text-emerald-700"
                   : "border-slate-200/90 bg-slate-50 text-slate-500 hover:bg-slate-100"
@@ -763,13 +784,13 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                 }
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
-                className="h-11 w-full rounded-2xl border border-slate-200/90 bg-slate-50/70 pl-4 pr-4 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white shadow-2xs"
+                className="h-10 sm:h-11 w-full rounded-2xl border border-slate-200/90 bg-slate-50/70 pl-3.5 pr-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white shadow-2xs"
               />
             </div>
 
             <button
               type="submit"
-              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#22C55E] hover:bg-[#16A34A] text-white shadow-md shadow-green-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
+              className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#22C55E] hover:bg-[#16A34A] text-white shadow-md shadow-green-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
             >
               <Send className="h-4 w-4" />
             </button>
