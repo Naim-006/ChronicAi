@@ -7,14 +7,9 @@ import {
   Phone,
   Mail,
   MapPin,
-  Building,
-  Calendar,
-  FileText,
+  ChevronRight,
+  X,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { mockDoctors } from "@/lib/mock-data";
 import { Doctor } from "@/types/medical";
 
@@ -22,16 +17,14 @@ export default function DoctorsPage() {
   const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // New Doctor Form State
+  // Form state
   const [name, setName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [clinic, setClinic] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
 
-  const handleAddDoctor = (e: React.FormEvent) => {
+  const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !specialty) return;
 
@@ -42,8 +35,6 @@ export default function DoctorsPage() {
       specialty,
       clinic_name: clinic,
       phone,
-      email,
-      address,
       notes,
       created_at: new Date().toISOString(),
     };
@@ -54,209 +45,149 @@ export default function DoctorsPage() {
     setSpecialty("");
     setClinic("");
     setPhone("");
-    setEmail("");
-    setAddress("");
     setNotes("");
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Personal Healthcare Providers"
-        description="Directory of physicians, specialists, and clinics you have consulted. Stores contact info, visit history, and consultation instructions."
-        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "Doctors" }]}
-        actions={
-          <Button
-            size="sm"
-            onClick={() => setShowAddModal(true)}
-            className="text-xs h-8 gap-1.5 bg-teal-700 hover:bg-teal-800 text-white"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Doctor
-          </Button>
-        }
-      />
+    <div className="space-y-5">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+            Healthcare Providers
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Your personal directory of {doctors.length} consulting doctors.
+          </p>
+        </div>
 
-      {/* Add Doctor Modal */}
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-1.5 rounded-full bg-teal-800 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          <span>Add</span>
+        </button>
+      </div>
+
+      {/* Add Modal */}
       {showAddModal && (
-        <Card className="border-2 border-teal-600 bg-white p-5 shadow-lg">
-          <CardHeader className="p-0 pb-4 border-b border-slate-100 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-bold text-slate-900">
-              Add Healthcare Provider
-            </CardTitle>
-            <Button
-              size="sm"
-              variant="ghost"
+        <div className="rounded-2xl border border-teal-300 bg-white p-4 shadow-md space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span className="text-xs font-bold text-slate-900">Add Healthcare Provider</span>
+            <button
+              type="button"
               onClick={() => setShowAddModal(false)}
-              className="h-7 w-7 p-0 text-slate-400"
+              className="text-slate-400 hover:text-slate-700"
             >
-              ×
-            </Button>
-          </CardHeader>
-          <form onSubmit={handleAddDoctor} className="mt-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Physician Full Name *
-                </label>
-                <Input
-                  required
-                  placeholder="e.g. Dr. Catherine Wei, MD"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Medical Specialty *
-                </label>
-                <Input
-                  required
-                  placeholder="e.g. Endocrinology & Metabolism"
-                  value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Clinic or Hospital Name
-                </label>
-                <Input
-                  placeholder="e.g. Endocrine & Metabolic Health"
-                  value={clinic}
-                  onChange={(e) => setClinic(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Phone Number
-                </label>
-                <Input
-                  placeholder="e.g. +1 (555) 789-0123"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Email Address
-                </label>
-                <Input
-                  type="email"
-                  placeholder="e.g. doctor@clinic.org"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Practice Address
-                </label>
-                <Input
-                  placeholder="e.g. 450 Medical Park Blvd, Seattle, WA"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-            </div>
-
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <form onSubmit={handleAdd} className="space-y-3 text-xs">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Clinical Context & Consultation Notes
-              </label>
-              <Input
-                placeholder="e.g. Primary doctor managing diabetes and quarterly lab panels."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="text-xs"
+              <label className="font-semibold text-slate-700 block mb-1">Doctor Name *</label>
+              <input
+                required
+                placeholder="e.g. Dr. Catherine Wei, MD"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
               />
             </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <Button
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Specialty *</label>
+                <input
+                  required
+                  placeholder="e.g. Endocrinology"
+                  value={specialty}
+                  onChange={(e) => setSpecialty(e.target.value)}
+                  className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Clinic Name</label>
+                <input
+                  placeholder="e.g. Metabolic Health"
+                  value={clinic}
+                  onChange={(e) => setClinic(e.target.value)}
+                  className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Phone</label>
+              <input
+                placeholder="e.g. +1 (555) 789-0123"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+              />
+            </div>
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Clinical Context</label>
+              <input
+                placeholder="e.g. Primary endocrinologist for quarterly diabetes workup."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={() => setShowAddModal(false)}
-                className="text-xs h-8"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="submit"
-                size="sm"
-                className="bg-teal-700 hover:bg-teal-800 text-white text-xs h-8"
+                className="px-3.5 py-1.5 rounded-lg bg-teal-800 text-xs font-semibold text-white"
               >
-                Save Provider
-              </Button>
+                Save
+              </button>
             </div>
           </form>
-        </Card>
+        </div>
       )}
 
-      {/* Doctors Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Grouped Doctors List */}
+      <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
         {doctors.map((doc) => (
-          <Card key={doc.id} className="hover:border-slate-300 transition-all flex flex-col justify-between">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-full bg-teal-50 text-teal-800 font-bold text-xs shrink-0">
+          <div key={doc.id} className="p-4 hover:bg-slate-50/70 transition-colors space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-800 font-bold text-xs shrink-0">
                   {doc.name.split(" ").slice(-1)[0][0]}
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-slate-900">{doc.name}</CardTitle>
-                  <span className="text-xs text-teal-800 font-medium block">{doc.specialty}</span>
+                  <span className="text-xs font-bold text-slate-900 block">{doc.name}</span>
+                  <span className="text-[11px] text-teal-800 font-medium block">{doc.specialty}</span>
                   {doc.clinic_name && (
-                    <span className="text-[11px] text-slate-500 block mt-0.5">{doc.clinic_name}</span>
+                    <span className="text-[11px] text-slate-400 block">{doc.clinic_name}</span>
                   )}
                 </div>
               </div>
-            </CardHeader>
 
-            <CardContent className="pt-3 pb-4 space-y-2 text-xs text-slate-600 flex-1">
               {doc.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{doc.phone}</span>
-                </div>
+                <a
+                  href={`tel:${doc.phone}`}
+                  className="flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold hover:bg-slate-200"
+                >
+                  <Phone className="h-3 w-3" />
+                  <span>Call</span>
+                </a>
               )}
-              {doc.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{doc.email}</span>
-                </div>
-              )}
-              {doc.address && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="truncate">{doc.address}</span>
-                </div>
-              )}
-
-              {doc.notes && (
-                <div className="mt-3 p-2.5 rounded bg-slate-50 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
-                  {doc.notes}
-                </div>
-              )}
-            </CardContent>
-
-            <div className="p-3 border-t border-slate-100 bg-slate-50/60 rounded-b-lg flex justify-end">
-              <Button size="sm" variant="outline" className="text-xs h-7">
-                View History
-              </Button>
             </div>
-          </Card>
+
+            {doc.notes && (
+              <p className="text-[11px] text-slate-500 pl-12 leading-relaxed">
+                {doc.notes}
+              </p>
+            )}
+          </div>
         ))}
       </div>
     </div>

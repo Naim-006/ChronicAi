@@ -8,179 +8,150 @@ import {
   CheckCircle2,
   Calendar,
   AlertCircle,
-  TrendingDown,
   Eye,
   ShieldCheck,
   Pill,
   Sparkles,
+  ChevronRight,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { StatCard } from "@/components/shared/StatCard";
-import { mockProfile, mockMedications, mockHealthMetrics } from "@/lib/mock-data";
-import { formatDate } from "@/lib/utils";
+import { mockProfile, mockMedications } from "@/lib/mock-data";
 
 export default function ChronicCarePage() {
-  const diabetesCondition = mockProfile.chronic_conditions.find((c) => c.name.includes("Diabetes"));
   const diabetesMeds = mockMedications.filter((m) => m.related_condition?.includes("Diabetes"));
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Chronic Care Management — Diabetes Protocol"
-        description="Specialized multi-marker monitoring for Type 2 Diabetes Mellitus, cardiovascular risk reduction, and renal preservation."
-        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "Chronic Care" }]}
-      />
+    <div className="space-y-5">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+            Diabetes Protocol
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Type 2 Diabetes Mellitus • Managed care plan.
+          </p>
+        </div>
 
-      {/* Disease Summary Card */}
-      <Card className="border-teal-200 bg-teal-50/40">
-        <CardContent className="p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-3 rounded-lg bg-teal-700 text-white shadow-xs">
-                <HeartPulse className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-slate-900">Type 2 Diabetes Mellitus</h2>
-                  <Badge variant="default" className="text-xs">
-                    ICD-10: E11.9
-                  </Badge>
-                  <Badge variant="outline" className="border-teal-300 text-teal-800 text-xs">
-                    Well-Managed
-                  </Badge>
-                </div>
-                <p className="text-xs text-slate-600 mt-1 max-w-xl leading-relaxed">
-                  Diagnosed on May 10, 2018 (8 years management). Managed through lifestyle modifications, Metformin ER 1000mg BID, and SGLT2 inhibitor Empagliflozin 10mg QD with regular quarterly endocrinology follow-ups.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex sm:flex-col gap-2 shrink-0">
-              <Link href="/assistant">
-                <Button size="sm" className="text-xs h-8 bg-teal-700 hover:bg-teal-800 text-white w-full gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Analyze Care Plan
-                </Button>
-              </Link>
-              <Link href="/metrics">
-                <Button size="sm" variant="outline" className="text-xs h-8 w-full border-teal-300 text-teal-900 hover:bg-teal-100">
-                  View Trends
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Target Metrics Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Current HbA1c"
-          value={6.8}
-          unit="%"
-          subtitle="Clinician Target: < 7.0%"
-          icon={TrendingDown}
-          status="normal"
-          trend={{ value: "Target achieved in Nov", isPositive: true }}
-        />
-        <StatCard
-          title="Fasting Glucose"
-          value={118}
-          unit="mg/dL"
-          subtitle="Target: 70 - 130 mg/dL"
-          icon={Activity}
-          status="normal"
-          trend={{ value: "118 mg/dL this morning", isPositive: true }}
-        />
-        <StatCard
-          title="Renal Preservation"
-          value="eGFR 68"
-          unit="mL/min"
-          subtitle="Stage 2 CKD (Stable)"
-          icon={ShieldCheck}
-          status="normal"
-          trend={{ value: "ACE inhibitor active", isNeutral: true }}
-        />
-        <StatCard
-          title="Diabetic Eye Exam"
-          value="Clear"
-          subtitle="Annual screening Nov 2026"
-          icon={Eye}
-          status="normal"
-          trend={{ value: "Negative for retinopathy", isPositive: true }}
-        />
+        <Link
+          href="/assistant"
+          className="flex items-center gap-1.5 rounded-full bg-teal-800 px-3 py-1 text-xs font-semibold text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all"
+        >
+          <Sparkles className="h-3 w-3" />
+          <span>Ask AI</span>
+        </Link>
       </div>
 
-      {/* Care Protocols and Active Regimens */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Diabetes Regimen */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Pill className="h-4 w-4 text-teal-700" />
-              Active Glycemic & Organ Protection Pharmacotherapy
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {diabetesMeds.map((med) => (
-              <div key={med.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50/70 text-xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900">{med.name} ({med.strength})</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    {med.status}
-                  </Badge>
-                </div>
-                <div className="text-slate-600 font-medium">
-                  {med.frequency} • {med.instructions}
-                </div>
-                <div className="text-[11px] text-slate-500 pt-1">
-                  Prescribed by {med.prescribing_doctor} for {med.related_condition}.
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {/* Target Status Banner */}
+      <div className="rounded-2xl border border-teal-200/80 bg-white p-4 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span className="text-xs font-bold text-slate-900">Care Plan Status: Well-Controlled</span>
+          </div>
+          <span className="text-[11px] font-semibold text-teal-800">Target &lt; 7.0%</span>
+        </div>
 
-        {/* Preventative Screening Cadence */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-teal-700" />
-              Diabetic Preventive Screening Schedule
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50/50 text-xs">
-              <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-900 block">Annual Dilated Eye Screening</span>
-                <span className="text-slate-600 block">Completed Nov 14, 2026 with Dr. Sarah Jenkins. Result: No microvascular disease.</span>
-                <span className="text-[10px] text-emerald-800 font-semibold block mt-1">Next Due: November 2027</span>
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
+          <div className="p-2 rounded-xl bg-slate-50">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">HbA1c</span>
+            <span className="text-base font-extrabold text-teal-900">6.8%</span>
+            <span className="text-[9px] text-emerald-700 block font-semibold">Goal Met</span>
+          </div>
+
+          <div className="p-2 rounded-xl bg-slate-50">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Fasting</span>
+            <span className="text-base font-extrabold text-slate-900">118</span>
+            <span className="text-[9px] text-slate-400 block font-medium">mg/dL</span>
+          </div>
+
+          <div className="p-2 rounded-xl bg-slate-50">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">eGFR Kidney</span>
+            <span className="text-base font-extrabold text-slate-900">68</span>
+            <span className="text-[9px] text-slate-500 block font-medium">Stage 2</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Grouped List: Active Glycemic Regimen */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Prescribed Pharmacotherapy
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          {diabetesMeds.map((med) => (
+            <div key={med.id} className="p-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-800 shrink-0">
+                  <Pill className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">{med.name}</span>
+                    <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
+                      {med.strength}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    {med.frequency} • {med.instructions}
+                  </span>
+                </div>
               </div>
             </div>
+          ))}
+        </div>
+      </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50/50 text-xs">
-              <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-900 block">Quarterly HbA1c & Metabolic Panel</span>
-                <span className="text-slate-600 block">Completed Nov 2, 2026 at Quest Diagnostics (6.8%).</span>
-                <span className="text-[10px] text-emerald-800 font-semibold block mt-1">Next Due: February 2027</span>
+      {/* Grouped List: Preventive Screening Cadence */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Preventive Screening Cadence
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          <div className="p-3.5 flex items-start gap-3">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Diabetic Retinal Exam</span>
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Completed Nov 14
+                </span>
               </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                Valley Eye Center (Dr. Jenkins): Dilated fundus examination negative for retinopathy. Next due Nov 2027.
+              </p>
             </div>
+          </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50/50 text-xs">
-              <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-slate-900 block">Urine Albumin-to-Creatinine Ratio (UACR)</span>
-                <span className="text-slate-600 block">Renal microalbumin monitoring for Stage 2 CKD.</span>
-                <span className="text-[10px] text-amber-800 font-semibold block mt-1">Scheduled to be reviewed with Dr. Wei on Dec 8</span>
+          <div className="p-3.5 flex items-start gap-3">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Metabolic Panel & HbA1c</span>
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Completed Nov 2
+                </span>
               </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                Quest Diagnostics: HbA1c 6.8%, Fasting Glucose 118. Next quarterly review due Feb 2027.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="p-3.5 flex items-start gap-3">
+            <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Urine Microalbumin (UACR)</span>
+                <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  Discussion Dec 8
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                Renal microalbumin monitoring for Stage 2 CKD on appointment agenda with Dr. Catherine Wei.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

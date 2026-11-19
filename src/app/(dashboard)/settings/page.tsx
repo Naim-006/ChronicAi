@@ -6,17 +6,12 @@ import {
   Bell,
   Lock,
   Download,
-  Trash2,
   Sparkles,
   CheckCircle2,
   Globe,
   Save,
+  ChevronRight,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { mockProfile } from "@/lib/mock-data";
 
 export default function SettingsPage() {
@@ -28,7 +23,7 @@ export default function SettingsPage() {
 
   const handleSave = () => {
     setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setTimeout(() => setIsSaved(false), 2500);
   };
 
   const handleExportData = () => {
@@ -43,171 +38,143 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Settings & Privacy Preferences"
-        description="Configure your personal health preferences, AI explanation depth, notifications, and export your complete health data."
-        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "Settings" }]}
-        actions={
-          <Button
-            size="sm"
-            onClick={handleSave}
-            className="text-xs h-8 gap-1.5 bg-teal-700 hover:bg-teal-800 text-white"
-          >
-            <Save className="h-3.5 w-3.5" />
-            Save Preferences
-          </Button>
-        }
-      />
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+            Settings & Preferences
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Configure AI explanation depth, notifications & export health records.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSave}
+          className="flex items-center gap-1.5 rounded-full bg-teal-800 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all"
+        >
+          <Save className="h-3.5 w-3.5" />
+          <span>Save</span>
+        </button>
+      </div>
 
       {isSaved && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 flex items-center gap-2">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           Settings successfully saved.
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: AI & Health Preferences */}
-        <div className="space-y-6">
-          {/* AI Explanation Customization */}
-          <Card>
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-teal-700" />
-                AI Explanation Complexity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3 text-xs">
-              <p className="text-slate-600 text-xs leading-relaxed">
-                Choose how the Medical AI synthesizes lab results and medical documents.
-              </p>
-
-              <div className="space-y-2">
-                {[
-                  { id: "simple", label: "Layman / Plain Language", desc: "Clear, jargon-free explanations with simple analogies." },
-                  { id: "balanced", label: "Balanced (Recommended)", desc: "Clear explanations alongside exact clinical biomarker names and values." },
-                  { id: "detailed", label: "Clinical & Detailed", desc: "In-depth pathophysiological descriptions with medical terminology." },
-                ].map((tier) => (
-                  <label
-                    key={tier.id}
-                    onClick={() => setAiDepth(tier.id as any)}
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      aiDepth === tier.id ? "border-teal-600 bg-teal-50/50" : "border-slate-200 bg-white hover:bg-slate-50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="aiDepth"
-                      checked={aiDepth === tier.id}
-                      onChange={() => setAiDepth(tier.id as any)}
-                      className="mt-0.5 text-teal-700 focus:ring-teal-600"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-900 block">{tier.label}</span>
-                      <span className="text-[11px] text-slate-500 block">{tier.desc}</span>
-                    </div>
-                  </label>
-                ))}
+      {/* Group 1: AI Explanation Complexity */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          AI Explanation Complexity
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          {[
+            { id: "simple", label: "Layman / Plain Language", desc: "Clear, conversational explanations with simple analogies." },
+            { id: "balanced", label: "Balanced (Recommended)", desc: "Clear explanations alongside exact clinical biomarker names and values." },
+            { id: "detailed", label: "Clinical & Detailed", desc: "In-depth physiological explanations and terminology." },
+          ].map((tier) => (
+            <div
+              key={tier.id}
+              onClick={() => setAiDepth(tier.id as any)}
+              className="p-3.5 flex items-start gap-3 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="aiDepth"
+                checked={aiDepth === tier.id}
+                onChange={() => setAiDepth(tier.id as any)}
+                className="mt-1 text-teal-800 focus:ring-teal-700"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-bold text-slate-900 block">{tier.label}</span>
+                <span className="text-[11px] text-slate-500 block leading-relaxed mt-0.5">{tier.desc}</span>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Language & Regional Settings */}
-          <Card>
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Globe className="h-4 w-4 text-teal-700" />
-                Language & Regional Standards
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Primary Language</label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full rounded-md border border-slate-200 p-2 text-xs"
-                >
-                  <option value="en">English (US)</option>
-                  <option value="es">Español</option>
-                  <option value="fr">Français</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Standard Laboratory Units</label>
-                <select className="w-full rounded-md border border-slate-200 p-2 text-xs">
-                  <option value="us">US Standard (mg/dL for glucose, mmHg for BP)</option>
-                  <option value="si">SI Units (mmol/L for glucose, kPa for BP)</option>
-                </select>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Right Column: Notifications & Data Portability */}
-        <div className="space-y-6">
-          {/* Notification Preferences */}
-          <Card>
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Bell className="h-4 w-4 text-teal-700" />
-                Notification Channels & Schedules
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3 text-xs">
-              <label className="flex items-center justify-between p-2.5 rounded border border-slate-200">
-                <div>
-                  <span className="font-bold text-slate-800 block">Medication Dosing Reminders</span>
-                  <span className="text-[11px] text-slate-500">Scheduled reminders for morning and evening doses.</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifMeds}
-                  onChange={(e) => setNotifMeds(e.target.checked)}
-                  className="h-4 w-4 rounded text-teal-700 focus:ring-teal-600"
-                />
-              </label>
+      {/* Group 2: Regional & Laboratory Standards */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Language & Units
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden text-xs">
+          <div className="p-3.5 flex items-center justify-between">
+            <span className="font-semibold text-slate-700">Display Language</span>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            >
+              <option value="en">English (US)</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
 
-              <label className="flex items-center justify-between p-2.5 rounded border border-slate-200">
-                <div>
-                  <span className="font-bold text-slate-800 block">Doctor Visit & Follow-Up Alerts</span>
-                  <span className="text-[11px] text-slate-500">Alerts 24 hours and 2 hours prior to scheduled consultations.</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifApts}
-                  onChange={(e) => setNotifApts(e.target.checked)}
-                  className="h-4 w-4 rounded text-teal-700 focus:ring-teal-600"
-                />
-              </label>
-            </CardContent>
-          </Card>
+          <div className="p-3.5 flex items-center justify-between">
+            <span className="font-semibold text-slate-700">Lab Units Format</span>
+            <span className="text-slate-500 font-medium">US Standard (mg/dL, mmHg)</span>
+          </div>
+        </div>
+      </div>
 
-          {/* Data Portability (HIPAA / GDPR) */}
-          <Card className="border-slate-300">
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Download className="h-4 w-4 text-teal-700" />
-                Data Portability & Export
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3 text-xs leading-relaxed text-slate-600">
-              <p>
-                You have absolute ownership of your healthcare data. You can download a structured copy of your entire health profile, documents, and measurements at any time.
-              </p>
+      {/* Group 3: Notifications */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Reminders & Alerts
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden text-xs">
+          <label className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50">
+            <div>
+              <span className="font-bold text-slate-900 block">Medication Dosing Reminders</span>
+              <span className="text-[11px] text-slate-500">Alerts for morning (08:00) and evening (20:00) doses.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={notifMeds}
+              onChange={(e) => setNotifMeds(e.target.checked)}
+              className="h-4 w-4 rounded text-teal-800 focus:ring-teal-700"
+            />
+          </label>
 
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleExportData}
-                className="text-xs h-8 gap-1.5 w-full border-slate-300 text-slate-800 hover:bg-slate-50"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Export Complete Medical Life Record (JSON)
-              </Button>
-            </CardContent>
-          </Card>
+          <label className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50">
+            <div>
+              <span className="font-bold text-slate-900 block">Appointment Reminders</span>
+              <span className="text-[11px] text-slate-500">Alerts 24 hours prior to scheduled visits.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={notifApts}
+              onChange={(e) => setNotifApts(e.target.checked)}
+              className="h-4 w-4 rounded text-teal-800 focus:ring-teal-700"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Group 4: Data Portability (Export JSON) */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Data Ownership & Portability
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs p-4 space-y-2 text-xs">
+          <p className="text-slate-600 leading-relaxed">
+            Download an encrypted, structured JSON archive containing your entire personal health life record, verified laboratory values, and prescriptions.
+          </p>
+          <button
+            type="button"
+            onClick={handleExportData}
+            className="flex items-center justify-center gap-1.5 w-full rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors"
+          >
+            <Download className="h-3.5 w-3.5 text-teal-800" />
+            <span>Export Complete Health Record (JSON)</span>
+          </button>
         </div>
       </div>
     </div>

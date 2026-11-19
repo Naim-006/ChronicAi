@@ -15,24 +15,13 @@ import {
   Activity,
   Plus,
   TrendingDown,
-  TrendingUp,
-  Filter,
-  Calendar,
-  CheckCircle2,
-  AlertCircle,
+  ChevronRight,
+  X,
   FileSpreadsheet,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { mockHealthMetrics, mockDocuments } from "@/lib/mock-data";
-import { formatDate } from "@/lib/utils";
+import { mockHealthMetrics } from "@/lib/mock-data";
 
-// Glucose Trend Data for Chart
-const glucoseChartData = [
+const glucoseData = [
   { date: "Nov 15", fasting: 114, postprandial: 142 },
   { date: "Nov 16", fasting: 120, postprandial: 135 },
   { date: "Nov 17", fasting: 128, postprandial: 148 },
@@ -40,8 +29,7 @@ const glucoseChartData = [
   { date: "Nov 19", fasting: 118, postprandial: 132 },
 ];
 
-// Blood Pressure Trend Data
-const bpChartData = [
+const bpData = [
   { date: "May 26", systolic: 132, diastolic: 82 },
   { date: "Aug 26", systolic: 126, diastolic: 78 },
   { date: "Nov 15", systolic: 126, diastolic: 80 },
@@ -49,355 +37,218 @@ const bpChartData = [
 ];
 
 export default function MetricsPage() {
-  const [metrics, setMetrics] = useState(mockHealthMetrics);
-  const [activeTab, setActiveTab] = useState("glucose");
+  const [activeTab, setActiveTab] = useState<"glucose" | "bp" | "comparison">("glucose");
   const [showLogModal, setShowLogModal] = useState(false);
 
-  // New measurement form state
-  const [newType, setNewType] = useState("glucose");
-  const [newVal1, setNewVal1] = useState("");
-  const [newVal2, setNewVal2] = useState("");
-  const [newContext, setNewContext] = useState("fasting");
-  const [newNotes, setNewNotes] = useState("");
-
-  const handleAddMeasurement = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newVal1) return;
-
-    const newMetric = {
-      id: `met-${Date.now()}`,
-      user_id: "user-elena-vance",
-      metric_type: newType as any,
-      value_primary: parseFloat(newVal1),
-      value_secondary: newVal2 ? parseFloat(newVal2) : undefined,
-      unit: newType === "glucose" ? "mg/dL" : newType === "blood_pressure" ? "mmHg" : "kg",
-      context: newContext as any,
-      recorded_at: new Date().toISOString(),
-      notes: newNotes,
-      created_at: new Date().toISOString(),
-    };
-
-    setMetrics((prev) => [newMetric, ...prev]);
-    setShowLogModal(false);
-    setNewVal1("");
-    setNewVal2("");
-    setNewNotes("");
-  };
+  // Form state
+  const [val1, setVal1] = useState("");
+  const [val2, setVal2] = useState("");
+  const [context, setContext] = useState("fasting");
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Health Analytics & Measurements"
-        description="Monitor time-series trends in blood glucose, HbA1c, blood pressure, and compare longitudinal laboratory reports."
-        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "Health Analytics" }]}
-        actions={
-          <Button
-            size="sm"
-            onClick={() => setShowLogModal(true)}
-            className="text-xs h-8 gap-1.5 bg-teal-700 hover:bg-teal-800 text-white"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Log Measurement
-          </Button>
-        }
-      />
+    <div className="space-y-5">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+            Health Analytics
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Longitudinal biometrics & laboratory comparisons.
+          </p>
+        </div>
 
-      {/* Manual Measurement Modal */}
+        <button
+          type="button"
+          onClick={() => setShowLogModal(true)}
+          className="flex items-center gap-1.5 rounded-full bg-teal-800 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          <span>Log</span>
+        </button>
+      </div>
+
+      {/* Log Modal */}
       {showLogModal && (
-        <Card className="border-2 border-teal-600 bg-white p-5 shadow-lg">
-          <CardHeader className="p-0 pb-4 border-b border-slate-100 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-bold text-slate-900">
-              Record Health Biometric
-            </CardTitle>
-            <Button
-              size="sm"
-              variant="ghost"
+        <div className="rounded-2xl border border-teal-300 bg-white p-4 shadow-md space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <span className="text-xs font-bold text-slate-900">Log Health Metric</span>
+            <button
+              type="button"
               onClick={() => setShowLogModal(false)}
-              className="h-7 w-7 p-0 text-slate-400"
+              className="text-slate-400 hover:text-slate-700"
             >
-              ×
-            </Button>
-          </CardHeader>
-          <form onSubmit={handleAddMeasurement} className="mt-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-3 text-xs">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Biometric Type
-                </label>
-                <select
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-600"
-                >
-                  <option value="glucose">Blood Glucose (mg/dL)</option>
-                  <option value="blood_pressure">Blood Pressure (mmHg)</option>
-                  <option value="hba1c">Hemoglobin A1c (%)</option>
-                  <option value="weight">Body Weight (kg)</option>
-                  <option value="heart_rate">Heart Rate (bpm)</option>
+                <label className="font-semibold text-slate-700 block mb-1">Metric</label>
+                <select className="w-full h-8 rounded-lg border border-slate-200 px-2 text-xs">
+                  <option>Blood Glucose (mg/dL)</option>
+                  <option>Blood Pressure (mmHg)</option>
+                  <option>Body Weight (kg)</option>
                 </select>
               </div>
-
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Context / Timing
-                </label>
+                <label className="font-semibold text-slate-700 block mb-1">Timing</label>
                 <select
-                  value={newContext}
-                  onChange={(e) => setNewContext(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-600"
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  className="w-full h-8 rounded-lg border border-slate-200 px-2 text-xs"
                 >
-                  <option value="fasting">Fasting (Morning before meal)</option>
-                  <option value="postprandial">Postprandial (2h after meal)</option>
+                  <option value="fasting">Fasting</option>
+                  <option value="postprandial">Post-Meal (2h)</option>
                   <option value="resting">Resting</option>
-                  <option value="bedtime">Bedtime</option>
                 </select>
               </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  {newType === "blood_pressure" ? "Systolic (Upper)" : "Value *"}
-                </label>
-                <Input
-                  required
-                  type="number"
-                  step="0.1"
-                  placeholder={newType === "glucose" ? "e.g. 118" : newType === "hba1c" ? "e.g. 6.8" : "e.g. 120"}
-                  value={newVal1}
-                  onChange={(e) => setNewVal1(e.target.value)}
-                  className="text-xs"
-                />
-              </div>
-
-              {newType === "blood_pressure" && (
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Diastolic (Lower) *
-                  </label>
-                  <Input
-                    required
-                    type="number"
-                    placeholder="e.g. 80"
-                    value={newVal2}
-                    onChange={(e) => setNewVal2(e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-              )}
             </div>
-
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Measurement Notes
-              </label>
-              <Input
-                placeholder="e.g. Seated 5 min, left arm cuff"
-                value={newNotes}
-                onChange={(e) => setNewNotes(e.target.value)}
-                className="text-xs"
+              <label className="font-semibold text-slate-700 block mb-1">Measurement Value</label>
+              <input
+                type="number"
+                placeholder="e.g. 118"
+                value={val1}
+                onChange={(e) => setVal1(e.target.value)}
+                className="w-full h-8 rounded-lg border border-slate-200 px-2.5 text-xs"
               />
             </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <Button
+            <div className="flex justify-end gap-2 pt-1">
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={() => setShowLogModal(false)}
-                className="text-xs h-8"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600"
               >
                 Cancel
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                className="bg-teal-700 hover:bg-teal-800 text-white text-xs h-8"
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLogModal(false)}
+                className="px-3.5 py-1.5 rounded-lg bg-teal-800 text-xs font-semibold text-white"
               >
-                Save Measurement
-              </Button>
+                Save
+              </button>
             </div>
-          </form>
-        </Card>
+          </div>
+        </div>
       )}
 
-      {/* Analytics Tabs: Charts & Comparative Matrix */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-slate-100">
-          <TabsTrigger value="glucose">Blood Glucose Trends</TabsTrigger>
-          <TabsTrigger value="bp">Blood Pressure</TabsTrigger>
-          <TabsTrigger value="comparison">Lab Report Comparison Matrix</TabsTrigger>
-        </TabsList>
+      {/* Segmented Tab Bar (iOS Style) */}
+      <div className="flex rounded-xl bg-slate-200/80 p-1 text-xs">
+        {[
+          { id: "glucose", label: "Glucose" },
+          { id: "bp", label: "Blood Pressure" },
+          { id: "comparison", label: "Lab Matrix" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex-1 py-1.5 rounded-lg text-center font-semibold transition-all cursor-pointer ${
+              activeTab === tab.id
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Tab 1: Glucose Chart */}
-        <TabsContent value="glucose" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+      {/* Tab 1: Glucose Trends */}
+      {activeTab === "glucose" && (
+        <div className="rounded-2xl bg-white border border-slate-200/80 p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-900 block">
+                Daily Glucose Readings (mg/dL)
+              </span>
+              <span className="text-[11px] text-slate-400">Target Fasting: 70 – 130 mg/dL</span>
+            </div>
+            <span className="text-xs font-bold text-teal-800">118 mg/dL today</span>
+          </div>
+
+          <div className="h-60 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={glucoseData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} />
+                <YAxis stroke="#94a3b8" fontSize={11} domain={[80, 170]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0", borderRadius: 12, fontSize: 11 }}
+                />
+                <ReferenceLine y={130} stroke="#f59e0b" strokeDasharray="3 3" />
+                <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
+                <Line type="monotone" dataKey="fasting" name="Fasting" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="postprandial" name="Post-meal" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="3 3" dot={{ r: 2 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Blood Pressure */}
+      {activeTab === "bp" && (
+        <div className="rounded-2xl bg-white border border-slate-200/80 p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-900 block">
+                Blood Pressure (mmHg)
+              </span>
+              <span className="text-[11px] text-slate-400">Target in Diabetes: &lt; 130/80</span>
+            </div>
+            <span className="text-xs font-bold text-teal-800">122/78 mmHg</span>
+          </div>
+
+          <div className="h-60 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={bpData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} />
+                <YAxis stroke="#94a3b8" fontSize={11} domain={[60, 150]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0", borderRadius: 12, fontSize: 11 }}
+                />
+                <ReferenceLine y={130} stroke="#f59e0b" strokeDasharray="3 3" />
+                <ReferenceLine y={80} stroke="#f59e0b" strokeDasharray="3 3" />
+                <Line type="monotone" dataKey="systolic" name="Systolic" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="diastolic" name="Diastolic" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Lab Comparison Matrix (Grouped Rows) */}
+      {activeTab === "comparison" && (
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          <div className="p-3.5 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-900">Lab Biomarker</span>
+            <span className="font-semibold text-slate-500">Nov 2026 vs May 2026</span>
+          </div>
+
+          {[
+            { name: "Hemoglobin A1c", latest: "6.8 %", prev: "7.1 %", goal: "< 7.0 %", improved: true },
+            { name: "Fasting Glucose", latest: "118 mg/dL", prev: "126 mg/dL", goal: "70 - 130", improved: true },
+            { name: "Estimated GFR (eGFR)", latest: "68 mL/min", prev: "66 mL/min", goal: "> 60 (CKD2)", stable: true },
+            { name: "Serum Creatinine", latest: "1.04 mg/dL", prev: "1.08 mg/dL", goal: "0.50 - 1.10", stable: true },
+            { name: "Total Cholesterol", latest: "168 mg/dL", prev: "174 mg/dL", goal: "< 200", improved: true },
+          ].map((row, i) => (
+            <div key={i} className="flex items-center justify-between p-3.5 hover:bg-slate-50/70 transition-colors">
               <div>
-                <CardTitle className="text-sm font-bold text-slate-900">
-                  Fasting & Postprandial Blood Glucose (mg/dL)
-                </CardTitle>
-                <p className="text-xs text-slate-500">
-                  Daily fingerstick records over the last 5 days. Target range: 70 – 130 mg/dL fasting.
-                </p>
+                <span className="text-xs font-bold text-slate-900 block">{row.name}</span>
+                <span className="text-[11px] text-slate-400">Target: {row.goal}</span>
               </div>
-              <Badge variant="success" className="text-xs">
-                In Target Range
-              </Badge>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={glucoseChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                    <YAxis stroke="#64748b" fontSize={11} domain={[80, 180]} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#ffffff", borderColor: "#cbd5e1", borderRadius: 8, fontSize: 12 }}
-                    />
-                    {/* Clinical Reference Target Bands */}
-                    <ReferenceLine y={130} stroke="#b45309" strokeDasharray="4 4" label={{ value: "Fasting Upper Goal (130)", fill: "#b45309", fontSize: 10 }} />
-                    <ReferenceLine y={70} stroke="#b45309" strokeDasharray="4 4" label={{ value: "Fasting Lower Goal (70)", fill: "#b45309", fontSize: 10 }} />
-                    <Line type="monotone" dataKey="fasting" name="Fasting Glucose" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                    <Line type="monotone" dataKey="postprandial" name="Postprandial (2h)" stroke="#64748b" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="text-right">
+                <span className="text-xs font-bold text-teal-900 block">{row.latest}</span>
+                <span className="text-[10px] text-emerald-700 font-medium">
+                  {row.improved ? "✓ Improved" : "Stable"} (Prev: {row.prev})
+                </span>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab 2: Blood Pressure Chart */}
-        <TabsContent value="bp" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-sm font-bold text-slate-900">
-                  Blood Pressure Trajectory (mmHg)
-                </CardTitle>
-                <p className="text-xs text-slate-500">
-                  Systolic & Diastolic readings. Clinical goal in diabetic renal protection: &lt; 130/80 mmHg.
-                </p>
-              </div>
-              <Badge variant="success" className="text-xs">
-                Controlled on Lisinopril
-              </Badge>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={bpChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                    <YAxis stroke="#64748b" fontSize={11} domain={[60, 150]} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#ffffff", borderColor: "#cbd5e1", borderRadius: 8, fontSize: 12 }}
-                    />
-                    <ReferenceLine y={130} stroke="#b45309" strokeDasharray="3 3" label={{ value: "Target Systolic (130)", fill: "#b45309", fontSize: 10 }} />
-                    <ReferenceLine y={80} stroke="#b45309" strokeDasharray="3 3" label={{ value: "Target Diastolic (80)", fill: "#b45309", fontSize: 10 }} />
-                    <Line type="monotone" dataKey="systolic" name="Systolic" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="diastolic" name="Diastolic" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab 3: Laboratory Report Comparison Matrix */}
-        <TabsContent value="comparison" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-bold text-slate-900">
-                Multi-Report Laboratory Comparison Matrix
-              </CardTitle>
-              <p className="text-xs text-slate-500">
-                Direct comparative delta between your recent Quest Diagnostics laboratory panels.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-600">
-                      <th className="p-3 font-semibold">Laboratory Biomarker</th>
-                      <th className="p-3 font-semibold">Nov 2, 2026 (Latest)</th>
-                      <th className="p-3 font-semibold">May 18, 2026</th>
-                      <th className="p-3 font-semibold">Nov 10, 2025</th>
-                      <th className="p-3 font-semibold">Standard Reference</th>
-                      <th className="p-3 font-semibold">Clinical Trajectory</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="p-3 font-bold text-slate-900">Hemoglobin A1c</td>
-                      <td className="p-3 font-bold text-teal-800">6.8 %</td>
-                      <td className="p-3 text-slate-700">7.1 %</td>
-                      <td className="p-3 text-slate-700">7.4 %</td>
-                      <td className="p-3 text-slate-500">&lt; 7.0 % (Diabetic Goal)</td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px]">
-                          <TrendingDown className="h-3 w-3" /> Improved (-0.6%)
-                        </span>
-                      </td>
-                    </tr>
-
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="p-3 font-bold text-slate-900">Fasting Plasma Glucose</td>
-                      <td className="p-3 font-bold text-slate-900">118 mg/dL</td>
-                      <td className="p-3 text-slate-700">126 mg/dL</td>
-                      <td className="p-3 text-slate-700">135 mg/dL</td>
-                      <td className="p-3 text-slate-500">70 - 130 mg/dL</td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px]">
-                          <TrendingDown className="h-3 w-3" /> Improved (-17 mg/dL)
-                        </span>
-                      </td>
-                    </tr>
-
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="p-3 font-bold text-slate-900">Estimated GFR (eGFR)</td>
-                      <td className="p-3 font-bold text-slate-900">68 mL/min</td>
-                      <td className="p-3 text-slate-700">66 mL/min</td>
-                      <td className="p-3 text-slate-700">67 mL/min</td>
-                      <td className="p-3 text-slate-500">&gt; 60 mL/min/1.73m2</td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center gap-1 text-slate-700 font-medium bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                          Stable (CKD Stage 2)
-                        </span>
-                      </td>
-                    </tr>
-
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="p-3 font-bold text-slate-900">Serum Creatinine</td>
-                      <td className="p-3 font-bold text-slate-900">1.04 mg/dL</td>
-                      <td className="p-3 text-slate-700">1.08 mg/dL</td>
-                      <td className="p-3 text-slate-700">1.06 mg/dL</td>
-                      <td className="p-3 text-slate-500">0.50 - 1.10 mg/dL</td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center gap-1 text-slate-700 font-medium bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                          Normal Baseline
-                        </span>
-                      </td>
-                    </tr>
-
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="p-3 font-bold text-slate-900">Total Cholesterol</td>
-                      <td className="p-3 font-bold text-slate-900">168 mg/dL</td>
-                      <td className="p-3 text-slate-700">174 mg/dL</td>
-                      <td className="p-3 text-slate-700">182 mg/dL</td>
-                      <td className="p-3 text-slate-500">&lt; 200 mg/dL</td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px]">
-                          <TrendingDown className="h-3 w-3" /> Controlled (Atorvastatin)
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

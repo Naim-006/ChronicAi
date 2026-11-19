@@ -8,355 +8,362 @@ import {
   Clock,
   Sparkles,
   Pill,
-  ArrowRight,
-  TrendingDown,
+  ChevronRight,
   AlertCircle,
   FileText,
   Plus,
+  Check,
+  TrendingDown,
+  UploadCloud,
   CheckCircle2,
-  CalendarClock,
-  Upload,
+  Stethoscope,
+  HeartPulse,
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { StatCard } from "@/components/shared/StatCard";
-import {
-  mockProfile,
-  mockMedications,
-  mockAppointments,
-  mockHealthMetrics,
-  mockTimelineEvents,
-  mockDocuments,
-} from "@/lib/mock-data";
+import { mockProfile, mockMedications, mockAppointments, mockTimelineEvents, mockDocuments } from "@/lib/mock-data";
 import { formatDate, formatTime } from "@/lib/utils";
 
 export default function DashboardPage() {
-  const [meds, setMeds] = useState(mockMedications);
-  const [loggedMeds, setLoggedMeds] = useState<Record<string, "taken" | "skipped">>({
-    "med-1": "taken",
-    "med-2": "taken",
-    "med-3": "taken",
+  const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({
+    "med-1": true,
+    "med-2": true,
+    "med-3": true,
+    "med-4": false,
   });
 
   const nextAppointment = mockAppointments.find((a) => a.status === "upcoming") || mockAppointments[0];
   const pendingReviewDocs = mockDocuments.filter((d) => d.status === "needs_review");
 
-  const handleMedAction = (medId: string, status: "taken" | "skipped") => {
+  const toggleMed = (medId: string) => {
     setLoggedMeds((prev) => ({
       ...prev,
-      [medId]: status,
+      [medId]: !prev[medId],
     }));
   };
 
   return (
     <div className="space-y-6">
-      {/* Top Greeting & Verification Banner */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {/* 1. Human Greeting & Health Context Banner */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Good morning, {mockProfile.full_name}
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+            Good morning, Elena
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Here is your longitudinal health summary as of{" "}
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })}.
+            Your conditions (Type 2 Diabetes, HTN, CKD2) are stable today.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link href="/vault">
-            <Button size="sm" variant="outline" className="text-xs h-8 gap-1.5">
-              <Upload className="h-3.5 w-3.5 text-slate-500" />
-              Upload Report
-            </Button>
-          </Link>
-          <Link href="/assistant">
-            <Button size="sm" className="text-xs h-8 gap-1.5 bg-teal-700 hover:bg-teal-800 text-white">
-              <Sparkles className="h-3.5 w-3.5 text-teal-200" />
-              Ask Medical AI
-            </Button>
-          </Link>
-        </div>
+        <Link
+          href="/chronic-care"
+          className="flex items-center gap-1.5 rounded-full bg-teal-50 border border-teal-200/80 px-3 py-1 text-xs font-semibold text-teal-800 hover:bg-teal-100 transition-colors"
+        >
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Diabetes Care</span>
+          <ChevronRight className="h-3.5 w-3.5 text-teal-600" />
+        </Link>
       </div>
 
-      {/* Verification Queue Alert if pending documents exist */}
+      {/* 2. Action Required Alert (if document needs review) */}
       {pendingReviewDocs.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3.5 text-amber-900 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-amber-100 p-1.5 text-amber-700 shrink-0">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 transition-all">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-amber-100 p-2 text-amber-700 shrink-0">
               <AlertCircle className="h-4 w-4" />
             </div>
-            <div>
-              <span className="text-xs font-semibold block">Document Extraction Verification Needed</span>
-              <span className="text-[11px] text-amber-800 block">
-                {pendingReviewDocs.length} new document ({pendingReviewDocs[0].file_name}) has been parsed. Review and confirm clinical facts.
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-bold text-amber-950 block">
+                Verification Required: {pendingReviewDocs[0].file_name}
               </span>
+              <p className="text-xs text-amber-800/90 mt-0.5 line-clamp-1">
+                New clinical notes from Valley Eye Center parsed. Confirm findings to add to your timeline.
+              </p>
+              <div className="mt-2.5 flex items-center gap-2">
+                <Link
+                  href="/vault"
+                  className="inline-flex items-center gap-1 rounded-lg bg-amber-800 px-3 py-1 text-xs font-semibold text-white shadow-xs hover:bg-amber-900 transition-colors"
+                >
+                  Review Extracted Data
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
           </div>
-          <Link href="/vault">
-            <Button size="sm" variant="outline" className="text-xs h-7 border-amber-300 text-amber-900 hover:bg-amber-100 shrink-0">
-              Review Now
-            </Button>
-          </Link>
         </div>
       )}
 
-      {/* Key Health Metrics Overview */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Fasting Glucose"
-          value={118}
-          unit="mg/dL"
-          subtitle="Target: 70 - 130 mg/dL"
-          icon={Activity}
-          status="normal"
-          trend={{ value: "4 mg/dL lower than yesterday", isPositive: true }}
-        />
-        <StatCard
-          title="Latest HbA1c"
-          value={6.8}
-          unit="%"
-          subtitle="Target: < 7.0%"
-          icon={TrendingDown}
-          status="normal"
-          trend={{ value: "-0.3% from May 2026", isPositive: true }}
-        />
-        <StatCard
-          title="Blood Pressure"
-          value="122/78"
-          unit="mmHg"
-          subtitle="Resting (Omron Cuff)"
-          icon={Activity}
-          status="normal"
-          trend={{ value: "Stable in target zone", isNeutral: true }}
-        />
-        <StatCard
-          title="Medication Adherence"
-          value="100%"
-          unit="7-day avg"
-          subtitle="4 active prescriptions"
-          icon={Pill}
-          status="normal"
-          trend={{ value: "All morning doses taken", isPositive: true }}
-        />
-      </div>
-
-      {/* Main Grid: Left Column (Medications & Timeline), Right Column (Appointments & AI Insight) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column (Span 2) */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Today's Medication Schedule */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle>Today's Medication Schedule</CardTitle>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Track your daily prescribed doses. End of course requires confirmation.
-                </p>
-              </div>
-              <Link href="/medications" className="text-xs font-medium text-teal-700 hover:underline flex items-center gap-1">
-                View all ({meds.length})
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              <div className="divide-y divide-slate-100">
-                {meds.map((med) => {
-                  const state = loggedMeds[med.id];
-                  return (
-                    <div key={med.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-2">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-md bg-slate-100 text-slate-600 mt-0.5">
-                          <Pill className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-900">{med.name}</span>
-                            <Badge variant="outline" className="text-[10px] py-0">
-                              {med.strength}
-                            </Badge>
-                          </div>
-                          <span className="text-xs text-slate-500 block mt-0.5">
-                            {med.frequency} • {med.instructions}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
-                        {state === "taken" ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Taken
-                          </span>
-                        ) : state === "skipped" ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md">
-                            Skipped
-                          </span>
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleMedAction(med.id, "taken")}
-                              className="text-xs h-7 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                            >
-                              Mark Taken
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleMedAction(med.id, "skipped")}
-                              className="text-xs h-7 text-slate-500 hover:bg-slate-100"
-                            >
-                              Skip
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Medical Journey Activity */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle>Recent Medical Activity</CardTitle>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Chronological records from your lifelong health timeline.
-                </p>
-              </div>
-              <Link href="/timeline" className="text-xs font-medium text-teal-700 hover:underline flex items-center gap-1">
-                Full timeline
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-                {mockTimelineEvents.slice(0, 3).map((event) => (
-                  <div key={event.id} className="relative">
-                    <div className="absolute -left-6 top-1 h-3 w-3 rounded-full border-2 border-white bg-teal-700 shadow-xs" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-900">{event.title}</span>
-                        <Badge variant="secondary" className="text-[10px] py-0 capitalize">
-                          {event.event_type.replace("_", " ")}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                        {event.description}
-                      </p>
-                      <span className="text-[11px] text-slate-400 mt-1 block">
-                        {formatDate(event.event_date)} • {event.facility_or_doctor}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+      {/* 3. Daily Health Status Snapshot (Compact 3-Pill Strip, Apple Health Style) */}
+      <div>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Vital Indicators
+          </span>
+          <Link href="/metrics" className="text-xs font-medium text-teal-800 hover:underline">
+            View Analytics
+          </Link>
         </div>
 
-        {/* Right Column (Span 1) */}
-        <div className="space-y-6">
-          {/* Grounded AI Medical Insight Card */}
-          <Card className="border-teal-200 bg-teal-50/40">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2 text-teal-800">
-                <Sparkles className="h-4 w-4" />
-                <CardTitle className="text-sm font-semibold text-teal-900">
-                  AI Context Insight
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-xs text-slate-700 leading-relaxed">
-                Your HbA1c from Quest Diagnostics has dropped from <strong>7.1%</strong> in May 2026 to <strong>6.8%</strong> in November 2026, reaching your clinical target of &lt; 7.0%.
-              </p>
-              <div className="rounded-md border border-teal-200 bg-white p-2.5 text-[11px] text-slate-600 space-y-1">
-                <span className="font-semibold text-slate-800 block">Sourced from:</span>
-                <span className="text-slate-500 block truncate">• Metabolic_Lipid_Panel_Nov2026.pdf (Quest)</span>
-                <span className="text-slate-500 block truncate">• Comprehensive_Metabolic_Panel_May2026.pdf</span>
-              </div>
-              <Link href="/assistant" className="inline-block w-full">
-                <Button size="sm" variant="outline" className="w-full text-xs h-8 border-teal-300 text-teal-900 hover:bg-teal-100">
-                  Explore with Assistant
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-3 gap-2.5">
+          <Link
+            href="/metrics"
+            className="rounded-2xl bg-white p-3 border border-slate-200/80 shadow-xs hover:border-teal-300 transition-all text-center sm:text-left"
+          >
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Fasting Glucose
+            </span>
+            <div className="mt-1 flex items-baseline justify-center sm:justify-start gap-1">
+              <span className="text-lg font-bold text-slate-900">118</span>
+              <span className="text-[10px] text-slate-500 font-medium">mg/dL</span>
+            </div>
+            <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
+              ● In Target
+            </span>
+          </Link>
 
-          {/* Upcoming Appointment Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Upcoming Appointment</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3.5 space-y-2.5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-xs font-bold text-slate-900 block">{nextAppointment.doctor_name}</span>
-                    <span className="text-[11px] text-teal-700 font-medium block">{nextAppointment.specialty}</span>
-                  </div>
-                  <Badge variant="outline" className="text-[10px]">
-                    {nextAppointment.status}
-                  </Badge>
-                </div>
+          <Link
+            href="/metrics"
+            className="rounded-2xl bg-white p-3 border border-slate-200/80 shadow-xs hover:border-teal-300 transition-all text-center sm:text-left"
+          >
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Latest HbA1c
+            </span>
+            <div className="mt-1 flex items-baseline justify-center sm:justify-start gap-1">
+              <span className="text-lg font-bold text-teal-800">6.8</span>
+              <span className="text-[10px] text-slate-500 font-medium">%</span>
+            </div>
+            <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
+              -0.3% Nov Panel
+            </span>
+          </Link>
 
-                <div className="text-xs text-slate-600 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                    <span>{formatDate(nextAppointment.appointment_date)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" />
-                    <span>{formatTime(nextAppointment.appointment_time)}</span>
-                  </div>
-                </div>
+          <Link
+            href="/metrics"
+            className="rounded-2xl bg-white p-3 border border-slate-200/80 shadow-xs hover:border-teal-300 transition-all text-center sm:text-left"
+          >
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Blood Pressure
+            </span>
+            <div className="mt-1 flex items-baseline justify-center sm:justify-start gap-1">
+              <span className="text-lg font-bold text-slate-900">122/78</span>
+              <span className="text-[10px] text-slate-500 font-medium">mmHg</span>
+            </div>
+            <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
+              Resting seated
+            </span>
+          </Link>
+        </div>
+      </div>
 
-                <div className="pt-2 border-t border-slate-200/80">
-                  <span className="text-[11px] font-semibold text-slate-700 block mb-1">AI Preparation Checklist:</span>
-                  <ul className="text-[11px] text-slate-500 space-y-0.5 list-disc pl-3.5">
-                    {nextAppointment.preparation_questions?.slice(0, 2).map((q, idx) => (
-                      <li key={idx}>{q}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+      {/* 4. Structured Grouped List: Today's Medication Schedule (Apple Health / Banking style) */}
+      <div>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Today's Medications
+          </span>
+          <Link href="/medications" className="text-xs font-medium text-teal-800 hover:underline">
+            Manage List
+          </Link>
+        </div>
 
-              <div className="mt-4">
-                <Link href="/appointments" className="w-full block">
-                  <Button size="sm" variant="outline" className="w-full text-xs h-8">
-                    Manage Appointments
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          {mockMedications.map((med) => {
+            const isTaken = loggedMeds[med.id];
+            return (
+              <div
+                key={med.id}
+                onClick={() => toggleMed(med.id)}
+                className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/70 transition-colors cursor-pointer select-none"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    type="button"
+                    aria-label={`Mark ${med.name} as taken`}
+                    className={`flex h-6 w-6 items-center justify-center rounded-full border transition-colors shrink-0 ${
+                      isTaken
+                        ? "bg-teal-700 border-teal-700 text-white"
+                        : "border-slate-300 hover:border-slate-400 bg-white"
+                    }`}
+                  >
+                    {isTaken && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                  </button>
 
-          {/* Active Health Conditions Summary */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Active Conditions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {mockProfile.chronic_conditions.map((cond) => (
-                  <div key={cond.id} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-0">
-                    <div>
-                      <span className="font-semibold text-slate-800 block">{cond.name}</span>
-                      <span className="text-[10px] text-slate-500">ICD: {cond.icd10} • Since {formatDate(cond.diagnosed_date)}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-bold truncate ${
+                          isTaken ? "text-slate-500 line-through" : "text-slate-900"
+                        }`}
+                      >
+                        {med.name}
+                      </span>
+                      <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
+                        {med.strength}
+                      </span>
                     </div>
-                    <Badge variant={cond.status === "active" ? "default" : "secondary"} className="text-[10px] capitalize">
-                      {cond.status}
-                    </Badge>
+                    <span className="text-[11px] text-slate-500 block truncate mt-0.5">
+                      {med.frequency}
+                    </span>
                   </div>
-                ))}
+                </div>
+
+                <div className="text-right shrink-0 pl-2">
+                  <span
+                    className={`text-[11px] font-semibold ${
+                      isTaken ? "text-emerald-700" : "text-slate-400"
+                    }`}
+                  >
+                    {isTaken ? "Taken" : "Tap to take"}
+                  </span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5. Next Consultation Compact Card */}
+      <div>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Next Doctor Visit
+          </span>
+          <Link href="/appointments" className="text-xs font-medium text-teal-800 hover:underline">
+            All Visits
+          </Link>
+        </div>
+
+        <Link
+          href="/appointments"
+          className="block rounded-2xl bg-white border border-slate-200/80 p-4 shadow-xs hover:border-slate-300 transition-all"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-800 shrink-0">
+                <Stethoscope className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 block">
+                  {nextAppointment.doctor_name}
+                </span>
+                <span className="text-[11px] text-teal-800 font-medium block">
+                  {nextAppointment.specialty} • {nextAppointment.clinic_or_hospital}
+                </span>
+                <span className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3 text-slate-400" />
+                  {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
+                </span>
+              </div>
+            </div>
+
+            <ChevronRight className="h-4 w-4 text-slate-400" />
+          </div>
+
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500 truncate max-w-[220px]">
+              Reason: {nextAppointment.reason}
+            </span>
+            <span className="text-teal-800 font-semibold flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              Preparation Ready
+            </span>
+          </div>
+        </Link>
+      </div>
+
+      {/* 6. AI Medical Health Query Banner (Integrated, Not Generic) */}
+      <div className="rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/60 to-emerald-50/40 p-4 shadow-xs">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-800 text-white">
+            <Sparkles className="h-3.5 w-3.5" />
+          </div>
+          <span className="text-xs font-bold text-teal-950">
+            Ask Your Medical Life Assistant
+          </span>
+        </div>
+        <p className="text-xs text-slate-600 leading-relaxed mb-3">
+          Instant answers grounded in your verified lab results, prescriptions, and timeline.
+        </p>
+
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            "How has my HbA1c changed?",
+            "What questions for Dr. Wei?",
+            "List my 4 active medications",
+          ].map((prompt, i) => (
+            <Link
+              key={i}
+              href="/assistant"
+              className="rounded-full bg-white border border-teal-200/80 px-3 py-1 text-[11px] font-medium text-teal-900 hover:bg-teal-50 hover:border-teal-300 transition-colors shadow-2xs"
+            >
+              {prompt}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* 7. Structured Grouped List: Recent Medical Journey */}
+      <div>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Recent Timeline Records
+          </span>
+          <Link href="/timeline" className="text-xs font-medium text-teal-800 hover:underline">
+            Full Journey
+          </Link>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          {mockTimelineEvents.slice(0, 3).map((event) => (
+            <Link
+              key={event.id}
+              href="/timeline"
+              className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/70 transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 shrink-0">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-slate-900 block truncate">
+                    {event.title}
+                  </span>
+                  <span className="text-[11px] text-slate-500 block truncate mt-0.5">
+                    {formatDate(event.event_date)} • {event.facility_or_doctor}
+                  </span>
+                </div>
+              </div>
+
+              <ChevronRight className="h-4 w-4 text-slate-300 shrink-0 ml-2" />
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* 8. Quick Actions (Pill Bar) */}
+      <div className="pt-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <Link
+            href="/vault"
+            className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200/90 py-2.5 px-3 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
+          >
+            <UploadCloud className="h-3.5 w-3.5 text-teal-700" />
+            Upload File
+          </Link>
+
+          <Link
+            href="/metrics"
+            className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200/90 py-2.5 px-3 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
+          >
+            <Plus className="h-3.5 w-3.5 text-teal-700" />
+            Log Biometric
+          </Link>
+
+          <Link
+            href="/appointments"
+            className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200/90 py-2.5 px-3 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
+          >
+            <Calendar className="h-3.5 w-3.5 text-teal-700" />
+            Add Visit
+          </Link>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   UserRound,
   ShieldAlert,
@@ -11,186 +12,174 @@ import {
   CheckCircle2,
   Calendar,
   Activity,
-  Plus,
+  ChevronRight,
+  Share2,
+  UserCheck,
+  Settings,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { mockProfile } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(mockProfile);
-  const [isSaved, setIsSaved] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Personal Health Profile"
-        description="Comprehensive demographic baseline, confirmed allergies, emergency contacts, and chronic health history."
-        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "Health Profile" }]}
-        actions={
-          <Button
-            size="sm"
-            onClick={handleSave}
-            className="text-xs h-8 gap-1.5 bg-teal-700 hover:bg-teal-800 text-white"
-          >
-            <Save className="h-3.5 w-3.5" />
-            Save Profile
-          </Button>
-        }
-      />
+      {/* Profile Header (Apple Health Style) */}
+      <div className="flex items-center gap-3.5 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-800 text-white font-extrabold text-lg shrink-0 shadow-xs">
+          EV
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-extrabold text-slate-900 leading-tight">
+            {profile.full_name}
+          </h1>
+          <span className="text-xs text-slate-500 block mt-0.5">
+            DOB: {formatDate(profile.date_of_birth)} (Age 64)
+          </span>
+          <span className="text-[11px] font-semibold text-teal-800 block mt-0.5">
+            Blood Type: {profile.blood_group} • {profile.height_cm} cm • {profile.weight_kg} kg
+          </span>
+        </div>
+      </div>
 
-      {isSaved && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 flex items-center gap-2">
+      {saved && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          Health profile changes successfully updated and synchronized.
+          Health profile changes successfully updated.
         </div>
       )}
 
-      {/* Profile Overview & Emergency Banner */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Core Demographics & Emergency Card */}
-        <div className="space-y-6">
-          {/* Emergency Identification Card */}
-          <Card className="border-red-200 bg-red-50/40">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2 text-red-900 font-bold text-xs uppercase tracking-wider">
-                <ShieldAlert className="h-4 w-4 text-red-600" />
-                Emergency Medical Card
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-red-200/60">
-                <span className="text-slate-600">Blood Group:</span>
-                <span className="font-extrabold text-red-700 text-sm">{profile.blood_group}</span>
-              </div>
-              <div className="flex items-center justify-between pb-2 border-b border-red-200/60">
-                <span className="text-slate-600">Primary Emergency Contact:</span>
-                <span className="font-semibold text-slate-900">{profile.emergency_contact?.name} ({profile.emergency_contact?.relationship})</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600">Emergency Phone:</span>
-                <span className="font-bold text-slate-900">{profile.emergency_contact?.phone}</span>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Emergency Identification Card */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Emergency Health Card
+        </span>
+        <div className="rounded-2xl border border-red-200 bg-red-50/40 p-4 shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between pb-2 border-b border-red-200/60">
+            <span className="text-xs text-red-900 font-semibold">Blood Group</span>
+            <span className="text-sm font-extrabold text-red-700">{profile.blood_group}</span>
+          </div>
 
-          {/* Core Demographics Form */}
-          <Card>
-            <CardHeader className="pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900">Demographic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Full Legal Name</label>
-                <Input
-                  value={profile.full_name}
-                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                  className="text-xs"
-                />
-              </div>
+          <div className="flex items-center justify-between pb-2 border-b border-red-200/60">
+            <div>
+              <span className="text-xs text-slate-700 font-bold block">{profile.emergency_contact?.name}</span>
+              <span className="text-[11px] text-slate-500">{profile.emergency_contact?.relationship}</span>
+            </div>
+            <a
+              href={`tel:${profile.emergency_contact?.phone}`}
+              className="flex items-center gap-1.5 rounded-full bg-red-700 text-white px-3 py-1 text-xs font-semibold hover:bg-red-800"
+            >
+              <Phone className="h-3 w-3" />
+              Call
+            </a>
+          </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Date of Birth</label>
-                <Input
-                  type="date"
-                  value={profile.date_of_birth}
-                  onChange={(e) => setProfile({ ...profile, date_of_birth: e.target.value })}
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Height (cm)</label>
-                  <Input
-                    type="number"
-                    value={profile.height_cm}
-                    onChange={(e) => setProfile({ ...profile, height_cm: parseFloat(e.target.value) })}
-                    className="text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Weight (kg)</label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={profile.weight_kg}
-                    onChange={(e) => setProfile({ ...profile, weight_kg: parseFloat(e.target.value) })}
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="text-[11px] text-red-800">
+            <strong>Critical Alert:</strong> Severe Penicillin allergy. Carries MedicAlert identifier.
+          </div>
         </div>
+      </div>
 
-        {/* Right Column: Confirmed Allergies & Chronic Conditions */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Confirmed Allergies */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                Confirmed Allergies & Adverse Drug Reactions ({profile.allergies.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              {profile.allergies.map((allergy) => (
-                <div key={allergy.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 text-xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 text-sm">{allergy.substance}</span>
-                    <Badge variant={allergy.severity === "severe" ? "destructive" : "warning"} className="text-[10px] capitalize">
-                      {allergy.severity} Reaction
-                    </Badge>
-                  </div>
-                  <p className="text-slate-600 font-medium">
-                    Reaction: {allergy.reaction}
-                  </p>
-                  <span className="text-[10px] text-slate-400 block">
-                    Documented: {formatDate(allergy.diagnosed_date)}
-                  </span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Confirmed Allergies (Grouped List) */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Documented Drug Allergies
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          {profile.allergies.map((a) => (
+            <div key={a.id} className="p-3.5 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-900 block">{a.substance}</span>
+                <span className="text-[11px] text-red-700 font-semibold mt-0.5 block">{a.reaction}</span>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                {a.severity}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Active Chronic Conditions */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Heart className="h-4 w-4 text-teal-700" />
-                Documented Chronic Medical Conditions ({profile.chronic_conditions.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              {profile.chronic_conditions.map((cond) => (
-                <div key={cond.id} className="p-3.5 rounded-lg border border-slate-200 bg-white text-xs space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 text-sm">{cond.name}</span>
-                    <Badge variant="default" className="text-[10px] capitalize">
-                      {cond.status}
-                    </Badge>
-                  </div>
-                  <div className="text-slate-500 text-[11px]">
-                    ICD-10: <strong>{cond.icd10}</strong> • Diagnosed on {formatDate(cond.diagnosed_date)}
-                  </div>
-                  <p className="text-slate-700 leading-relaxed bg-slate-50 p-2 rounded border border-slate-100">
-                    {cond.notes}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Chronic Health Conditions (Grouped List) */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Active Chronic Conditions
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          {profile.chronic_conditions.map((c) => (
+            <div key={c.id} className="p-3.5 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">{c.name}</span>
+                <span className="text-[10px] font-semibold text-slate-400">ICD: {c.icd10}</span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                {c.notes}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Navigation Sections (Settings style) */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
+          Care Team & Clinical Sharing
+        </span>
+        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          <Link
+            href="/doctors"
+            className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-800">
+                <UserCheck className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 block">Healthcare Providers</span>
+                <span className="text-[11px] text-slate-400">Dr. Wei, Dr. Vance, Dr. Jenkins</span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+          </Link>
+
+          <Link
+            href="/summaries"
+            className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-800">
+                <Share2 className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 block">Printable Clinical Summary</span>
+                <span className="text-[11px] text-slate-400">Export for doctor appointments & share links</span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+          </Link>
+
+          <Link
+            href="/settings"
+            className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                <Settings className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 block">Preferences & Data Export</span>
+                <span className="text-[11px] text-slate-400">AI explanation depth, units, download JSON</span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+          </Link>
         </div>
       </div>
     </div>

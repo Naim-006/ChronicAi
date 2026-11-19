@@ -6,28 +6,21 @@ import {
   Send,
   FileText,
   AlertTriangle,
-  ExternalLink,
+  X,
   ShieldAlert,
-  HelpCircle,
-  RotateCcw,
-  User,
+  Paperclip,
   CheckCircle2,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { EmergencyBanner } from "@/components/shared/EmergencyBanner";
-import { mockMessages, mockConversations, mockProfile, mockMedications, mockHealthMetrics } from "@/lib/mock-data";
+import { mockMessages, mockProfile } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { AIMessage, AICitation } from "@/types/medical";
 
 const suggestedQuestions = [
-  "How has my HbA1c changed over the last 12 months?",
-  "What medications am I currently prescribed and what are their doses?",
-  "What questions should I bring to my appointment with Dr. Wei on Dec 8?",
-  "Explain my latest kidney eGFR result from Quest Diagnostics.",
+  "How has my HbA1c progressed over the last year?",
+  "What are my 4 current daily medications and timings?",
+  "What should I ask Dr. Wei on Dec 8?",
+  "Explain my latest kidney eGFR result.",
 ];
 
 export default function AssistantPage() {
@@ -43,11 +36,10 @@ export default function AssistantPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSend = (textToSend?: string) => {
     const query = textToSend || inputQuery;
     if (!query.trim()) return;
 
-    // Check emergency red flags
     const lower = query.toLowerCase();
     const isEmergency =
       lower.includes("chest pain") ||
@@ -55,8 +47,7 @@ export default function AssistantPage() {
       lower.includes("can't breathe") ||
       lower.includes("stroke") ||
       lower.includes("bleeding heavily") ||
-      lower.includes("suicide") ||
-      lower.includes("unconscious");
+      lower.includes("suicide");
 
     const userMessage: AIMessage = {
       id: `msg-${Date.now()}`,
@@ -71,26 +62,25 @@ export default function AssistantPage() {
 
     if (isEmergency) {
       setEmergencyAlert(
-        `Critical safety warning: Your query mentions potentially life-threatening symptoms ("${query}"). This AI system cannot provide acute clinical triage. Please call 911 or visit the nearest emergency facility immediately.`
+        `Critical safety warning: Your query describes potentially urgent symptoms ("${query}"). This AI assistant cannot provide acute emergency medical care. Please contact emergency services (call 911 or visit local emergency) immediately.`
       );
       return;
     }
 
-    // Normal safe clinical query: simulate grounded RAG response
     setIsTyping(true);
     setTimeout(() => {
       let responseContent = "";
       let citations: AICitation[] = [];
 
       if (lower.includes("medication") || lower.includes("pill") || lower.includes("dose")) {
-        responseContent = `According to your verified prescription records, you are currently taking 4 active medications:
+        responseContent = `Your verified records show 4 active prescribed medications:
 
-1. **Metformin ER 1000mg**: 1 tablet twice daily with meals (Breakfast & Dinner) for Type 2 Diabetes.
-2. **Empagliflozin (Jardiance) 10mg**: 1 tablet once daily in the morning with water.
-3. **Lisinopril 20mg**: 1 tablet once daily in the morning for blood pressure and renal protection.
-4. **Atorvastatin 20mg**: 1 tablet once daily at bedtime for cardiovascular risk reduction.
+• **Metformin ER 1000mg**: Twice daily with meals (08:00, 20:00) for Diabetes.
+• **Empagliflozin 10mg**: Once daily in morning (08:00) for Glycemic & Renal protection.
+• **Lisinopril 20mg**: Once daily in morning (08:00) for Blood Pressure & Kidneys.
+• **Atorvastatin 20mg**: Once daily at bedtime (21:00) for Cardiovascular protection.
 
-*Clinical Reminder: Never adjust doses or discontinue prescribed medications without consulting your prescribing physician.*`;
+*Notice: Never change dosages without consulting your prescribing doctor.*`;
         citations = [
           {
             document_id: "doc-102",
@@ -100,13 +90,12 @@ export default function AssistantPage() {
             snippet: "Metformin ER 1000mg BID #180, Empagliflozin 10mg QD #90",
           },
         ];
-      } else if (lower.includes("appointment") || lower.includes("wei") || lower.includes("question")) {
-        responseContent = `For your upcoming consultation with **Dr. Catherine Wei** on **December 8, 2026 at 10:15 AM**, here are suggested, clinically relevant questions based on your recent health trajectory:
+      } else if (lower.includes("wei") || lower.includes("appointment") || lower.includes("question")) {
+        responseContent = `Here are clinically relevant preparation questions for your **Dec 8** consultation with **Dr. Catherine Wei**:
 
-1. *"My HbA1c dropped to 6.8% in November. Should we maintain my current Metformin ER and Empagliflozin dosages?"*
-2. *"My eGFR was steady at 68 mL/min. Is my kidney function remaining stable, and when should we repeat the urine microalbumin test?"*
-3. *"I had my annual diabetic eye screening at Valley Eye Center on Nov 14 and fundus was clear of retinopathy. Do you need a copy of Dr. Jenkins' report?"*
-4. *"Are there any dietary or exercise adjustments you recommend now that my glycemic markers have achieved our target goal?"*`;
+1. "My HbA1c dropped to 6.8% in November. Should we maintain our current dosage of Metformin and Empagliflozin?"
+2. "My eGFR stabilized at 68 mL/min. When should we schedule our next urine microalbumin check?"
+3. "My annual diabetic eye exam at Valley Eye Center was clear of retinopathy. Do you need a copy of Dr. Jenkins' report?"`;
         citations = [
           {
             document_id: "doc-101",
@@ -115,22 +104,13 @@ export default function AssistantPage() {
             page: 1,
             snippet: "HbA1c 6.8%, Fasting Glucose 118 mg/dL, eGFR 68",
           },
-          {
-            document_id: "doc-105",
-            document_title: "Recent_Clinic_Discharge_Ophthalmology.pdf",
-            date: "2026-11-14",
-            page: 1,
-            snippet: "Dilated fundus negative for diabetic retinopathy",
-          },
         ];
       } else {
-        responseContent = `Based on your longitudinal medical records:
+        responseContent = `Based on your verified medical records from Quest Diagnostics (Nov 2, 2026):
 
-Your glycemic markers are currently under good control. Your most recent laboratory workup from Quest Diagnostics (November 2, 2026) verified an **HbA1c of 6.8%** and **Fasting Blood Glucose of 118 mg/dL**, both meeting your endocrinologist's target goals. 
+Your **HbA1c is 6.8%**, down from 7.1% in May 2026, achieving your clinical goal (< 7.0%). Your **Fasting Blood Glucose is 118 mg/dL** (down from 126 mg/dL). 
 
-Your renal function indicators show an **eGFR of 68 mL/min/1.73m²** and **Serum Creatinine of 1.04 mg/dL**, representing stable Stage 2 CKD under ACE inhibitor therapy.
-
-If you have specific questions about any lab biomarker, medication schedule, or previous doctor visits, feel free to ask.`;
+Your renal indicators show an **eGFR of 68 mL/min** and **Creatinine of 1.04 mg/dL**, confirming stable Stage 2 CKD on ACE inhibitor therapy.`;
         citations = [
           {
             document_id: "doc-101",
@@ -153,215 +133,158 @@ If you have specific questions about any lab biomarker, medication schedule, or 
 
       setMessages((prev) => [...prev, assistantMessage]);
       setIsTyping(false);
-    }, 900);
+    }, 800);
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Personal Medical AI Assistant"
-        description="Context-grounded health companion. Ask questions about your verified lab reports, medication schedules, and clinical trajectory."
-        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "AI Assistant" }]}
-      />
+    <div className="flex flex-col h-[calc(100vh-120px)] sm:h-[calc(100vh-140px)]">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 mb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-800 text-white shadow-xs">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-slate-900 leading-tight">
+              Medical Life Assistant
+            </h1>
+            <span className="text-[10px] text-teal-800 font-semibold block">
+              Grounded in Elena Vance's Verified Records
+            </span>
+          </div>
+        </div>
 
-      {/* Emergency Alert if red-flag triggered */}
+        <button
+          type="button"
+          onClick={() => setMessages(mockMessages)}
+          className="text-[11px] font-semibold text-slate-500 hover:text-slate-800"
+        >
+          Clear
+        </button>
+      </div>
+
+      {/* Emergency Alert */}
       {emergencyAlert && (
-        <EmergencyBanner
-          message={emergencyAlert}
-          onDismiss={() => setEmergencyAlert(null)}
-        />
+        <div className="mb-3">
+          <EmergencyBanner message={emergencyAlert} onDismiss={() => setEmergencyAlert(null)} />
+        </div>
       )}
 
-      {/* Main Chat Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chat Window (Span 2) */}
-        <Card className="lg:col-span-2 flex flex-col h-[640px] border-slate-200">
-          <CardHeader className="py-3 px-4 border-b border-slate-100 flex flex-row items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-teal-50 text-teal-700">
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <div>
-                <CardTitle className="text-xs font-bold text-slate-900">
-                  Medical Context Session
-                </CardTitle>
-                <span className="text-[10px] text-teal-700 font-medium">
-                  Grounded with Elena Vance's verified records
-                </span>
-              </div>
-            </div>
-
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setMessages(mockMessages)}
-              className="text-xs h-7 text-slate-500 hover:text-slate-800"
+      {/* Citation Popover Modal */}
+      {activeCitation && (
+        <div className="mb-3 rounded-2xl border border-teal-300 bg-teal-50/70 p-3 shadow-xs space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-teal-950 flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-teal-700" />
+              Source Record: {activeCitation.document_title}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveCitation(null)}
+              className="text-slate-400 hover:text-slate-700"
             >
-              Reset Chat
-            </Button>
-          </CardHeader>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <span className="text-[10px] text-slate-500 block">Date: {formatDate(activeCitation.date)}</span>
+          <p className="bg-white rounded-lg p-2 border border-teal-200 text-slate-700 text-[11px] leading-relaxed">
+            "{activeCitation.snippet}"
+          </p>
+        </div>
+      )}
 
-          {/* Messages Stream */}
-          <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 text-xs ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {msg.role === "assistant" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-700 text-white shadow-xs">
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </div>
-                )}
-
-                <div
-                  className={`rounded-lg p-3.5 max-w-[85%] leading-relaxed space-y-2.5 ${
-                    msg.role === "user"
-                      ? "bg-teal-700 text-white font-medium"
-                      : "bg-slate-50 border border-slate-200 text-slate-800"
-                  }`}
-                >
-                  <div className="whitespace-pre-line">{msg.content}</div>
-
-                  {/* Sourced Citations Pill Bar */}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="pt-2 border-t border-slate-200/80">
-                      <span className="text-[10px] font-semibold text-slate-500 block mb-1">
-                        Verified Sources ({msg.citations.length}):
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {msg.citations.map((cite, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => setActiveCitation(cite)}
-                            className="inline-flex items-center gap-1 text-[10px] bg-white text-teal-900 border border-teal-200 px-2 py-0.5 rounded hover:bg-teal-50 transition-colors cursor-pointer"
-                          >
-                            <FileText className="h-3 w-3 text-teal-700" />
-                            <span className="truncate max-w-[150px]">{cite.document_title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {msg.role === "user" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-700 font-bold text-xs">
-                    EV
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isTyping && (
-              <div className="flex gap-3 items-center text-xs text-slate-500">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-                  <Sparkles className="h-3.5 w-3.5 animate-spin" />
-                </div>
-                <span>Retrieving verified patient records and analyzing clinical context...</span>
+      {/* Messages Stream */}
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex gap-2.5 text-xs ${
+              msg.role === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            {msg.role === "assistant" && (
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-800 text-white mt-0.5">
+                <Sparkles className="h-3 w-3" />
               </div>
             )}
-            <div ref={messagesEndRef} />
-          </CardContent>
 
-          {/* Input Bar */}
-          <div className="p-3 border-t border-slate-200 bg-white">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              className="flex items-center gap-2"
+            <div
+              className={`rounded-2xl p-3.5 max-w-[88%] leading-relaxed space-y-2 ${
+                msg.role === "user"
+                  ? "bg-teal-800 text-white font-medium rounded-br-xs"
+                  : "bg-white border border-slate-200/80 text-slate-800 shadow-xs rounded-bl-xs"
+              }`}
             >
-              <Input
-                placeholder="Ask about your lab trends, doctor visits, or medication instructions..."
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
-                className="text-xs"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                className="bg-teal-700 hover:bg-teal-800 text-white shrink-0 h-9 px-4 gap-1.5"
-              >
-                <Send className="h-3.5 w-3.5" />
-                Ask
-              </Button>
-            </form>
+              <div className="whitespace-pre-line text-xs">{msg.content}</div>
+
+              {msg.citations && msg.citations.length > 0 && (
+                <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1">
+                  {msg.citations.map((cite, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveCitation(cite)}
+                      className="inline-flex items-center gap-1 text-[10px] bg-teal-50 text-teal-900 border border-teal-200 px-2 py-0.5 rounded-full hover:bg-teal-100 transition-colors cursor-pointer"
+                    >
+                      <FileText className="h-3 w-3 text-teal-700" />
+                      <span className="truncate max-w-[140px]">{cite.document_title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </Card>
+        ))}
 
-        {/* Right Column: Suggested Questions & Citation Drawer */}
-        <div className="space-y-4">
-          {/* Active Citation Card */}
-          {activeCitation && (
-            <Card className="border-teal-300 bg-teal-50/50">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
-                    <FileText className="h-3.5 w-3.5 text-teal-700" />
-                    Source Record Verification
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setActiveCitation(null)}
-                    className="h-6 w-6 p-0 text-slate-400"
-                  >
-                    ×
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2 text-xs">
-                <div>
-                  <span className="font-semibold text-slate-800 block">{activeCitation.document_title}</span>
-                  <span className="text-[10px] text-slate-500">Date: {formatDate(activeCitation.date)}</span>
-                </div>
-                <div className="p-2 rounded bg-white border border-teal-200 text-slate-700 text-[11px] leading-relaxed">
-                  <strong>Excerpt:</strong> "{activeCitation.snippet}"
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {isTyping && (
+          <div className="flex gap-2 items-center text-xs text-slate-500 py-1">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-50 text-teal-800">
+              <Sparkles className="h-3 w-3 animate-spin" />
+            </div>
+            <span>Analyzing patient records...</span>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-          {/* Suggested Context Questions */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <HelpCircle className="h-3.5 w-3.5 text-teal-700" />
-                Suggested Queries for Elena
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1.5">
-              {suggestedQuestions.map((q, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSendMessage(q)}
-                  className="w-full text-left p-2.5 rounded-md border border-slate-200 bg-slate-50/70 hover:bg-teal-50 hover:border-teal-200 text-xs text-slate-700 transition-colors leading-relaxed block"
-                >
-                  {q}
-                </button>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Suggested Questions Pill Scroller */}
+      <div className="py-2 overflow-x-auto flex gap-1.5 no-scrollbar shrink-0">
+        {suggestedQuestions.map((q, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => handleSend(q)}
+            className="whitespace-nowrap rounded-full bg-white border border-slate-200 px-3 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs shrink-0 cursor-pointer"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
 
-          {/* Safety & Protocol Card */}
-          <Card className="bg-slate-50 border-slate-200">
-            <CardContent className="p-4 space-y-2 text-[11px] text-slate-500 leading-relaxed">
-              <div className="font-semibold text-slate-800 flex items-center gap-1">
-                <ShieldAlert className="h-3.5 w-3.5 text-teal-700" />
-                Clinical Safety Architecture
-              </div>
-              <p>
-                Responses are synthesized strictly from your uploaded, verified medical records and reliable clinical guidelines. The assistant does not invent facts or replace your doctor.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Input Bar */}
+      <div className="pt-1 border-t border-slate-200 bg-[#F4F6F8] shrink-0">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+          className="flex items-center gap-2"
+        >
+          <div className="relative flex-1">
+            <input
+              placeholder="Ask about test results, medications, visits..."
+              value={inputQuery}
+              onChange={(e) => setInputQuery(e.target.value)}
+              className="h-10 w-full rounded-2xl border border-slate-200/90 bg-white pl-4 pr-10 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-700 shadow-xs"
+            />
+          </div>
+          <button
+            type="submit"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-800 text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all shrink-0 cursor-pointer"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </form>
       </div>
     </div>
   );
