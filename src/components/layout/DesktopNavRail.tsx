@@ -179,8 +179,12 @@ export function DesktopNavRail() {
           )}
           title={isCollapsed ? "Profile" : undefined}
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/20">
-            {initials || "PT"}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/20 overflow-hidden">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt={displayName} className="h-full w-full object-cover" />
+            ) : (
+              initials || "PT"
+            )}
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">

@@ -32,7 +32,7 @@ import { MedicalDocument, ExtractedRecord, DocumentCategory } from "@/types/medi
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { getDocuments, createDocumentRecord, createExtractedRecord as dbCreateExtracted } from "@/lib/supabase/services/documents";
-import { uploadMedicalDocument } from "@/lib/supabase/storage";
+import { uploadMedicalDocument, getMedicalDocumentSignedUrl } from "@/lib/supabase/storage";
 import { useRealtimeTables } from "@/hooks/useRealtime";
 
 const iconTones = [
@@ -118,6 +118,25 @@ export default function VaultPage() {
     extractedRecords.find((r) => r.status === "pending") || null
   );
   const [notification, setNotification] = useState<string | null>(null);
+  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
+  const [isSavingRecord, setIsSavingRecord] = useState(false);
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null);
+
+  const handleViewOriginalDocument = async (doc: MedicalDocument) => {
+    setOpeningDocId(doc.id);
+    try {
+      const url = await getMedicalDocumentSignedUrl(doc.file_path, 3600);
+      if (url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      } else {
+        setNotification(`Could not generate secure view URL for "${doc.file_name}"`);
+      }
+    } catch {
+      setNotification("Failed to open document file.");
+    } finally {
+      setOpeningDocId(null);
+    }
+  };
 
   // Cleanup camera stream when modal closes
   const stopCameraStream = () => {
@@ -232,6 +251,8 @@ export default function VaultPage() {
   const handleCameraFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSelectedUploadFile(file);
+    setEditFileName(file.name || `Mobile_Capture_${Date.now()}.jpg`);
     const url = URL.createObjectURL(file);
     setIsScannerOpen(true);
     handleCaptureAndRunOCR(url);
@@ -264,6 +285,8 @@ export default function VaultPage() {
   };
 
   const processFileDirect = (file: File) => {
+    setSelectedUploadFile(file);
+    setEditFileName(file.name);
     const url = URL.createObjectURL(file);
     setIsScannerOpen(true);
     handleCaptureAndRunOCR(url);
@@ -271,64 +294,86 @@ export default function VaultPage() {
 
   // Final Manual Verification Confirmation
   const handleSaveVerifiedRecord = async () => {
-    const fileName = editFileName.trim() || `Report_${Date.now()}.pdf`;
-    
-    // Save to Supabase database (with storage reference)
-    const savedDoc = await createDocumentRecord({
-      user_id: effectiveUserId,
-      file_name: fileName,
-      file_path: `medical-records/${effectiveUserId}/${fileName}`,
-      file_type: "application/pdf",
-      file_size: 1024 * 145,
-      category: editCategory,
-      document_date: editDate || new Date().toISOString().split("T")[0],
-      facility_name: editFacility || "Verified Clinical Center",
-      doctor_name: editDoctor || "Dr. Staff Physician, MD",
-      status: "verified",
-      summary: editSummary,
-      tags: ["Verified Record", "OCR Extracted", "AI Analyzed"],
-    });
+    if (!effectiveUserId) return;
+    setIsSavingRecord(true);
+    try {
+      const fileName = editFileName.trim() || selectedUploadFile?.name || `Report_${Date.now()}.pdf`;
+      let storedPath = `medical-records/${effectiveUserId}/${fileName}`;
+      let fileSize = selectedUploadFile?.size || 1024 * 145;
+      let fileType = selectedUploadFile?.type || "application/pdf";
 
-    const savedExtracted = await dbCreateExtracted({
-      document_id: savedDoc.id,
-      user_id: effectiveUserId,
-      confidence_score: ocrConfidence / 100,
-      status: "confirmed",
-      raw_extracted: {
-        document_type: editCategory,
-        date: savedDoc.document_date,
-        facility: savedDoc.facility_name,
-        doctor: savedDoc.doctor_name,
-        diagnoses: [editSummary.slice(0, 48)],
-        lab_results: editLabs.map((l) => ({
-          test_name: l.test_name,
-          value: Number(l.value) || 0,
-          unit: l.unit,
-          reference_range: l.reference_range,
-          is_abnormal: l.is_abnormal,
-        })),
-        instructions: ["You confirmed this record. It is now part of your health timeline."],
-      },
-      confirmed_data: {
-        document_type: editCategory,
-        date: savedDoc.document_date,
-        facility: savedDoc.facility_name,
-        doctor: savedDoc.doctor_name,
-        diagnoses: [editSummary.slice(0, 48)],
-        lab_results: editLabs.map((l) => ({
-          test_name: l.test_name,
-          value: Number(l.value) || 0,
-          unit: l.unit,
-          reference_range: l.reference_range,
-          is_abnormal: l.is_abnormal,
-        })),
-      },
-    });
+      // If a real file was uploaded, store it directly in Supabase Storage
+      if (selectedUploadFile) {
+        const uploadRes = await uploadMedicalDocument(selectedUploadFile, effectiveUserId);
+        if (uploadRes.path) {
+          storedPath = uploadRes.path;
+        }
+      }
 
-    setDocuments((prev) => [savedDoc, ...prev]);
-    setExtractedRecords((prev) => [savedExtracted, ...prev]);
-    handleCloseScanner();
-    setNotification(`Successfully verified and saved "${savedDoc.file_name}" into your health records!`);
+      // Save to Supabase database (with authentic storage reference)
+      const savedDoc = await createDocumentRecord({
+        user_id: effectiveUserId,
+        file_name: fileName,
+        file_path: storedPath,
+        file_type: fileType,
+        file_size: fileSize,
+        category: editCategory,
+        document_date: editDate || new Date().toISOString().split("T")[0],
+        facility_name: editFacility || "Verified Clinical Center",
+        doctor_name: editDoctor || "Dr. Staff Physician, MD",
+        status: "verified",
+        summary: editSummary,
+        tags: ["Verified Record", "OCR Extracted", "AI Analyzed"],
+      });
+
+      const savedExtracted = await dbCreateExtracted({
+        document_id: savedDoc.id,
+        user_id: effectiveUserId,
+        confidence_score: ocrConfidence / 100,
+        status: "confirmed",
+        raw_extracted: {
+          document_type: editCategory,
+          date: savedDoc.document_date,
+          facility: savedDoc.facility_name,
+          doctor: savedDoc.doctor_name,
+          diagnoses: [editSummary.slice(0, 48)],
+          lab_results: editLabs.map((l) => ({
+            test_name: l.test_name,
+            value: Number(l.value) || 0,
+            unit: l.unit,
+            reference_range: l.reference_range,
+            is_abnormal: l.is_abnormal,
+          })),
+          instructions: ["You confirmed this record. It is now part of your health timeline."],
+        },
+        confirmed_data: {
+          document_type: editCategory,
+          date: savedDoc.document_date,
+          facility: savedDoc.facility_name,
+          doctor: savedDoc.doctor_name,
+          diagnoses: [editSummary.slice(0, 48)],
+          lab_results: editLabs.map((l) => ({
+            test_name: l.test_name,
+            value: Number(l.value) || 0,
+            unit: l.unit,
+            reference_range: l.reference_range,
+            is_abnormal: l.is_abnormal,
+          })),
+        },
+      });
+
+      setDocuments((prev) => [savedDoc, ...prev]);
+      setExtractedRecords((prev) => [savedExtracted, ...prev]);
+      setSelectedUploadFile(null);
+      handleCloseScanner();
+      setNotification(`Successfully uploaded and verified "${savedDoc.file_name}" in your secure storage!`);
+    } catch (err) {
+      console.error("Failed to upload/verify record:", err);
+      setNotification("Error uploading file to storage. Please try again.");
+    } finally {
+      setIsSavingRecord(false);
+    }
+  };
     setTimeout(() => setNotification(null), 5000);
   };
 
