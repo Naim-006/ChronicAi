@@ -3,9 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Search, Sun, Moon } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
-import { useTheme } from "@/context/ThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
@@ -28,7 +27,6 @@ const pageTitles: Record<string, { title: string; parent?: string }> = {
 export function MobileTopBar() {
   const pathname = usePathname();
   const { openDrawer } = useMobileNav();
-  const { resolvedTheme, toggleTheme } = useTheme();
   const { t } = useLanguage();
 
   const localizedTitles: Record<string, string> = {
@@ -85,23 +83,8 @@ export function MobileTopBar() {
           </div>
         </div>
 
-        {/* Right Side: Theme Toggle + Notification Icon + Profile Icon */}
+        {/* Right Side: Notification Icon + Profile Icon */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {/* Quick Theme Toggle */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)] cursor-pointer"
-            title={resolvedTheme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            aria-label="Toggle Theme"
-          >
-            {resolvedTheme === "dark" ? (
-              <Sun className="h-4 w-4 text-amber-400" />
-            ) : (
-              <Moon className="h-4 w-4 text-slate-700" />
-            )}
-          </button>
-
           <Link
             href="/notifications"
             className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)]"
@@ -145,21 +128,6 @@ export function MobileTopBar() {
               className="h-11 w-72 rounded-2xl border border-[var(--border)] bg-[var(--muted)] pl-10 pr-4 text-sm outline-none transition-all placeholder:text-[var(--muted-foreground)] focus:border-emerald-300 focus:bg-white dark:focus:bg-slate-850 focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
-
-          {/* Desktop Theme Toggle */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white dark:bg-slate-800 text-[var(--foreground)] transition-colors hover:bg-[var(--muted)] cursor-pointer"
-            title={resolvedTheme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            aria-label="Toggle Theme"
-          >
-            {resolvedTheme === "dark" ? (
-              <Sun className="h-4 w-4 text-amber-400" />
-            ) : (
-              <Moon className="h-4 w-4 text-slate-700 dark:text-slate-200" />
-            )}
-          </button>
 
           <Link
             href="/notifications"
