@@ -6,7 +6,6 @@ import {
   Activity,
   Calendar,
   Clock,
-  Sparkles,
   Pill,
   ChevronRight,
   AlertCircle,
@@ -21,6 +20,7 @@ import {
   Flame,
   Footprints,
   Phone,
+  ShieldCheck,
 } from "lucide-react";
 import { mockProfile, mockMedications, mockAppointments, mockTimelineEvents, mockDocuments } from "@/lib/mock-data";
 import { formatDate, formatTime } from "@/lib/utils";
@@ -105,7 +105,62 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 2. Verification Alert Banner if unconfirmed document exists */}
+      {/* 2. Quick Action Workflow Bar (Streamlined Patient Actions) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <Link
+          href="/metrics"
+          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 group-hover:scale-105 transition-transform">
+            <Activity className="h-4 w-4" />
+          </div>
+          <div className="text-left">
+            <span className="text-xs font-bold text-slate-900 block leading-tight">Log Vitals</span>
+            <span className="text-[10px] text-slate-400">BP, Glucose</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/vault"
+          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700 group-hover:scale-105 transition-transform">
+            <UploadCloud className="h-4 w-4" />
+          </div>
+          <div className="text-left">
+            <span className="text-xs font-bold text-slate-900 block leading-tight">Add Record</span>
+            <span className="text-[10px] text-slate-400">PDF, Lab Scan</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/appointments"
+          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700 group-hover:scale-105 transition-transform">
+            <Calendar className="h-4 w-4" />
+          </div>
+          <div className="text-left">
+            <span className="text-xs font-bold text-slate-900 block leading-tight">Visits</span>
+            <span className="text-[10px] text-slate-400">Schedule, Prep</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/assistant"
+          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white group-hover:scale-105 transition-transform">
+            <Stethoscope className="h-4 w-4" />
+          </div>
+          <div className="text-left">
+            <span className="text-xs font-bold text-slate-900 block leading-tight">Copilot</span>
+            <span className="text-[10px] text-slate-400">Clinical Guide</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* 3. Verification Alert Banner if unconfirmed document exists */}
       {pendingReviewDocs.length > 0 && (
         <div className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50/50 p-4 shadow-sm">
           <div className="flex items-start gap-3">
@@ -133,14 +188,14 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 3. Quick Access 2x2 Grid (Exact layout from Image 1) */}
+      {/* 4. Quick Access 2x2 Grid (Exact layout from Image 1) */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Quick Access
+            Biometric Quick Access
           </h3>
           <Link href="/metrics" className="text-xs font-bold text-emerald-600 hover:underline">
-            View All
+            View Analytics
           </Link>
         </div>
 
@@ -238,7 +293,7 @@ export default function DashboardPage() {
             className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Medication</span>
+              <span className="text-xs font-bold text-slate-700">Medications</span>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Pill className="h-3.5 w-3.5" />
               </div>
@@ -249,7 +304,7 @@ export default function DashboardPage() {
                 <span className="text-xs text-slate-400 font-medium">Active</span>
               </div>
               <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
-                Morning doses taken
+                Daily protocol active
               </span>
             </div>
             {/* Mini Progress Circles */}
@@ -263,14 +318,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 4. Top Doctor & Appointment (Exact style from Image 1 & 3) */}
+      {/* 5. Top Doctor & Appointment (Exact style from Image 1 & 3) */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
             Next Doctor Appointment
           </h3>
           <Link href="/appointments" className="text-xs font-bold text-emerald-600 hover:underline">
-            View All
+            View Schedule
           </Link>
         </div>
 
@@ -305,14 +360,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 5. Daily Medication Checklist (Structured Card List) */}
+      {/* 6. Daily Medication Checklist (Structured Card List) */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
             Today's Medications
           </h3>
           <Link href="/medications" className="text-xs font-bold text-emerald-600 hover:underline">
-            Schedule
+            Adherence Matrix
           </Link>
         </div>
 
@@ -362,7 +417,7 @@ export default function DashboardPage() {
                     isTaken ? "text-emerald-600" : "text-slate-400"
                   }`}
                 >
-                  {isTaken ? "Done" : "Tap to log"}
+                  {isTaken ? "Logged" : "Tap to log"}
                 </span>
               </div>
             );
@@ -370,21 +425,21 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 6. AI Medical Prompt Bar (Integrated pill triggers) */}
-      <div className="rounded-3xl bg-gradient-to-tr from-emerald-600 to-green-500 p-5 text-white shadow-lg shadow-emerald-500/20">
+      {/* 7. Clinical Copilot Intelligence Banner (Professional Healthcare Guidance) */}
+      <div className="rounded-3xl bg-gradient-to-tr from-emerald-700 to-green-600 p-5 text-white shadow-lg shadow-emerald-600/20">
         <div className="flex items-center gap-2 mb-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
-            <Sparkles className="h-4 w-4 text-white" />
+            <Stethoscope className="h-4 w-4 text-white" />
           </div>
           <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-100">
-            AI Medical Companion
+            Clinical Health Intelligence
           </span>
         </div>
         <h4 className="text-base font-extrabold leading-tight">
-          Have questions about your health records?
+          Review your medical records with your Clinical Copilot
         </h4>
         <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
-          Ask questions grounded in your Quest Diagnostics panels and medical history.
+          Grounded directly in Quest Diagnostics panels, clinical notes, and active prescriptions.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">

@@ -6,11 +6,11 @@ import {
   Bell,
   Lock,
   Download,
-  Sparkles,
   CheckCircle2,
   Globe,
   Save,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { mockProfile } from "@/lib/mock-data";
 

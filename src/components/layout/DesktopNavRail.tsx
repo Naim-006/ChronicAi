@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  FolderArchive,
-  Sparkles,
+  FileText,
+  Stethoscope,
   Activity,
   Calendar,
   Pill,
@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   FileSpreadsheet,
   Settings,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,18 +25,18 @@ const navSections = [
     title: "Core Platform",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: Home },
-      { name: "Medical Records", href: "/vault", icon: FolderArchive, badge: "1 New" },
+      { name: "Medical Records", href: "/vault", icon: FileText, badge: "1 New" },
       { name: "Medical Timeline", href: "/timeline", icon: Clock },
-      { name: "AI Medical Copilot", href: "/assistant", icon: Sparkles, highlight: true },
+      { name: "Clinical Copilot", href: "/assistant", icon: Stethoscope, highlight: true },
     ],
   },
   {
     title: "Health & Treatment",
     items: [
       { name: "Health Analytics", href: "/metrics", icon: Activity },
-      { name: "Medications", href: "/medications", icon: Pill },
-      { name: "Appointments", href: "/appointments", icon: Calendar },
-      { name: "Chronic Care", href: "/chronic-care", icon: HeartPulse },
+      { name: "Prescriptions & Dosing", href: "/medications", icon: Pill },
+      { name: "Doctors & Visits", href: "/appointments", icon: Calendar },
+      { name: "Chronic Care Protocol", href: "/chronic-care", icon: HeartPulse },
     ],
   },
   {
@@ -64,7 +65,7 @@ export function DesktopNavRail() {
               Universal Medical
             </span>
             <span className="text-[10px] font-bold text-emerald-600 tracking-wider block mt-1 uppercase">
-              Intelligent Health
+              Lifelong Healthcare
             </span>
           </div>
         </Link>
@@ -87,21 +88,24 @@ export function DesktopNavRail() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all",
+                      "flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all group",
                       isActive
-                        ? "bg-emerald-50/80 text-emerald-800 font-bold shadow-2xs border-l-4 border-emerald-500"
+                        ? "bg-emerald-50/90 text-emerald-900 font-bold shadow-2xs border-l-4 border-emerald-500"
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     )}
                   >
-                    <Icon
-                      className={cn(
-                        "h-4 w-4 shrink-0 transition-colors",
-                        isActive ? "text-emerald-600 stroke-[2.2]" : "text-slate-400"
-                      )}
-                    />
-                    <span className="flex-1 truncate">{item.name}</span>
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        className={cn(
+                          "h-4 w-4 shrink-0 transition-colors",
+                          isActive ? "text-emerald-600 stroke-[2.2]" : "text-slate-400 group-hover:text-slate-600"
+                        )}
+                      />
+                      <span>{item.name}</span>
+                    </div>
+
                     {item.badge && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                         {item.badge}
                       </span>
                     )}
@@ -113,23 +117,26 @@ export function DesktopNavRail() {
         ))}
       </div>
 
-      {/* Patient Footer */}
-      <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+      {/* Patient Profile Card at Bottom */}
+      <div className="p-4 border-t border-slate-100 bg-slate-50/60">
         <Link
           href="/profile"
-          className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white hover:shadow-xs transition-all"
+          className="flex items-center justify-between p-2 rounded-xl hover:bg-white transition-all group"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-xs shrink-0 ring-2 ring-emerald-200">
-            EV
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white font-bold text-xs">
+              EV
+            </div>
+            <div>
+              <span className="text-xs font-bold text-slate-900 block leading-tight">
+                Elena Vance
+              </span>
+              <span className="text-[10px] text-slate-500 block">
+                Age 48 · ID #892-04
+              </span>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-xs font-bold text-slate-900 block truncate">
-              Elena Vance
-            </span>
-            <span className="text-[10px] text-slate-500 block truncate mt-0.5">
-              Age 64 • T2D / HTN
-            </span>
-          </div>
+          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
         </Link>
       </div>
     </aside>

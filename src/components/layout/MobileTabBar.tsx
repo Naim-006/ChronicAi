@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   FolderArchive,
-  Sparkles,
+  Stethoscope,
   Calendar,
   User,
   Activity,
@@ -27,9 +27,9 @@ const tabs = [
     badge: "1",
   },
   {
-    name: "AI Health",
+    name: "Copilot",
     href: "/assistant",
-    icon: Sparkles,
+    icon: Stethoscope,
     highlight: true,
   },
   {
@@ -50,8 +50,8 @@ export function MobileTabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-4 left-3 right-3 z-50 lg:hidden max-w-md mx-auto">
-      <div className="flex h-16 items-center justify-around rounded-full border border-slate-100/80 bg-white/95 px-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+    <nav className="fixed bottom-4 left-3 right-3 z-50 lg:hidden max-w-md mx-auto pointer-events-auto">
+      <div className="flex h-16 items-center justify-around rounded-full border border-slate-200/80 bg-white/95 px-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl">
         {tabs.map((tab) => {
           const isActive =
             (tab.matchExact && pathname === tab.href) ||
@@ -78,10 +78,10 @@ export function MobileTabBar() {
                 <span
                   className={cn(
                     "text-[10px] font-bold mt-1 tracking-tight",
-                    isActive ? "text-emerald-700" : "text-slate-500"
+                    isActive ? "text-emerald-700" : "text-slate-600"
                   )}
                 >
-                  AI Copilot
+                  Copilot
                 </span>
               </Link>
             );
@@ -99,26 +99,19 @@ export function MobileTabBar() {
               )}
             >
               <div className="relative">
-                <div
+                <Icon
                   className={cn(
-                    "p-1.5 rounded-full transition-colors",
-                    isActive && "bg-emerald-50 text-emerald-600"
+                    "h-5 w-5 transition-transform",
+                    isActive ? "scale-110 stroke-[2.2]" : "stroke-[1.7]"
                   )}
-                >
-                  <Icon
-                    className={cn(
-                      "h-5 w-5 transition-transform",
-                      isActive ? "scale-110 stroke-[2.4]" : "stroke-[1.8]"
-                    )}
-                  />
-                </div>
+                />
                 {tab.badge && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-extrabold text-white ring-2 ring-white">
+                  <span className="absolute -top-1 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-extrabold text-white">
                     {tab.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium tracking-tight mt-0.5 leading-none">
+              <span className="text-[10px] font-medium mt-1 leading-none">
                 {tab.name}
               </span>
             </Link>

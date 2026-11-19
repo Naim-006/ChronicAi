@@ -6,7 +6,6 @@ import {
   Clock,
   Plus,
   Stethoscope,
-  Sparkles,
   MapPin,
   ChevronRight,
   X,
@@ -15,6 +14,7 @@ import {
   Bell,
   Search,
   SlidersHorizontal,
+  ClipboardList,
 } from "lucide-react";
 import { mockAppointments } from "@/lib/mock-data";
 import { formatDate, formatTime } from "@/lib/utils";
@@ -265,12 +265,12 @@ export default function AppointmentsPage() {
               </span>
             </div>
 
-            {/* AI Preparation Checklist */}
+            {/* Pre-Consultation Preparation Checklist */}
             {apt.preparation_questions && apt.preparation_questions.length > 0 && (
-              <div className="p-3.5 rounded-2xl bg-emerald-50/50 border border-emerald-200/70 space-y-2">
+              <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950">
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                  AI Consultation Preparation Questions:
+                  <ClipboardList className="h-3.5 w-3.5 text-emerald-600" />
+                  Pre-Consultation Clinical Discussion Points:
                 </div>
                 <ul className="list-disc pl-4 text-xs text-slate-700 space-y-1">
                   {apt.preparation_questions.map((q, idx) => (

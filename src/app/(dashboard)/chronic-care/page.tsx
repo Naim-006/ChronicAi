@@ -11,7 +11,7 @@ import {
   Eye,
   ShieldCheck,
   Pill,
-  Sparkles,
+  Stethoscope,
   ChevronRight,
 } from "lucide-react";
 import { mockProfile, mockMedications } from "@/lib/mock-data";
@@ -34,10 +34,10 @@ export default function ChronicCarePage() {
 
         <Link
           href="/assistant"
-          className="flex items-center gap-1.5 rounded-full bg-teal-800 px-3 py-1 text-xs font-semibold text-white shadow-xs hover:bg-teal-900 active:scale-95 transition-all"
+          className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-95 transition-all"
         >
-          <Sparkles className="h-3 w-3" />
-          <span>Ask AI</span>
+          <Stethoscope className="h-3.5 w-3.5" />
+          <span>Consult Copilot</span>
         </Link>
       </div>
 
