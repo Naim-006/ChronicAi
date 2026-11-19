@@ -23,12 +23,14 @@ CASCADE;
 UPDATE public.health_profiles
 SET 
     date_of_birth = NULL,
-    gender = NULL,
-    blood_type = NULL,
-    emergency_contact = NULL,
+    sex = NULL,
+    blood_group = NULL,
+    height_cm = NULL,
+    weight_kg = NULL,
+    emergency_contact = '{}'::jsonb,
     allergies = '[]'::jsonb,
     chronic_conditions = '[]'::jsonb,
-    ai_summary = NULL,
+    preferences = '{"language": "en", "explanation_depth": "balanced", "notifications_enabled": true}'::jsonb,
     updated_at = NOW();
 
 -- 3. DROP DEMO SEED FUNCTION
