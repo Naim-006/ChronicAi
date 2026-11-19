@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Stethoscope, ChevronLeft, Search, LayoutGrid } from "lucide-react";
+import { Bell, ChevronLeft, Search, LayoutGrid, Menu } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
 
 const pageTitles: Record<string, { title: string; parent?: string }> = {
@@ -33,18 +33,29 @@ export function MobileTopBar() {
     <>
       {/* Mobile / tablet top bar */}
       <header className="sticky top-0 z-30 flex h-16 w-full max-w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/85 px-3.5 sm:px-6 backdrop-blur-xl lg:hidden">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+        {/* Left Side: Menu Button + Page Context */}
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+          <button
+            type="button"
+            onClick={openDrawer}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] hover:bg-[var(--mint-deep)] transition-transform active:scale-95 cursor-pointer"
+            title="Care Hub Menu"
+            aria-label="Open Menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
           {!isDashboard ? (
             <div className="flex min-w-0 items-center gap-2">
               <Link
                 href={pageMeta.parent || "/dashboard"}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                 aria-label="Back"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-4 w-4" />
               </Link>
               <div className="min-w-0">
-                <h1 className="truncate text-base font-extrabold text-[var(--foreground)] leading-tight">
+                <h1 className="truncate text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-tight">
                   {pageMeta.title}
                 </h1>
                 <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
@@ -53,51 +64,37 @@ export function MobileTopBar() {
               </div>
             </div>
           ) : (
-            <Link href="/profile" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-              <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100">
-                EV
-              </div>
-              <div className="text-left min-w-0">
-                <span className="block text-[11px] font-medium text-[var(--muted-foreground)] leading-tight truncate">
-                  Good morning
-                </span>
-                <span className="block text-sm font-extrabold text-[var(--foreground)] leading-tight truncate">
-                  Elena Vance
-                </span>
-              </div>
-            </Link>
+            <div className="min-w-0">
+              <span className="block text-sm font-extrabold text-[var(--foreground)] leading-tight">
+                ChronicAI
+              </span>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
+                Lifelong Care Intelligence
+              </span>
+            </div>
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {pathname !== "/assistant" && (
-            <Link
-              href="/assistant"
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 transition-colors hover:bg-emerald-100"
-              title="Clinical Copilot"
-            >
-              <Stethoscope className="h-4 w-4" />
-            </Link>
-          )}
-
+        {/* Right Side: Notification Icon + Profile Icon (No name, only avatar icon) */}
+        <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/notifications"
             className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)]"
             title="Notifications & Alerts"
+            aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </Link>
 
-          <button
-            type="button"
-            onClick={openDrawer}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#18261F] text-white shadow-sm hover:bg-[#253D30] transition-transform active:scale-95 cursor-pointer"
-            title="Care Hub · All 14 Pages"
-            aria-label="Care Hub Menu"
+          <Link
+            href="/profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 transition-transform active:scale-95"
+            title="Profile & Medical ID"
+            aria-label="Profile"
           >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
+            EV
+          </Link>
         </div>
       </header>
 
@@ -124,20 +121,11 @@ export function MobileTopBar() {
             />
           </div>
 
-          {pathname !== "/assistant" && (
-            <Link
-              href="/assistant"
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 px-4 text-sm font-bold text-white shadow-md shadow-emerald-600/25 transition-transform hover:scale-[1.02]"
-            >
-              <Stethoscope className="h-4 w-4" />
-              Copilot
-            </Link>
-          )}
-
           <Link
             href="/notifications"
             className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
             title="Notifications & Alerts"
+            aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
@@ -152,6 +140,15 @@ export function MobileTopBar() {
             <LayoutGrid className="h-4 w-4 text-emerald-600" />
             <span>Care Hub</span>
           </button>
+
+          <Link
+            href="/profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 transition-transform hover:scale-105"
+            title="Elena Vance · Profile"
+            aria-label="Profile"
+          >
+            EV
+          </Link>
         </div>
       </header>
     </>
