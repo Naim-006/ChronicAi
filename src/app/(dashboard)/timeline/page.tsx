@@ -19,6 +19,7 @@ import {
   getTimelineEvents,
   createTimelineEvent,
 } from "@/lib/supabase/services/timeline";
+import { useRealtimeTable } from "@/hooks/useRealtime";
 
 export default function TimelinePage() {
   const { effectiveUserId } = useAuth();
@@ -36,25 +37,35 @@ export default function TimelinePage() {
   const [facility, setFacility] = useState("");
   const [desc, setDesc] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    if (effectiveUserId) {
-      setIsLoading(true);
-      getTimelineEvents(effectiveUserId)
-        .then((data) => {
-          if (isMounted) setEvents(data);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
+  const loadTimeline = React.useCallback(async () => {
+    if (!effectiveUserId) {
       setEvents([]);
       setIsLoading(false);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const data = await getTimelineEvents(effectiveUserId);
+      setEvents(data || []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadTimeline();
+  }, [loadTimeline]);
+
+  // Realtime subscription: syncs longitudinal care timeline events live
+  useRealtimeTable({
+    table: "timeline_events",
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadTimeline();
+    },
+  });
 
   const filteredEvents = events.filter((ev) => {
     const matchesSearch =

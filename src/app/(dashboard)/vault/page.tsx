@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { getDocuments, createDocumentRecord, createExtractedRecord as dbCreateExtracted } from "@/lib/supabase/services/documents";
 import { uploadMedicalDocument } from "@/lib/supabase/storage";
+import { useRealtimeTables } from "@/hooks/useRealtime";
 
 const iconTones = [
   "bg-rose-50 text-rose-600 border-rose-100",
@@ -58,32 +59,35 @@ export default function VaultPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
-  // Load documents from Supabase on mount
-  useEffect(() => {
-    let isMounted = true;
-    async function loadDocs() {
-      if (!effectiveUserId) {
-        setDocuments([]);
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const fetched = await getDocuments(effectiveUserId);
-        if (isMounted) {
-          setDocuments(fetched || []);
-        }
-      } catch {
-        if (isMounted) setDocuments([]);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
+  const loadDocs = React.useCallback(async () => {
+    if (!effectiveUserId) {
+      setDocuments([]);
+      setIsLoading(false);
+      return;
     }
-    loadDocs();
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const fetched = await getDocuments(effectiveUserId);
+      setDocuments(fetched || []);
+    } catch {
+      setDocuments([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadDocs();
+  }, [loadDocs]);
+
+  // Realtime subscription: syncs uploaded medical documents and extracted clinical records
+  useRealtimeTables({
+    tables: ["medical_documents", "extracted_records"],
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadDocs();
+    },
+  });
 
   // Drag & Drop State
   const [isDragging, setIsDragging] = useState(false);

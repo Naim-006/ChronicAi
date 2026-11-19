@@ -13,31 +13,41 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { Medication } from "@/types/medical";
 import { getMedications } from "@/lib/supabase/services/medications";
+import { useRealtimeTable } from "@/hooks/useRealtime";
 
 export default function ChronicCarePage() {
   const { effectiveUserId, profile } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    if (effectiveUserId) {
-      setIsLoading(true);
-      getMedications(effectiveUserId)
-        .then((data) => {
-          if (isMounted) setMedications(data);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
+  const loadMeds = React.useCallback(async () => {
+    if (!effectiveUserId) {
       setMedications([]);
       setIsLoading(false);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const data = await getMedications(effectiveUserId);
+      setMedications(data || []);
+    } catch {
+      setMedications([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadMeds();
+  }, [loadMeds]);
+
+  useRealtimeTable({
+    table: "medications",
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadMeds();
+    },
+  });
 
   const activeMeds = medications.filter(
     (m) =>
@@ -50,8 +60,12 @@ export default function ChronicCarePage() {
     <div className="space-y-5">
       <PageHeader
         eyebrow="Protocols"
-        title="Diabetes & Chronic Care Protocol"
-        description="Type 2 Diabetes Mellitus · Managed care plan"
+        title="Personalized Care Protocol"
+        description={
+          profile?.chronic_conditions && profile.chronic_conditions.length > 0
+            ? `${profile.chronic_conditions.join(" · ")} · Managed care plan`
+            : "Personalized Chronic Condition Management Protocol"
+        }
         actions={
           <Link
             href="/assistant"

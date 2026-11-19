@@ -15,6 +15,7 @@ import {
 import { Doctor } from "@/types/medical";
 import { useAuth } from "@/context/AuthContext";
 import { getDoctors, createDoctor } from "@/lib/supabase/services/appointments";
+import { useRealtimeTable } from "@/hooks/useRealtime";
 
 export default function DoctorsPage() {
   const { effectiveUserId } = useAuth();
@@ -30,25 +31,35 @@ export default function DoctorsPage() {
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    if (effectiveUserId) {
-      setIsLoading(true);
-      getDoctors(effectiveUserId)
-        .then((data) => {
-          if (isMounted) setDoctors(data);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
+  const loadDoctors = React.useCallback(async () => {
+    if (!effectiveUserId) {
       setDoctors([]);
       setIsLoading(false);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const data = await getDoctors(effectiveUserId);
+      setDoctors(data || []);
+    } catch {
+      setDoctors([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadDoctors();
+  }, [loadDoctors]);
+
+  // Realtime subscription: syncs care team directory live
+  useRealtimeTable({
+    table: "doctors",
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadDoctors();
+    },
+  });
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();

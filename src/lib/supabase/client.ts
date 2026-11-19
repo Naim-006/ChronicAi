@@ -12,11 +12,24 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
-export function createClient(): any {
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co";
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+let clientInstance: any = null;
 
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+export function createClient(): any {
+  if (typeof window === "undefined") {
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co";
+    const supabaseAnonKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+    return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  if (!clientInstance) {
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co";
+    const supabaseAnonKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+    clientInstance = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  return clientInstance;
 }

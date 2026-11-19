@@ -27,6 +27,7 @@ import {
   markNotificationRead,
   dismissNotification as dismissNotifService,
 } from "@/lib/supabase/services/notifications";
+import { useRealtimeTable } from "@/hooks/useRealtime";
 
 export default function NotificationsPage() {
   const { effectiveUserId } = useAuth();
@@ -34,25 +35,35 @@ export default function NotificationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread" | "critical" | "action">("all");
 
-  useEffect(() => {
-    let isMounted = true;
-    if (effectiveUserId) {
-      setIsLoading(true);
-      getClinicalNotifications(effectiveUserId)
-        .then((data) => {
-          if (isMounted) setNotifications(data);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
+  const loadNotifications = React.useCallback(async () => {
+    if (!effectiveUserId) {
       setNotifications([]);
       setIsLoading(false);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const data = await getClinicalNotifications(effectiveUserId);
+      setNotifications(data || []);
+    } catch {
+      setNotifications([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  // Realtime subscription: syncs clinical alerts and notifications live
+  useRealtimeTable({
+    table: "clinical_notifications",
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadNotifications();
+    },
+  });
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 

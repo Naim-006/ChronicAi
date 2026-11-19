@@ -37,6 +37,7 @@ import {
   createConversation,
   saveMessage,
 } from "@/lib/supabase/services/copilot";
+import { useRealtimeTable } from "@/hooks/useRealtime";
 
 interface ChatSession {
   id: string;
@@ -133,6 +134,33 @@ export default function AssistantPage() {
       isMounted = false;
     };
   }, [effectiveUserId]);
+
+  useRealtimeTable({
+    table: "ai_conversations",
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      if (!effectiveUserId) return;
+      getConversations(effectiveUserId).then(async (convs) => {
+        if (convs && convs.length > 0) {
+          const loaded: ChatSession[] = await Promise.all(
+            convs.map(async (c) => {
+              const msgs = await getMessages(c.id);
+              return {
+                id: c.id,
+                title: c.title,
+                date: formatDate(c.updated_at),
+                messages: msgs,
+              };
+            })
+          );
+          if (loaded.length > 0) {
+            setSessions(loaded);
+          }
+        }
+      });
+    },
+  });
 
   const handleCreateNewSession = async () => {
     const welcomeMsg: AIMessage = {

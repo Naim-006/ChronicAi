@@ -88,6 +88,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isConfigured]);
 
+  // Realtime profile listener
+  useEffect(() => {
+    if (!isConfigured || !user?.id) return;
+    const supabase = createClient();
+    const profileChannel = supabase
+      .channel(`realtime_auth_profile_${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "health_profiles",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          loadUserProfile(user.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [isConfigured, user?.id]);
+
   const signOut = async () => {
     if (isConfigured) {
       const supabase = createClient();

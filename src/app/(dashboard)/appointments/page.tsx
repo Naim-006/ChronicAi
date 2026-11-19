@@ -26,6 +26,7 @@ import {
   getAppointments,
   createAppointment,
 } from "@/lib/supabase/services/appointments";
+import { useRealtimeTables } from "@/hooks/useRealtime";
 
 export default function AppointmentsPage() {
   const { effectiveUserId } = useAuth();
@@ -43,25 +44,35 @@ export default function AppointmentsPage() {
   const [reason, setReason] = useState("");
   const [loc, setLoc] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    if (effectiveUserId) {
-      setIsLoading(true);
-      getAppointments(effectiveUserId)
-        .then((data) => {
-          if (isMounted) setAppointments(data);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
+  const loadApts = React.useCallback(async () => {
+    if (!effectiveUserId) {
       setAppointments([]);
       setIsLoading(false);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const data = await getAppointments(effectiveUserId);
+      setAppointments(data || []);
+    } catch {
+      setAppointments([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadApts();
+  }, [loadApts]);
+
+  // Realtime subscription: syncs scheduled appointments live
+  useRealtimeTables({
+    tables: ["appointments"],
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadApts();
+    },
+  });
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

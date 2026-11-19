@@ -7,37 +7,42 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { getMedications, createMedication, logMedicationAdherence } from "@/lib/supabase/services/medications";
+import { useRealtimeTables } from "@/hooks/useRealtime";
 
 export default function MedicationsPage() {
   const { effectiveUserId } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadMeds() {
-      if (!effectiveUserId) {
-        setMedications([]);
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const fetched = await getMedications(effectiveUserId);
-        if (isMounted) {
-          setMedications(fetched || []);
-        }
-      } catch {
-        if (isMounted) setMedications([]);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
+  const loadMeds = React.useCallback(async () => {
+    if (!effectiveUserId) {
+      setMedications([]);
+      setIsLoading(false);
+      return;
     }
-    loadMeds();
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const fetched = await getMedications(effectiveUserId);
+      setMedications(fetched || []);
+    } catch {
+      setMedications([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadMeds();
+  }, [loadMeds]);
+
+  // Realtime subscription: syncs medication records and adherence logs live
+  useRealtimeTables({
+    tables: ["medications", "medication_logs"],
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadMeds();
+    },
+  });
   const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({});
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);

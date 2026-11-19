@@ -25,6 +25,7 @@ import { getDocuments } from "@/lib/supabase/services/documents";
 import { getHealthMetrics, logHealthMetric } from "@/lib/supabase/services/metrics";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRealtimeTables } from "@/hooks/useRealtime";
 
 function ProgressRing({
   percent,
@@ -79,65 +80,88 @@ export default function DashboardPage() {
   const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showVitalsModal, setShowVitalsModal] = useState(false);
-  const [vitals, setVitals] = useState({
-    glucose: 118,
-    systolic: 122,
-    diastolic: 78,
-    heartRate: 72,
+  const [vitals, setVitals] = useState<{
+    glucose: number | null;
+    systolic: number | null;
+    diastolic: number | null;
+    heartRate: number | null;
+  }>({
+    glucose: null,
+    systolic: null,
+    diastolic: null,
+    heartRate: null,
   });
-  const [glucoseInput, setGlucoseInput] = useState("118");
-  const [sysInput, setSysInput] = useState("122");
-  const [diaInput, setDiaInput] = useState("78");
+  const [glucoseInput, setGlucoseInput] = useState("110");
+  const [sysInput, setSysInput] = useState("120");
+  const [diaInput, setDiaInput] = useState("80");
   const [hrInput, setHrInput] = useState("72");
   const [glucoseType, setGlucoseType] = useState<"fasting" | "postprandial">("fasting");
   const [logAlert, setLogAlert] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    if (effectiveUserId) {
-      Promise.all([
-        getMedications(effectiveUserId),
-        getAppointments(effectiveUserId),
-        getDocuments(effectiveUserId),
-        getHealthMetrics(effectiveUserId),
-      ])
-        .then(([meds, apts, docs, mets]) => {
-          if (!isMounted) return;
-          setMedications(meds);
-          setAppointments(apts);
-          setDocuments(docs);
-          setMetrics(mets);
-
-          const latestGlucose = mets.find((m) => m.metric_type === "glucose");
-          const latestBP = mets.find((m) => m.metric_type === "blood_pressure");
-          const latestHR = mets.find((m) => m.metric_type === "heart_rate");
-
-          setVitals((prev) => ({
-            glucose: latestGlucose ? latestGlucose.value_primary : prev.glucose,
-            systolic: latestBP ? latestBP.value_primary : prev.systolic,
-            diastolic: latestBP?.value_secondary ? latestBP.value_secondary : prev.diastolic,
-            heartRate: latestHR ? latestHR.value_primary : prev.heartRate,
-          }));
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
+  const fetchDashboardData = React.useCallback(async () => {
+    if (!effectiveUserId) {
       setMedications([]);
       setAppointments([]);
       setDocuments([]);
       setMetrics([]);
       setIsLoading(false);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const [meds, apts, docs, mets] = await Promise.all([
+        getMedications(effectiveUserId),
+        getAppointments(effectiveUserId),
+        getDocuments(effectiveUserId),
+        getHealthMetrics(effectiveUserId),
+      ]);
+      setMedications(meds || []);
+      setAppointments(apts || []);
+      setDocuments(docs || []);
+      setMetrics(mets || []);
+
+      const latestGlucose = (mets || []).find((m) => m.metric_type === "glucose");
+      const latestBP = (mets || []).find((m) => m.metric_type === "blood_pressure");
+      const latestHR = (mets || []).find((m) => m.metric_type === "heart_rate");
+
+      setVitals({
+        glucose: latestGlucose ? latestGlucose.value_primary : null,
+        systolic: latestBP ? latestBP.value_primary : null,
+        diastolic: latestBP?.value_secondary ? latestBP.value_secondary : null,
+        heartRate: latestHR ? latestHR.value_primary : null,
+      });
+    } catch (err) {
+      console.error("Error loading dashboard data:", err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Supabase Realtime Subscription: auto-syncs live updates across tables
+  useRealtimeTables({
+    tables: [
+      "medications",
+      "medication_logs",
+      "appointments",
+      "medical_documents",
+      "health_metrics",
+      "health_profiles",
+    ],
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      fetchDashboardData();
+    },
+  });
 
   const nextAppointment =
     appointments.find((a) => a.status === "upcoming") || null;
   const pendingReviewDocs = documents.filter((d) => d.status === "needs_review");
   const takenCount = Object.values(loggedMeds).filter(Boolean).length;
+  const latestHbA1c = metrics.find((m) => m.metric_type === "hba1c");
 
   const toggleMed = async (medId: string) => {
     const nextState = !loggedMeds[medId];
@@ -160,10 +184,10 @@ export default function DashboardPage() {
 
   const handleSaveVitals = async (e: React.FormEvent) => {
     e.preventDefault();
-    const g = parseInt(glucoseInput) || vitals.glucose;
-    const s = parseInt(sysInput) || vitals.systolic;
-    const d = parseInt(diaInput) || vitals.diastolic;
-    const hr = parseInt(hrInput) || vitals.heartRate;
+    const g = parseInt(glucoseInput) || vitals.glucose || 110;
+    const s = parseInt(sysInput) || vitals.systolic || 120;
+    const d = parseInt(diaInput) || vitals.diastolic || 80;
+    const hr = parseInt(hrInput) || vitals.heartRate || 72;
 
     setVitals({
       glucose: g,
@@ -288,12 +312,16 @@ export default function DashboardPage() {
             <div className="mt-4">
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-extrabold text-[var(--foreground)]">
-                  {vitals.glucose}
+                  {vitals.glucose !== null ? vitals.glucose : "--"}
                 </span>
                 <span className="text-xs text-[var(--muted-foreground)]">mg/dL</span>
               </div>
               <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                In target (70–130)
+                {vitals.glucose !== null
+                  ? vitals.glucose <= 130 && vitals.glucose >= 70
+                    ? "In target (70–130)"
+                    : "Outside target"
+                  : "No readings yet"}
               </span>
             </div>
             <div className="mt-4 flex h-10 items-end gap-2">
@@ -301,7 +329,10 @@ export default function DashboardPage() {
                 <div
                   key={i}
                   className="flex-1 rounded-full bg-emerald-400/80"
-                  style={{ height: `${h * 12.5}%`, opacity: 0.35 + i * 0.15 }}
+                  style={{
+                    height: `${h * 12.5}%`,
+                    opacity: vitals.glucose !== null ? 0.35 + i * 0.15 : 0.12,
+                  }}
                 />
               ))}
             </div>
@@ -322,12 +353,14 @@ export default function DashboardPage() {
             <div className="mt-4">
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-extrabold text-[var(--foreground)]">
-                  {vitals.systolic}/{vitals.diastolic}
+                  {vitals.systolic !== null && vitals.diastolic !== null
+                    ? `${vitals.systolic}/${vitals.diastolic}`
+                    : "--/--"}
                 </span>
                 <span className="text-xs text-[var(--muted-foreground)]">mmHg</span>
               </div>
               <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                Normal seated
+                {vitals.systolic !== null ? "Resting seated" : "No readings yet"}
               </span>
             </div>
             <div className="mt-4 grid grid-cols-4 gap-2">
@@ -335,7 +368,7 @@ export default function DashboardPage() {
                 <div
                   key={i}
                   className={`h-2.5 w-2.5 rounded-full ${
-                    i < 6 ? "bg-emerald-500" : "bg-[var(--border)]"
+                    vitals.systolic !== null && i < 6 ? "bg-emerald-500" : "bg-[var(--border)]"
                   }`}
                 />
               ))}
@@ -356,15 +389,30 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-emerald-700">6.8%</span>
-                <span className="text-xs text-[var(--muted-foreground)]">Nov 2026</span>
+                <span className="text-2xl font-extrabold text-emerald-700">
+                  {latestHbA1c ? `${latestHbA1c.value_primary}%` : "--%"}
+                </span>
+                <span className="text-xs text-[var(--muted-foreground)]">
+                  {latestHbA1c ? formatDate(latestHbA1c.recorded_at) : "No lab test"}
+                </span>
               </div>
               <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                −0.3% improved
+                {latestHbA1c
+                  ? latestHbA1c.value_primary <= 7.0
+                    ? "Optimal range"
+                    : "Elevated"
+                  : "Log lab report"}
               </span>
             </div>
             <div className="relative mt-4 h-2.5 overflow-hidden rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-400">
-              <span className="absolute top-1/2 left-[42%] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-600 shadow-sm" />
+              <span
+                className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-600 shadow-sm"
+                style={{
+                  left: latestHbA1c
+                    ? `${Math.min(Math.max((latestHbA1c.value_primary - 4) * 20, 5), 95)}%`
+                    : "10%",
+                }}
+              />
             </div>
           </Link>
 
@@ -383,12 +431,14 @@ export default function DashboardPage() {
             <div className="mt-4">
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-extrabold text-[var(--foreground)]">
-                  {takenCount} of 4
+                  {medications.length > 0 ? `${takenCount} of ${medications.length}` : "0"}
                 </span>
-                <span className="text-xs text-[var(--muted-foreground)]">today</span>
+                <span className="text-xs text-[var(--muted-foreground)]">
+                  {medications.length > 0 ? "today" : "active"}
+                </span>
               </div>
               <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                Daily protocol active
+                {medications.length > 0 ? "Daily protocol active" : "No medications logged"}
               </span>
             </div>
             <div className="mt-4 flex items-center gap-2">
@@ -396,7 +446,9 @@ export default function DashboardPage() {
                 <div
                   key={i}
                   className={`h-2.5 flex-1 rounded-full ${
-                    i < takenCount ? "bg-emerald-500" : "bg-[var(--border)]"
+                    medications.length > 0 && i < takenCount
+                      ? "bg-emerald-500"
+                      : "bg-[var(--border)]"
                   }`}
                 />
               ))}
@@ -517,17 +569,29 @@ export default function DashboardPage() {
                 Health Condition
               </h2>
               <span className="text-[11px] font-semibold text-emerald-600 truncate block">
-                Type 2 Diabetes & HTN · Managed
+                {profile?.chronic_conditions && profile.chronic_conditions.length > 0
+                  ? profile.chronic_conditions.join(" · ")
+                  : "Profile Active"}
               </span>
             </div>
           </div>
 
           <div className="relative flex shrink-0 items-center justify-center">
-            <ProgressRing percent={88} />
+            <ProgressRing
+              percent={
+                medications.length > 0
+                  ? Math.round((takenCount / medications.length) * 100)
+                  : 100
+              }
+            />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-sm font-extrabold text-[var(--foreground)]">88%</span>
+              <span className="text-sm font-extrabold text-[var(--foreground)]">
+                {medications.length > 0
+                  ? `${Math.round((takenCount / medications.length) * 100)}%`
+                  : "100%"}
+              </span>
               <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">
-                Optimal
+                {medications.length > 0 && takenCount < medications.length ? "Pending" : "Optimal"}
               </span>
             </div>
           </div>
@@ -535,11 +599,23 @@ export default function DashboardPage() {
 
         <div className="relative mt-5">
           <div className="mb-2 flex items-center justify-between text-[11px] font-semibold">
-            <span className="text-[var(--muted-foreground)]">Recovery progress</span>
-            <span className="text-emerald-700">HbA1c 6.8% · Goal &lt; 7.0%</span>
+            <span className="text-[var(--muted-foreground)]">Health status</span>
+            <span className="text-emerald-700">
+              {latestHbA1c
+                ? `HbA1c ${latestHbA1c.value_primary}% · Recorded ${formatDate(latestHbA1c.recorded_at)}`
+                : "Continuous Realtime Care Monitoring"}
+            </span>
           </div>
           <div className="soft-inset h-3 w-full overflow-hidden rounded-full p-0.5">
-            <div className="h-full w-[88%] rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all" />
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
+              style={{
+                width:
+                  medications.length > 0
+                    ? `${Math.max(Math.round((takenCount / medications.length) * 100), 10)}%`
+                    : "100%",
+              }}
+            />
           </div>
         </div>
 
@@ -553,20 +629,22 @@ export default function DashboardPage() {
                 Fasting glucose
               </span>
               <span className="text-xs font-extrabold text-[var(--foreground)] truncate block">
-                118 mg/dL
+                {vitals.glucose !== null ? `${vitals.glucose} mg/dL` : "Not logged"}
               </span>
             </div>
           </div>
           <div className="soft-inset flex items-center gap-3 rounded-xl p-3 min-w-0">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
-              <CheckCircle2 className="h-4 w-4" />
+              <Heart className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
               <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)] truncate">
-                eGFR kidney
+                Blood Pressure
               </span>
               <span className="text-xs font-extrabold text-[var(--foreground)] truncate block">
-                68 · Stable
+                {vitals.systolic !== null && vitals.diastolic !== null
+                  ? `${vitals.systolic}/${vitals.diastolic} mmHg`
+                  : "Not logged"}
               </span>
             </div>
           </div>
@@ -721,18 +799,18 @@ export default function DashboardPage() {
 
       {/* Quick Vitals Logger Modal */}
       {showVitalsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-3.5 sm:p-4 animate-in fade-in">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3.5 sm:p-4 animate-in fade-in">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--card)] text-[var(--foreground)] p-5 sm:p-6 shadow-2xl border border-[var(--border)] space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
                   <Activity className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 leading-tight">
+                  <h3 className="text-base font-extrabold text-[var(--foreground)] leading-tight">
                     Log Daily Biometrics
                   </h3>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-[var(--muted-foreground)]">
                     Encrypted personal health entry
                   </span>
                 </div>
@@ -740,7 +818,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowVitalsModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] p-1"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -748,9 +826,9 @@ export default function DashboardPage() {
 
             <form onSubmit={handleSaveVitals} className="space-y-4 text-xs">
               {/* Glucose Section */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2.5">
+              <div className="p-3.5 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800">Blood Glucose</span>
+                  <span className="font-bold text-[var(--foreground)]">Blood Glucose</span>
                   <div className="flex items-center gap-1 text-[10px] font-bold">
                     <button
                       type="button"
@@ -758,7 +836,7 @@ export default function DashboardPage() {
                       className={`px-2 py-0.5 rounded-lg transition-colors ${
                         glucoseType === "fasting"
                           ? "bg-emerald-600 text-white"
-                          : "bg-white text-slate-600 border border-slate-200"
+                          : "bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)]"
                       }`}
                     >
                       Fasting
@@ -769,7 +847,7 @@ export default function DashboardPage() {
                       className={`px-2 py-0.5 rounded-lg transition-colors ${
                         glucoseType === "postprandial"
                           ? "bg-emerald-600 text-white"
-                          : "bg-white text-slate-600 border border-slate-200"
+                          : "bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)]"
                       }`}
                     >
                       Post-Meal
@@ -785,21 +863,21 @@ export default function DashboardPage() {
                     max="450"
                     value={glucoseInput}
                     onChange={(e) => setGlucoseInput(e.target.value)}
-                    className="flex-1 h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="flex-1 h-11 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3.5 text-sm font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
-                  <span className="text-xs font-bold text-slate-400">mg/dL</span>
+                  <span className="text-xs font-bold text-[var(--muted-foreground)]">mg/dL</span>
                 </div>
-                <span className="text-[10px] text-slate-400 block">
+                <span className="text-[10px] text-[var(--muted-foreground)] block">
                   Target: 70–130 mg/dL (HbA1c &lt; 7.0%)
                 </span>
               </div>
 
               {/* Blood Pressure Section */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2.5">
-                <span className="font-bold text-slate-800 block">Blood Pressure & Pulse</span>
+              <div className="p-3.5 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] space-y-2.5">
+                <span className="font-bold text-[var(--foreground)] block">Blood Pressure & Pulse</span>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Systolic</label>
+                    <label className="text-[10px] font-bold text-[var(--muted-foreground)] block mb-1">Systolic</label>
                     <input
                       type="number"
                       required
@@ -807,11 +885,11 @@ export default function DashboardPage() {
                       max="240"
                       value={sysInput}
                       onChange={(e) => setSysInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 text-xs font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Diastolic</label>
+                    <label className="text-[10px] font-bold text-[var(--muted-foreground)] block mb-1">Diastolic</label>
                     <input
                       type="number"
                       required
@@ -819,11 +897,11 @@ export default function DashboardPage() {
                       max="140"
                       value={diaInput}
                       onChange={(e) => setDiaInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 text-xs font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Pulse (bpm)</label>
+                    <label className="text-[10px] font-bold text-[var(--muted-foreground)] block mb-1">Pulse (bpm)</label>
                     <input
                       type="number"
                       required
@@ -831,17 +909,17 @@ export default function DashboardPage() {
                       max="200"
                       value={hrInput}
                       onChange={(e) => setHrInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 text-xs font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setShowVitalsModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  className="px-4 py-2.5 rounded-xl border border-[var(--border)] text-xs font-semibold text-[var(--muted-foreground)] hover:bg-[var(--secondary)] cursor-pointer"
                 >
                   Cancel
                 </button>

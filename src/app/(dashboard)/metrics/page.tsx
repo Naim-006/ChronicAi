@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { HealthMetric, MetricType } from "@/types/medical";
 import { getHealthMetrics, logHealthMetric } from "@/lib/supabase/services/metrics";
 import { formatDate } from "@/lib/utils";
+import { useRealtimeTable } from "@/hooks/useRealtime";
 
 export default function MetricsPage() {
   const { effectiveUserId } = useAuth();
@@ -35,25 +36,35 @@ export default function MetricsPage() {
   const [val2, setVal2] = useState("");
   const [context, setContext] = useState<"fasting" | "postprandial" | "resting" | "random" | "bedtime">("fasting");
 
-  useEffect(() => {
-    let isMounted = true;
-    if (effectiveUserId) {
-      setIsLoading(true);
-      getHealthMetrics(effectiveUserId)
-        .then((data) => {
-          if (isMounted) setMetrics(data);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
+  const loadMetrics = React.useCallback(async () => {
+    if (!effectiveUserId) {
       setMetrics([]);
       setIsLoading(false);
+      return;
     }
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const data = await getHealthMetrics(effectiveUserId);
+      setMetrics(data || []);
+    } catch {
+      setMetrics([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    loadMetrics();
+  }, [loadMetrics]);
+
+  // Realtime subscription: syncs biometric readings and lab markers live
+  useRealtimeTable({
+    table: "health_metrics",
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadMetrics();
+    },
+  });
 
   const handleLog = async (e: React.FormEvent) => {
     e.preventDefault();
