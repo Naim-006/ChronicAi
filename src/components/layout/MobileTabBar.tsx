@@ -64,21 +64,21 @@ export function MobileTabBar() {
     },
   ];
 
-  // SVG Geometry for the custom continuous outline with smooth center dome
-  const H = 76;
-  const topBaseline = 22;
-  const bottom = 74;
-  const capRadius = (bottom - topBaseline) / 2; // 26
+  // Exact geometric parameters matching reference image
+  const H = 84;
+  const topBaseline = 24;
+  const bottom = 82;
+  const capRadius = (bottom - topBaseline) / 2; // 29px rounded stadium ends
   const cx = width / 2;
-  const domeHalf = 48; // width of dome base from center
-  const domePeakY = 3; // peak elevation of dome
+  const domeHalf = 52; // smooth bell curve spread
+  const domePeakY = 3; // rounded peak apex
 
-  // Continuous smooth SVG path with horizontal tangents at junctions and peak
+  // Continuous smooth SVG path with horizontal tangents at baseline and dome peak
   const svgPath = `
     M ${capRadius}, ${topBaseline}
     L ${cx - domeHalf}, ${topBaseline}
-    C ${cx - 24}, ${topBaseline} ${cx - 22}, ${domePeakY} ${cx}, ${domePeakY}
-    C ${cx + 22}, ${domePeakY} ${cx + 24}, ${topBaseline} ${cx + domeHalf}, ${topBaseline}
+    C ${cx - 28}, ${topBaseline} ${cx - 26}, ${domePeakY} ${cx}, ${domePeakY}
+    C ${cx + 26}, ${domePeakY} ${cx + 28}, ${topBaseline} ${cx + domeHalf}, ${topBaseline}
     L ${width - capRadius}, ${topBaseline}
     A ${capRadius} ${capRadius} 0 0 1 ${width - capRadius}, ${bottom}
     L ${capRadius}, ${bottom}
@@ -87,14 +87,14 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-md px-3 pointer-events-none lg:hidden">
+    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-[420px] px-3 pointer-events-none lg:hidden">
       <div
         ref={containerRef}
-        className="pointer-events-auto relative w-full h-[78px] select-none"
+        className="pointer-events-auto relative w-full h-[84px] select-none"
       >
-        {/* Custom SVG Background with Continuous Dark Border & Center Dome */}
+        {/* Custom SVG Background with Continuous Dark Navy Border & Center Dome */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_25px_rgba(30,41,59,0.14)]"
           width={width}
           height={H}
           viewBox={`0 0 ${width} ${H}`}
@@ -104,15 +104,15 @@ export function MobileTabBar() {
           <path
             d={svgPath}
             fill="#ffffff"
-            stroke="#334155"
-            strokeWidth="2"
+            stroke="#2b364a"
+            strokeWidth="2.2"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
         </svg>
 
         {/* 5 Tab Navigation Items */}
-        <div className="relative z-10 grid grid-cols-5 h-full items-end pb-2 pt-1 px-1">
+        <div className="relative z-10 grid grid-cols-5 h-full items-center px-1">
           {tabs.map((tab) => {
             const isActive =
               (tab.matchExact && pathname === tab.href) ||
@@ -125,18 +125,21 @@ export function MobileTabBar() {
 
             const Icon = tab.icon;
 
-            // Center Copilot Button with circular green gradient inside the dome
+            // Center Copilot Tab: Elevated green circular button framed inside the dome
             if (tab.isCenterCopilot) {
               return (
-                <div key={tab.name} className="flex flex-col items-center justify-end pb-0.5">
+                <div
+                  key={tab.name}
+                  className="flex flex-col items-center justify-end h-full pb-2 relative"
+                >
                   <Link
                     href={tab.href!}
                     aria-label="Chronic AI Copilot"
-                    className="group -mt-8 flex flex-col items-center justify-center transition-transform active:scale-95"
+                    className="group -mt-5 flex flex-col items-center justify-center transition-transform active:scale-95"
                   >
                     <div
                       className={cn(
-                        "flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 text-white shadow-[0_6px_16px_rgba(16,185,129,0.42)] transition-all",
+                        "flex h-[52px] w-[52px] items-center justify-center rounded-full bg-gradient-to-tr from-[#059669] to-[#10b981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.4)] transition-all",
                         isActive
                           ? "ring-2 ring-emerald-400 ring-offset-2 ring-offset-white scale-105"
                           : "group-hover:scale-105"
@@ -147,7 +150,7 @@ export function MobileTabBar() {
                     <span
                       className={cn(
                         "mt-1 text-[11px] font-medium leading-none tracking-tight",
-                        isActive ? "text-emerald-700 font-semibold" : "text-slate-600"
+                        isActive ? "text-[#059669] font-semibold" : "text-[#475569]"
                       )}
                     >
                       Copilot
@@ -158,49 +161,56 @@ export function MobileTabBar() {
             }
 
             // Normal Tab (Home, Records, Meds, Chronic Care)
+            // Positioned inside the baseline body (topBaseline = 24 to bottom = 82)
             return (
-              <Link
+              <div
                 key={tab.name}
-                href={tab.href!}
-                className={cn(
-                  "relative flex flex-col items-center justify-center py-1 transition-all group",
-                  isActive
-                    ? "text-emerald-600 font-semibold"
-                    : "text-slate-600 hover:text-slate-900"
-                )}
+                className="flex flex-col items-center justify-center h-full pt-[22px] pb-[6px]"
               >
-                <div className="relative flex items-center justify-center">
-                  <Icon
-                    className={cn(
-                      "h-5 w-5 transition-transform",
-                      isActive
-                        ? "stroke-[2.2] text-emerald-600 scale-105"
-                        : "stroke-[1.8] text-slate-700 group-hover:scale-105"
-                    )}
-                  />
-
-                  {/* Badge (e.g. green circle '1' on Records) */}
-                  {tab.badge && (
-                    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white shadow-sm ring-1 ring-white">
-                      {tab.badge}
-                    </span>
-                  )}
-                </div>
-
-                <span
+                <Link
+                  href={tab.href!}
                   className={cn(
-                    "mt-1 text-[11px] leading-tight text-center tracking-tight",
-                    isActive ? "font-semibold text-emerald-600" : "font-medium text-slate-600"
+                    "relative flex flex-col items-center justify-center w-full transition-all group",
+                    isActive
+                      ? "text-[#059669]"
+                      : "text-[#475569] hover:text-[#1e293b]"
                   )}
                 >
-                  {tab.name}
-                </span>
+                  <div className="relative flex items-center justify-center">
+                    <Icon
+                      className={cn(
+                        "h-[22px] w-[22px] transition-transform",
+                        isActive
+                          ? "stroke-[2.2] text-[#059669] scale-105"
+                          : "stroke-[1.9] text-[#475569] group-hover:scale-105"
+                      )}
+                    />
 
-                {/* Active Indicator Bar (rounded pill like in screenshot) */}
-                {isActive && (
-                  <span className="mt-0.5 h-1 w-4 rounded-full bg-emerald-500 shadow-sm" />
-                )}
-              </Link>
+                    {/* Notification badge on Records */}
+                    {tab.badge && (
+                      <span className="absolute -top-1 -right-2 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#059669] px-1 text-[9px] font-extrabold text-white shadow-sm ring-1.5 ring-white">
+                        {tab.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  <span
+                    className={cn(
+                      "mt-1 text-[11px] leading-tight text-center tracking-tight",
+                      isActive ? "font-semibold text-[#059669]" : "font-medium text-[#475569]"
+                    )}
+                  >
+                    {tab.name}
+                  </span>
+
+                  {/* Active Indicator Bar (rounded pill like in screenshot) */}
+                  {isActive ? (
+                    <span className="mt-1 h-[3.5px] w-4 rounded-full bg-[#059669]" />
+                  ) : (
+                    <span className="mt-1 h-[3.5px] w-4 rounded-full bg-transparent" />
+                  )}
+                </Link>
+              </div>
             );
           })}
         </div>
