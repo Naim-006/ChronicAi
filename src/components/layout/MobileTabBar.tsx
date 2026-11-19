@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Folder,
@@ -14,8 +14,22 @@ import { cn } from "@/lib/utils";
 
 export function MobileTabBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(400);
+
+  // Swipe gesture & wavy transition state
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [waveState, setWaveState] = useState<{
+    active: boolean;
+    direction: "left" | "right";
+    key: number;
+  }>({
+    active: false,
+    direction: "left",
+    key: 0,
+  });
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -64,6 +78,84 @@ export function MobileTabBar() {
     },
   ];
 
+  // Current active index for swipe navigation
+  const currentIndex = tabs.findIndex(
+    (tab) =>
+      (tab.matchExact && pathname === tab.href) ||
+      (!tab.matchExact &&
+        !tab.isCenterCopilot &&
+        (pathname === tab.href ||
+          (tab.aliases && tab.aliases.some((alias) => pathname.startsWith(alias))))) ||
+      (tab.isCenterCopilot && pathname.startsWith(tab.href!))
+  );
+
+  // Handle touch events for smooth horizontal swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const deltaX = e.touches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+
+    // Only respond to predominantly horizontal swipes
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      // Apply subtle elastic drag resistance
+      const clamped = Math.max(-40, Math.min(40, deltaX * 0.4));
+      setDragOffset(clamped);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    setDragOffset(0);
+
+    // Swipe threshold in pixels
+    const SWIPE_THRESHOLD = 36;
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
+      const activeIdx = currentIndex >= 0 ? currentIndex : 0;
+      let targetIndex = activeIdx;
+
+      if (deltaX < -SWIPE_THRESHOLD) {
+        // Swiped Left -> Move to Next Tab
+        targetIndex = Math.min(tabs.length - 1, activeIdx + 1);
+      } else if (deltaX > SWIPE_THRESHOLD) {
+        // Swiped Right -> Move to Previous Tab
+        targetIndex = Math.max(0, activeIdx - 1);
+      }
+
+      if (targetIndex !== activeIdx) {
+        // Trigger glassy wavy shimmer transition
+        setWaveState({
+          active: true,
+          direction: deltaX < 0 ? "left" : "right",
+          key: Date.now(),
+        });
+
+        // Trigger light haptic feedback if supported on mobile device
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate(12);
+          } catch {}
+        }
+
+        router.push(tabs[targetIndex].href);
+
+        // Auto reset wave animation after duration
+        setTimeout(() => {
+          setWaveState((prev) => ({ ...prev, active: false }));
+        }, 600);
+      }
+    }
+  };
+
   // Exact geometric parameters derived from reference design
   const H = 88;
   const topBaseline = 22;
@@ -90,20 +182,53 @@ export function MobileTabBar() {
     <nav className="fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[84%] max-w-3xl pointer-events-none lg:hidden transition-all duration-200">
       <div
         ref={containerRef}
-        className="pointer-events-auto relative w-full h-[88px] select-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className={cn(
+          "pointer-events-auto relative w-full h-[88px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
+          waveState.active && "animate-liquid-wave"
+        )}
       >
         {/* Frosted Glass Backdrop Blur Layer (clipped exactly to the stadium + dome outline) */}
         <div
-          className="absolute inset-0 pointer-events-none backdrop-blur-md bg-white/50"
+          className="absolute inset-0 pointer-events-none backdrop-blur-md bg-white/60"
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,
           }}
         />
 
-        {/* Custom SVG Outline with Refined Border Boldness & Center Dome */}
+        {/* Dynamic Glassy Wavy Shimmer Light Beam (Sweeps on Swipe) */}
+        {waveState.active && (
+          <div
+            key={waveState.key}
+            className={cn(
+              "absolute inset-0 pointer-events-none z-20",
+              waveState.direction === "left"
+                ? "animate-glass-wave-left"
+                : "animate-glass-wave-right"
+            )}
+            style={{
+              clipPath: `path('${svgPath}')`,
+              WebkitClipPath: `path('${svgPath}')`,
+              background: `linear-gradient(${
+                waveState.direction === "left" ? "90deg" : "270deg"
+              }, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.05) 15%, 
+                rgba(16, 185, 129, 0.35) 45%, 
+                rgba(255, 255, 255, 0.9) 50%, 
+                rgba(16, 185, 129, 0.35) 55%, 
+                rgba(255, 255, 255, 0.05) 85%, 
+                transparent 100%)`,
+            }}
+          />
+        )}
+
+        {/* Custom SVG Outline with Reduced Border Boldness & Center Dome */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(30,41,59,0.12)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(30,41,59,0.10)]"
           width="100%"
           height={H}
           viewBox={`0 0 ${width} ${H}`}
@@ -112,18 +237,23 @@ export function MobileTabBar() {
         >
           <path
             d={svgPath}
-            fill="rgba(255, 255, 255, 0.45)"
-            stroke="#334155"
-            strokeWidth="1.2"
-            strokeOpacity="0.8"
+            fill="rgba(255, 255, 255, 0.40)"
+            stroke="#475569"
+            strokeWidth="0.95"
+            strokeOpacity="0.65"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
         </svg>
 
         {/* 5 Tab Navigation Items mathematically aligned on the same baseline */}
-        <div className="relative z-10 grid grid-cols-5 h-full w-full">
-          {tabs.map((tab) => {
+        <div
+          className="relative z-10 grid grid-cols-5 h-full w-full transition-transform duration-150 ease-out"
+          style={{
+            transform: dragOffset !== 0 ? `translateX(${dragOffset}px)` : undefined,
+          }}
+        >
+          {tabs.map((tab, idx) => {
             const isActive =
               (tab.matchExact && pathname === tab.href) ||
               (!tab.matchExact &&

@@ -258,6 +258,65 @@
       box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
     }
   }
+
+  /* Glassy wavy shimmer transition animations for bottom bar swipe */
+  @keyframes glassWaveLeft {
+    0% {
+      transform: translateX(130%) skewX(-20deg);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.95;
+    }
+    80% {
+      opacity: 0.95;
+    }
+    100% {
+      transform: translateX(-130%) skewX(-20deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes glassWaveRight {
+    0% {
+      transform: translateX(-130%) skewX(20deg);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.95;
+    }
+    80% {
+      opacity: 0.95;
+    }
+    100% {
+      transform: translateX(130%) skewX(20deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes liquidWavePulse {
+    0% {
+      transform: scale(0.985);
+    }
+    45% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .animate-glass-wave-left {
+    animation: glassWaveLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .animate-glass-wave-right {
+    animation: glassWaveRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .animate-liquid-wave {
+    animation: liquidWavePulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
 }
 
 /* Custom scrollbar */
