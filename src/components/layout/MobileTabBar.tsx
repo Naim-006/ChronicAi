@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 export function MobileTabBar() {
   const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(380);
+  const [width, setWidth] = useState(400);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -87,14 +87,23 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-[420px] px-3 pointer-events-none lg:hidden">
+    <nav className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-[460px] px-2.5 sm:px-4 pointer-events-none lg:hidden">
       <div
         ref={containerRef}
         className="pointer-events-auto relative w-full h-[88px] select-none"
       >
-        {/* Custom SVG Background with Continuous Dark Navy Border & Center Dome */}
+        {/* Frosted Glass Backdrop Blur Layer (clipped exactly to the stadium + dome outline) */}
+        <div
+          className="absolute inset-0 pointer-events-none backdrop-blur-xl bg-white/75"
+          style={{
+            clipPath: `path('${svgPath}')`,
+            WebkitClipPath: `path('${svgPath}')`,
+          }}
+        />
+
+        {/* Custom SVG Outline with Refined Border Boldness & Center Dome */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_12px_28px_rgba(30,41,59,0.14)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(30,41,59,0.12)]"
           width="100%"
           height={H}
           viewBox={`0 0 ${width} ${H}`}
@@ -103,9 +112,10 @@ export function MobileTabBar() {
         >
           <path
             d={svgPath}
-            fill="#ffffff"
-            stroke="#2B364A"
-            strokeWidth="2.2"
+            fill="rgba(255, 255, 255, 0.45)"
+            stroke="#334155"
+            strokeWidth="1.35"
+            strokeOpacity="0.8"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
