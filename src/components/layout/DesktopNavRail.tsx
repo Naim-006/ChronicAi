@@ -72,6 +72,13 @@ export function DesktopNavRail() {
     .slice(0, 2)
     .toUpperCase();
 
+  const currentAvatar =
+    profile?.avatar_url ||
+    (profile?.preferences as any)?.avatar_url ||
+    (user?.user_metadata?.avatar_url as string) ||
+    (user?.user_metadata?.picture as string) ||
+    null;
+
   const getLocalizedName = (href: string, fallback: string) => {
     switch (href) {
       case "/dashboard": return t("nav.home", fallback);
@@ -180,8 +187,8 @@ export function DesktopNavRail() {
           title={isCollapsed ? "Profile" : undefined}
         >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/20 overflow-hidden">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={displayName} className="h-full w-full object-cover" />
+            {currentAvatar ? (
+              <img src={currentAvatar} alt={displayName} className="h-full w-full object-cover" />
             ) : (
               initials || "PT"
             )}

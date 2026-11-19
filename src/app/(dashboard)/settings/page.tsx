@@ -39,11 +39,15 @@ export default function SettingsPage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !effectiveUserId) return;
+    const previewUrl = URL.createObjectURL(file);
+    setLocalAvatarUrl(previewUrl);
+
     setAvatarUploading(true);
     setAvatarError(null);
     setAvatarSuccess(null);
@@ -52,6 +56,7 @@ export default function SettingsPage() {
       if (error || !url) {
         setAvatarError(error || "Failed to upload avatar image");
       } else {
+        setLocalAvatarUrl(url);
         await updateHealthProfile(effectiveUserId, { avatar_url: url });
         await refreshProfile();
         setAvatarSuccess("Profile photo updated and saved to storage!");
@@ -63,6 +68,14 @@ export default function SettingsPage() {
       setAvatarUploading(false);
     }
   };
+
+  const currentAvatar =
+    localAvatarUrl ||
+    profile?.avatar_url ||
+    (profile?.preferences as any)?.avatar_url ||
+    (user?.user_metadata?.avatar_url as string) ||
+    (user?.user_metadata?.picture as string) ||
+    null;
 
   useEffect(() => {
     if (profile?.preferences) {
@@ -176,11 +189,11 @@ export default function SettingsPage() {
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col sm:flex-row items-center sm:items-start justify-between gap-5">
           <div className="flex items-center gap-4">
             <div className="relative group">
-              {profile?.avatar_url ? (
+              {currentAvatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={profile.avatar_url}
-                  alt={profile.full_name || "Profile"}
+                  src={currentAvatar}
+                  alt={profile?.full_name || "Profile"}
                   className="h-16 w-16 rounded-full object-cover ring-2 ring-emerald-500/30 shadow-xs"
                 />
               ) : (

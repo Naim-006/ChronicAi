@@ -26,6 +26,13 @@ function ProfileDropdown() {
     .slice(0, 2)
     .toUpperCase();
 
+  const currentAvatar =
+    profile?.avatar_url ||
+    (profile?.preferences as any)?.avatar_url ||
+    (user?.user_metadata?.avatar_url as string) ||
+    (user?.user_metadata?.picture as string) ||
+    null;
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -53,9 +60,9 @@ function ProfileDropdown() {
         aria-label="User Profile Menu"
         aria-expanded={isOpen}
       >
-        {profile?.avatar_url ? (
+        {currentAvatar ? (
           <img
-            src={profile.avatar_url}
+            src={currentAvatar}
             alt={displayName}
             className="h-full w-full object-cover"
           />
@@ -69,9 +76,9 @@ function ProfileDropdown() {
           {/* User Details Header */}
           <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[var(--secondary)] border border-[var(--border)]">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-extrabold text-white shadow-sm overflow-hidden">
-              {profile?.avatar_url ? (
+              {currentAvatar ? (
                 <img
-                  src={profile.avatar_url}
+                  src={currentAvatar}
                   alt={displayName}
                   className="h-full w-full object-cover"
                 />

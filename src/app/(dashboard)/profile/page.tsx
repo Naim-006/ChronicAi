@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,19 +38,24 @@ export default function ProfilePage() {
       return;
     }
 
+    // Immediately show preview
+    const previewUrl = URL.createObjectURL(file);
+    setLocalAvatarUrl(previewUrl);
+
     setIsUploadingAvatar(true);
     try {
       const res = await uploadAvatar(file, effectiveUserId);
       if (res.error) {
         setAvatarMessage(`Upload failed: ${res.error}`);
       } else if (res.url) {
+        setLocalAvatarUrl(res.url);
         await updateHealthProfile(effectiveUserId, {
           avatar_url: res.url,
         });
         await refreshProfile();
         setAvatarMessage("Profile picture successfully updated!");
       }
-    } catch (err) {
+    } catch {
       setAvatarMessage("An unexpected error occurred while uploading avatar.");
     } finally {
       setIsUploadingAvatar(false);
@@ -64,6 +70,14 @@ export default function ProfilePage() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const currentAvatar =
+    localAvatarUrl ||
+    profile?.avatar_url ||
+    (profile?.preferences as any)?.avatar_url ||
+    (user?.user_metadata?.avatar_url as string) ||
+    (user?.user_metadata?.picture as string) ||
+    null;
 
   const allergies = profile?.allergies || [];
   const conditions = profile?.chronic_conditions || [];
@@ -80,9 +94,9 @@ export default function ProfilePage() {
       <section className="soft-card flex items-center gap-4 p-4 sm:p-5">
         <div className="relative group shrink-0">
           <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-3xl bg-[var(--forest)] text-xl font-extrabold text-white shadow-md overflow-hidden border-2 border-[var(--border)]">
-            {profile?.avatar_url ? (
+            {currentAvatar ? (
               <img
-                src={profile.avatar_url}
+                src={currentAvatar}
                 alt={displayName}
                 className="h-full w-full object-cover"
               />

@@ -31,10 +31,19 @@ export async function getHealthProfile(userId: string): Promise<HealthProfile | 
     };
   }
 
+  const rawPrefs = (data.preferences as any) || {
+    language: "en",
+    explanation_depth: "balanced",
+    notifications_enabled: true,
+    theme: "system",
+  };
+  const resolvedAvatar = data.avatar_url || rawPrefs.avatar_url || undefined;
+
   return {
     id: data.id,
     user_id: data.user_id,
     full_name: data.full_name || "Patient",
+    avatar_url: resolvedAvatar,
     date_of_birth: data.date_of_birth || undefined,
     sex: data.sex || undefined,
     blood_group: data.blood_group || undefined,
@@ -43,12 +52,7 @@ export async function getHealthProfile(userId: string): Promise<HealthProfile | 
     emergency_contact: (data.emergency_contact as any) || undefined,
     allergies: (data.allergies as any) || [],
     chronic_conditions: (data.chronic_conditions as any) || [],
-    preferences: (data.preferences as any) || {
-      language: "en",
-      explanation_depth: "balanced",
-      notifications_enabled: true,
-      theme: "system",
-    },
+    preferences: rawPrefs,
     created_at: data.created_at,
     updated_at: data.updated_at,
   };
@@ -65,6 +69,7 @@ export async function updateHealthProfile(
   };
 
   if (updates.full_name !== undefined) payload.full_name = updates.full_name;
+  if (updates.avatar_url !== undefined) payload.avatar_url = updates.avatar_url;
   if (updates.date_of_birth !== undefined) payload.date_of_birth = updates.date_of_birth;
   if (updates.sex !== undefined) payload.sex = updates.sex;
   if (updates.blood_group !== undefined) payload.blood_group = updates.blood_group;
@@ -73,19 +78,57 @@ export async function updateHealthProfile(
   if (updates.emergency_contact !== undefined) payload.emergency_contact = updates.emergency_contact;
   if (updates.allergies !== undefined) payload.allergies = updates.allergies;
   if (updates.chronic_conditions !== undefined) payload.chronic_conditions = updates.chronic_conditions;
-  if (updates.preferences !== undefined) payload.preferences = updates.preferences;
+  if (updates.preferences !== undefined) {
+    payload.preferences = {
+      ...updates.preferences,
+      ...(updates.avatar_url ? { avatar_url: updates.avatar_url } : {}),
+    };
+  } else if (updates.avatar_url) {
+    payload.preferences = { avatar_url: updates.avatar_url };
+  }
 
-  const { data, error } = await supabase
+  // Also update Supabase Auth user metadata so user session always holds avatar_url
+  if (updates.avatar_url) {
+    try {
+      await supabase.auth.updateUser({
+        data: { avatar_url: updates.avatar_url },
+      });
+    } catch {
+      // Ignored if session is restricted
+    }
+  }
+
+  let { data, error } = await supabase
     .from("health_profiles")
     .upsert(payload, { onConflict: "user_id" })
     .select()
     .single();
+
+  // If avatar_url column does not exist on health_profiles table, fallback to saving in preferences jsonb
+  if (error && updates.avatar_url && error.message?.includes("avatar_url")) {
+    delete payload.avatar_url;
+    payload.preferences = {
+      ...(payload.preferences || {}),
+      avatar_url: updates.avatar_url,
+    };
+    const retry = await supabase
+      .from("health_profiles")
+      .upsert(payload, { onConflict: "user_id" })
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
+
+  const rawPrefs = (data?.preferences as any) || (payload.preferences as any) || {};
+  const resolvedAvatar = data?.avatar_url || rawPrefs?.avatar_url || updates.avatar_url;
 
   if (error || !data) {
     return {
       id: `prof-${userId}`,
       user_id: userId,
       full_name: updates.full_name || "Patient",
+      avatar_url: resolvedAvatar,
       date_of_birth: updates.date_of_birth,
       sex: updates.sex,
       blood_group: updates.blood_group,
@@ -94,12 +137,7 @@ export async function updateHealthProfile(
       emergency_contact: updates.emergency_contact,
       allergies: updates.allergies || [],
       chronic_conditions: updates.chronic_conditions || [],
-      preferences: updates.preferences || {
-        language: "en",
-        explanation_depth: "balanced",
-        notifications_enabled: true,
-        theme: "system",
-      },
+      preferences: rawPrefs,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -109,6 +147,7 @@ export async function updateHealthProfile(
     id: data.id,
     user_id: data.user_id,
     full_name: data.full_name,
+    avatar_url: resolvedAvatar,
     date_of_birth: data.date_of_birth || undefined,
     sex: data.sex || undefined,
     blood_group: data.blood_group || undefined,
@@ -117,12 +156,7 @@ export async function updateHealthProfile(
     emergency_contact: (data.emergency_contact as any) || undefined,
     allergies: (data.allergies as any) || [],
     chronic_conditions: (data.chronic_conditions as any) || [],
-    preferences: (data.preferences as any) || {
-      language: "en",
-      explanation_depth: "balanced",
-      notifications_enabled: true,
-      theme: "system",
-    },
+    preferences: rawPrefs,
     created_at: data.created_at,
     updated_at: data.updated_at,
   };

@@ -92,6 +92,7 @@ export async function uploadAvatar(
     .upload(filePath, file, {
       cacheControl: "3600",
       upsert: true,
+      contentType: file.type || "image/png",
     });
 
   if (error) {
@@ -102,8 +103,12 @@ export async function uploadAvatar(
     .from(STORAGE_BUCKETS.AVATARS)
     .getPublicUrl(data.path);
 
+  const finalUrl = publicData.publicUrl
+    ? `${publicData.publicUrl}?t=${Date.now()}`
+    : publicData.publicUrl;
+
   return {
     path: data.path,
-    url: publicData.publicUrl,
+    url: finalUrl,
   };
 }

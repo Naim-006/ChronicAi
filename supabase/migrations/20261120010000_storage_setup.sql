@@ -2,6 +2,9 @@
 -- STORAGE BUCKETS & RLS POLICIES FOR MEDICAL RECORDS & AVATARS
 -- ==============================================================================
 
+-- 0. Ensure health_profiles table has avatar_url column
+ALTER TABLE health_profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
 -- 1. Ensure storage buckets exist
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES 
