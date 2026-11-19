@@ -190,9 +190,9 @@ export function MobileTabBar() {
           waveState.active && "animate-liquid-wave"
         )}
       >
-        {/* Frosted Glass Backdrop Blur Layer (clipped exactly to the stadium + dome outline) */}
+        {/* Clean Glass Backdrop Layer with Minimized Blurriness */}
         <div
-          className="absolute inset-0 pointer-events-none backdrop-blur-sm bg-white/75"
+          className="absolute inset-0 pointer-events-none backdrop-blur-[2px] bg-white/90"
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,

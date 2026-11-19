@@ -62,7 +62,7 @@ const navGroups: NavGroup[] = [
     title: "Medical Records",
     items: [
       {
-        name: "Vault & OCR Scans",
+        name: "Records",
         href: "/vault",
         icon: FileText,
       },
