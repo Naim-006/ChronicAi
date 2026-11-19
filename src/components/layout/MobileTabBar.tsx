@@ -192,7 +192,7 @@ export function MobileTabBar() {
       >
         {/* Frosted Glass Backdrop Blur Layer (clipped exactly to the stadium + dome outline) */}
         <div
-          className="absolute inset-0 pointer-events-none backdrop-blur-md bg-white/60"
+          className="absolute inset-0 pointer-events-none backdrop-blur-sm bg-white/75"
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,
