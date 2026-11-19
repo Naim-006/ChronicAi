@@ -14,7 +14,6 @@ import {
   HeartPulse,
   User,
   ShieldCheck,
-  FileSpreadsheet,
   Settings,
   ChevronRight,
 } from "lucide-react";
@@ -22,28 +21,27 @@ import { cn } from "@/lib/utils";
 
 const navSections = [
   {
-    title: "Core Platform",
+    title: "Care",
     items: [
-      { name: "Dashboard", href: "/dashboard", icon: Home },
-      { name: "Medical Records", href: "/vault", icon: FileText, badge: "1 New" },
-      { name: "Medical Timeline", href: "/timeline", icon: Clock },
-      { name: "Clinical Copilot", href: "/assistant", icon: Stethoscope, highlight: true },
+      { name: "Home", href: "/dashboard", icon: Home },
+      { name: "Records", href: "/vault", icon: FileText, badge: "1" },
+      { name: "Timeline", href: "/timeline", icon: Clock },
+      { name: "Copilot", href: "/assistant", icon: Stethoscope, highlight: true },
     ],
   },
   {
-    title: "Health & Treatment",
+    title: "Health",
     items: [
-      { name: "Health Analytics", href: "/metrics", icon: Activity },
-      { name: "Prescriptions & Dosing", href: "/medications", icon: Pill },
-      { name: "Doctors & Visits", href: "/appointments", icon: Calendar },
-      { name: "Chronic Care Protocol", href: "/chronic-care", icon: HeartPulse },
+      { name: "Analytics", href: "/metrics", icon: Activity },
+      { name: "Medications", href: "/medications", icon: Pill },
+      { name: "Appointments", href: "/appointments", icon: Calendar },
+      { name: "Chronic Care", href: "/chronic-care", icon: HeartPulse },
     ],
   },
   {
-    title: "Patient Services",
+    title: "You",
     items: [
-      { name: "Health Profile", href: "/profile", icon: User },
-      { name: "Clinical Summaries", href: "/summaries", icon: FileSpreadsheet },
+      { name: "Profile", href: "/profile", icon: User },
       { name: "Settings", href: "/settings", icon: Settings },
     ],
   },
@@ -53,34 +51,34 @@ export function DesktopNavRail() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200/70 bg-white select-none shrink-0 shadow-2xs">
-      {/* Brand Header */}
-      <div className="flex h-18 items-center px-6 border-b border-slate-100">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-500 text-white shadow-md shadow-emerald-500/20">
+    <aside className="hidden lg:flex w-[272px] shrink-0 flex-col border-r border-[var(--border)]/80 bg-white/90 backdrop-blur-xl select-none">
+      <div className="flex h-[72px] items-center px-5 border-b border-[var(--border)]/70">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-600/25 transition-transform group-hover:scale-[1.03]">
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-sm font-extrabold text-slate-900 block leading-none tracking-tight">
-              Universal Medical
+            <span className="block text-[15px] font-extrabold tracking-tight text-[var(--foreground)] leading-none">
+              ChronicAI
             </span>
-            <span className="text-[10px] font-bold text-emerald-600 tracking-wider block mt-1 uppercase">
-              Lifelong Healthcare
+            <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600">
+              Lifelong Care
             </span>
           </div>
         </Link>
       </div>
 
-      {/* Nav List */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 py-5 space-y-6">
         {navSections.map((sec) => (
           <div key={sec.title}>
-            <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
+            <span className="mb-2 block px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
               {sec.title}
             </span>
             <div className="space-y-1">
               {sec.items.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" && pathname.startsWith(item.href));
                 const Icon = item.icon;
 
                 return (
@@ -88,24 +86,28 @@ export function DesktopNavRail() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-medium transition-all group",
+                      "flex items-center justify-between rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold transition-all group",
                       isActive
-                        ? "bg-emerald-50/90 text-emerald-900 font-bold shadow-2xs border-l-4 border-emerald-500"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        ? "bg-emerald-50 text-emerald-900 shadow-sm ring-1 ring-emerald-100"
+                        : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon
+                      <span
                         className={cn(
-                          "h-4 w-4 shrink-0 transition-colors",
-                          isActive ? "text-emerald-600 stroke-[2.2]" : "text-slate-400 group-hover:text-slate-600"
+                          "flex h-8 w-8 items-center justify-center rounded-xl transition-colors",
+                          isActive
+                            ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-600/20"
+                            : "bg-[var(--muted)] text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
                         )}
-                      />
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
                       <span>{item.name}</span>
                     </div>
 
                     {item.badge && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                      <span className="rounded-lg bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
                         {item.badge}
                       </span>
                     )}
@@ -117,26 +119,25 @@ export function DesktopNavRail() {
         ))}
       </div>
 
-      {/* Patient Profile Card at Bottom */}
-      <div className="p-4 border-t border-slate-100 bg-slate-50/60">
+      <div className="border-t border-[var(--border)]/70 p-4">
         <Link
           href="/profile"
-          className="flex items-center justify-between p-2 rounded-xl hover:bg-white transition-all group"
+          className="soft-inset flex items-center justify-between rounded-2xl p-2.5 transition-all hover:bg-white group"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white font-bold text-xs">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-bold text-white shadow-sm">
               EV
             </div>
             <div>
-              <span className="text-xs font-bold text-slate-900 block leading-tight">
+              <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
                 Elena Vance
               </span>
-              <span className="text-[10px] text-slate-500 block">
-                Age 48 · ID #892-04
+              <span className="block text-[10px] text-[var(--muted-foreground)]">
+                Age 48 · Managed care
               </span>
             </div>
           </div>
-          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+          <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)] transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
     </aside>

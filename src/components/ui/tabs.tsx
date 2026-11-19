@@ -54,7 +54,7 @@ export function TabsList({
   return (
     <div
       className={cn(
-        "inline-flex h-9 items-center justify-center rounded-lg bg-slate-100 p-1 text-slate-500",
+        "inline-flex h-11 items-center justify-center rounded-2xl bg-[var(--secondary)] p-1 text-[var(--muted-foreground)]",
         className
       )}
     >
@@ -82,10 +82,10 @@ export function TabsTrigger({
       type="button"
       onClick={() => context.onValueChange(value)}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
         isSelected
-          ? "bg-white text-slate-950 shadow-sm"
-          : "text-slate-600 hover:text-slate-900",
+          ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-600/20"
+          : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
         className
       )}
     >
@@ -111,7 +111,7 @@ export function TabsContent({
   return (
     <div
       className={cn(
-        "mt-3 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2",
+        "mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30",
         className
       )}
     >

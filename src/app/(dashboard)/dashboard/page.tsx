@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -9,21 +9,65 @@ import {
   Pill,
   ChevronRight,
   AlertCircle,
-  FileText,
-  Plus,
   Check,
   TrendingDown,
   UploadCloud,
   CheckCircle2,
   Stethoscope,
   Heart,
-  Flame,
-  Footprints,
-  Phone,
-  ShieldCheck,
+  X,
 } from "lucide-react";
-import { mockProfile, mockMedications, mockAppointments, mockTimelineEvents, mockDocuments } from "@/lib/mock-data";
+import {
+  mockMedications,
+  mockAppointments,
+  mockDocuments,
+} from "@/lib/mock-data";
 import { formatDate, formatTime } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function ProgressRing({
+  percent,
+  size = 72,
+  stroke = 7,
+}: {
+  percent: number;
+  size?: number;
+  stroke?: number;
+}) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percent / 100) * circumference;
+
+  return (
+    <svg width={size} height={size} className="progress-ring shrink-0">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="#e8f0ed"
+        strokeWidth={stroke}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="url(#ringGrad)"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+      />
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#34d399" />
+          <stop offset="100%" stopColor="#16a34a" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
 
 export default function DashboardPage() {
   const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({
@@ -32,9 +76,30 @@ export default function DashboardPage() {
     "med-3": true,
     "med-4": false,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+  const [vitals, setVitals] = useState({
+    glucose: 118,
+    systolic: 122,
+    diastolic: 78,
+    heartRate: 72,
+  });
+  const [glucoseInput, setGlucoseInput] = useState("118");
+  const [sysInput, setSysInput] = useState("122");
+  const [diaInput, setDiaInput] = useState("78");
+  const [hrInput, setHrInput] = useState("72");
+  const [glucoseType, setGlucoseType] = useState<"fasting" | "postprandial">("fasting");
+  const [logAlert, setLogAlert] = useState<string | null>(null);
 
-  const nextAppointment = mockAppointments.find((a) => a.status === "upcoming") || mockAppointments[0];
+  const nextAppointment =
+    mockAppointments.find((a) => a.status === "upcoming") || mockAppointments[0];
   const pendingReviewDocs = mockDocuments.filter((d) => d.status === "needs_review");
+  const takenCount = Object.values(loggedMeds).filter(Boolean).length;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleMed = (medId: string) => {
     setLoggedMeds((prev) => ({
@@ -43,233 +108,342 @@ export default function DashboardPage() {
     }));
   };
 
+  const handleSaveVitals = (e: React.FormEvent) => {
+    e.preventDefault();
+    const g = parseInt(glucoseInput) || vitals.glucose;
+    const s = parseInt(sysInput) || vitals.systolic;
+    const d = parseInt(diaInput) || vitals.diastolic;
+    const hr = parseInt(hrInput) || vitals.heartRate;
+
+    setVitals({
+      glucose: g,
+      systolic: s,
+      diastolic: d,
+      heartRate: hr,
+    });
+    setShowVitalsModal(false);
+    setLogAlert(`Vitals recorded! Fasting Glucose updated to ${g} mg/dL and BP to ${s}/${d} mmHg.`);
+    setTimeout(() => setLogAlert(null), 4000);
+  };
+
   return (
-    <div className="space-y-6">
-      {/* 1. Health Condition Top Banner (Exact design from Image 1) */}
-      <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.06)] border border-slate-100/90 relative overflow-hidden">
-        {/* Top Header Row */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-5 sm:space-y-6">
+      {isLoading ? (
+        <>
+          {/* Skeleton loading state */}
+          <section className="soft-card p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-11 w-11 rounded-2xl" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              </div>
+              <Skeleton className="h-16 w-16 rounded-full" />
+            </div>
+            <div className="mt-4 space-y-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3.5 w-full" />
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[var(--border)]/80 pt-4">
+              <Skeleton className="h-16 rounded-2xl" />
+              <Skeleton className="h-16 rounded-2xl" />
+            </div>
+          </section>
+
+          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-20 rounded-2xl" />
+            ))}
+          </section>
+
+          <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-2xl" />
+            ))}
+          </section>
+
+          <section className="grid gap-5 lg:grid-cols-2">
+            <Skeleton className="h-24 rounded-2xl" />
+            <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          {/* Recovery / condition hero */}
+          <section className="soft-card relative overflow-hidden p-5 sm:p-6">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-emerald-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-12 left-1/3 h-32 w-32 rounded-full bg-teal-200/20 blur-3xl" />
+
+        <div className="relative flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
               <Heart className="h-5 w-5 stroke-[2.2]" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900 leading-tight">
+              <h2 className="text-sm font-extrabold text-[var(--foreground)]">
                 Health Condition
               </h2>
               <span className="text-[11px] font-semibold text-emerald-600">
-                ● Type 2 Diabetes & HTN Managed
+                Type 2 Diabetes & HTN · Managed
               </span>
             </div>
           </div>
 
-          {/* Circular Percentage Ring */}
-          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700 ring-2 ring-emerald-100">
-            <span>88%</span>
-            <span className="text-[10px] font-medium text-emerald-600">Optimal</span>
+          <div className="relative flex items-center justify-center">
+            <ProgressRing percent={88} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-sm font-extrabold text-[var(--foreground)]">88%</span>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">
+                Optimal
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Dynamic Progress Bar */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-            <span className="text-slate-500">Glycemic & Cardiovascular Target</span>
-            <span className="text-emerald-700">HbA1c 6.8% (Goal &lt; 7.0%)</span>
+        <div className="relative mt-4">
+          <div className="mb-1.5 flex items-center justify-between text-[11px] font-semibold">
+            <span className="text-[var(--muted-foreground)]">Recovery progress</span>
+            <span className="text-emerald-700">HbA1c 6.8% · Goal &lt; 7.0%</span>
           </div>
-          <div className="h-3.5 w-full rounded-full bg-slate-100 overflow-hidden p-0.5">
-            <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-400 w-[88%] transition-all shadow-xs" />
+          <div className="soft-inset h-3.5 w-full overflow-hidden rounded-full p-0.5">
+            <div className="h-full w-[88%] rounded-full bg-gradient-to-r from-emerald-500 to-green-400 transition-all" />
           </div>
         </div>
 
-        {/* Bottom Two Quick Indicators */}
-        <div className="mt-5 grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-600">
-              <Activity className="h-4 w-4 text-emerald-600" />
+        <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-[var(--border)]/80 pt-4">
+          <div className="soft-inset flex items-center gap-2.5 rounded-2xl p-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-emerald-600">
+              <Activity className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Fasting Glucose</span>
-              <span className="text-xs font-extrabold text-slate-900">118 mg/dL</span>
+              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">
+                Fasting glucose
+              </span>
+              <span className="text-xs font-extrabold text-[var(--foreground)]">
+                118 mg/dL
+              </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-600">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <div className="soft-inset flex items-center gap-2.5 rounded-2xl p-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-emerald-600">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">eGFR Kidney</span>
-              <span className="text-xs font-extrabold text-slate-900">68 mL/min (Stable)</span>
+              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)]">
+                eGFR kidney
+              </span>
+              <span className="text-xs font-extrabold text-[var(--foreground)]">
+                68 · Stable
+              </span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 2. Quick Action Workflow Bar (Streamlined Patient Actions) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <Link
-          href="/metrics"
-          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+      {/* Logged Vitals Success Alert */}
+      {logAlert && (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <span>{logAlert}</span>
+        </section>
+      )}
+
+      {/* Quick actions */}
+      <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <button
+          type="button"
+          onClick={() => setShowVitalsModal(true)}
+          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group text-left cursor-pointer"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 group-hover:scale-105 transition-transform">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-emerald-50 text-emerald-700">
             <Activity className="h-4 w-4" />
           </div>
-          <div className="text-left">
-            <span className="text-xs font-bold text-slate-900 block leading-tight">Log Vitals</span>
-            <span className="text-[10px] text-slate-400">BP, Glucose</span>
+          <div className="min-w-0 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+              Log Vitals
+            </span>
+            <span className="text-[10px] text-[var(--muted-foreground)]">
+              BP, Glucose
+            </span>
           </div>
-        </Link>
+        </button>
 
         <Link
           href="/vault"
-          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700 group-hover:scale-105 transition-transform">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-sky-50 text-sky-700">
             <UploadCloud className="h-4 w-4" />
           </div>
-          <div className="text-left">
-            <span className="text-xs font-bold text-slate-900 block leading-tight">Add Record</span>
-            <span className="text-[10px] text-slate-400">PDF, Lab Scan</span>
+          <div className="min-w-0 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+              Add Record
+            </span>
+            <span className="text-[10px] text-[var(--muted-foreground)]">
+              PDF, Lab scan
+            </span>
           </div>
         </Link>
 
         <Link
           href="/appointments"
-          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700 group-hover:scale-105 transition-transform">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-amber-50 text-amber-700">
             <Calendar className="h-4 w-4" />
           </div>
-          <div className="text-left">
-            <span className="text-xs font-bold text-slate-900 block leading-tight">Visits</span>
-            <span className="text-[10px] text-slate-400">Schedule, Prep</span>
+          <div className="min-w-0 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+              Visits
+            </span>
+            <span className="text-[10px] text-[var(--muted-foreground)]">
+              Schedule, prep
+            </span>
           </div>
         </Link>
 
         <Link
           href="/assistant"
-          className="flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 p-3 hover:border-emerald-300 hover:shadow-xs transition-all group"
+          className="soft-card hover-lift flex items-center gap-2.5 p-3 transition-all hover:border-emerald-200 group"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white group-hover:scale-105 transition-transform">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-gradient-to-br from-emerald-500 to-green-600 text-white">
             <Stethoscope className="h-4 w-4" />
           </div>
-          <div className="text-left">
-            <span className="text-xs font-bold text-slate-900 block leading-tight">Copilot</span>
-            <span className="text-[10px] text-slate-400">Clinical Guide</span>
+          <div className="min-w-0 text-left">
+            <span className="block text-xs font-bold text-[var(--foreground)] leading-tight">
+              Copilot
+            </span>
+            <span className="text-[10px] text-[var(--muted-foreground)]">
+              Clinical guidance
+            </span>
           </div>
         </Link>
-      </div>
+      </section>
 
-      {/* 3. Verification Alert Banner if unconfirmed document exists */}
       {pendingReviewDocs.length > 0 && (
-        <div className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50/50 p-4 shadow-sm">
+        <section className="rounded-3xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50/60 p-4 shadow-[var(--shadow-soft)]">
           <div className="flex items-start gap-3">
-            <div className="rounded-2xl bg-amber-100 p-2.5 text-amber-800 shrink-0 mt-0.5">
+            <div className="mt-0.5 shrink-0 rounded-2xl bg-amber-100 p-2.5 text-amber-800">
               <AlertCircle className="h-4 w-4" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-bold text-amber-950 block">
-                Verification Required: {pendingReviewDocs[0].file_name}
+            <div className="min-w-0 flex-1">
+              <span className="block text-xs font-bold text-amber-950">
+                Verification needed · {pendingReviewDocs[0].file_name}
               </span>
-              <p className="text-xs text-amber-800/90 mt-0.5 line-clamp-1">
-                New clinical notes from Valley Eye Center parsed. Confirm findings to add to your timeline.
+              <p className="mt-0.5 line-clamp-2 text-xs text-amber-800/90">
+                New clinical notes parsed. Confirm findings to add them to your
+                timeline.
               </p>
-              <div className="mt-2.5 flex items-center gap-2">
-                <Link
-                  href="/vault"
-                  className="inline-flex items-center gap-1 rounded-xl bg-amber-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-900 transition-colors"
-                >
-                  Review Extracted Data
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
+              <Link
+                href="/vault"
+                className="mt-2.5 inline-flex items-center gap-1 rounded-xl bg-amber-800 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-900"
+              >
+                Review data
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* 4. Quick Access 2x2 Grid (Exact layout from Image 1) */}
-      <div>
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Biometric Quick Access
+      {/* Biometric grid */}
+      <section>
+        <div className="mb-3 flex items-center justify-between px-0.5">
+          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+            Biometrics
           </h3>
-          <Link href="/metrics" className="text-xs font-bold text-emerald-600 hover:underline">
-            View Analytics
+          <Link
+            href="/metrics"
+            className="text-xs font-bold text-emerald-600 hover:underline"
+          >
+            Analytics
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {/* Card 1: Fasting Glucose */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Link
             href="/metrics"
-            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
+            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Fasting Glucose</span>
+              <span className="text-xs font-bold text-[var(--foreground)]">
+                Fasting Glucose
+              </span>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Activity className="h-3.5 w-3.5" />
               </div>
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-extrabold text-slate-900">118</span>
-                <span className="text-xs text-slate-400 font-medium">mg/dL</span>
+                <span className="text-xl font-extrabold text-[var(--foreground)]">
+                  {vitals.glucose}
+                </span>
+                <span className="text-xs text-[var(--muted-foreground)]">mg/dL</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
-                ● In Target (70-130)
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
+                In target (70–130)
               </span>
             </div>
-            {/* Visual Sparkline Wave */}
-            <div className="mt-3 h-8 flex items-end gap-1.5">
-              <div className="flex-1 bg-emerald-100 rounded-full h-4" />
-              <div className="flex-1 bg-emerald-200 rounded-full h-6" />
-              <div className="flex-1 bg-emerald-300 rounded-full h-5" />
-              <div className="flex-1 bg-emerald-400 rounded-full h-7" />
-              <div className="flex-1 bg-emerald-600 rounded-full h-8" />
+            <div className="mt-3 flex h-8 items-end gap-1.5">
+              {[4, 6, 5, 7, 8].map((h, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full bg-emerald-400/80"
+                  style={{ height: `${h * 12.5}%`, opacity: 0.35 + i * 0.15 }}
+                />
+              ))}
             </div>
           </Link>
 
-          {/* Card 2: Blood Pressure */}
           <Link
             href="/metrics"
-            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
+            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Blood Pressure</span>
+              <span className="text-xs font-bold text-[var(--foreground)]">
+                Blood Pressure
+              </span>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Heart className="h-3.5 w-3.5" />
               </div>
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-extrabold text-slate-900">122/78</span>
-                <span className="text-xs text-slate-400 font-medium">mmHg</span>
+                <span className="text-xl font-extrabold text-[var(--foreground)]">
+                  {vitals.systolic}/{vitals.diastolic}
+                </span>
+                <span className="text-xs text-[var(--muted-foreground)]">mmHg</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
-                ● Normal Seated
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
+                Normal seated
               </span>
             </div>
-            {/* Dot Matrix Graphic */}
             <div className="mt-3 grid grid-cols-4 gap-1.5">
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
                   className={`h-2 w-2 rounded-full ${
-                    i < 6 ? "bg-emerald-500" : "bg-slate-200"
+                    i < 6 ? "bg-emerald-500" : "bg-[var(--border)]"
                   }`}
                 />
               ))}
             </div>
           </Link>
 
-          {/* Card 3: Latest HbA1c */}
           <Link
             href="/metrics"
-            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
+            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Latest HbA1c</span>
+              <span className="text-xs font-bold text-[var(--foreground)]">
+                Latest HbA1c
+              </span>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <TrendingDown className="h-3.5 w-3.5" />
               </div>
@@ -277,187 +451,341 @@ export default function DashboardPage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-extrabold text-emerald-700">6.8%</span>
-                <span className="text-xs text-slate-400 font-medium">Nov 2026</span>
+                <span className="text-xs text-[var(--muted-foreground)]">Nov 2026</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
-                -0.3% Improved
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
+                −0.3% improved
               </span>
             </div>
-            {/* Horizontal Spectrum Bar */}
-            <div className="mt-3 h-2 rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-red-400 relative overflow-hidden" />
+            <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-400">
+              <span className="absolute top-1/2 left-[42%] h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-600 shadow-sm" />
+            </div>
           </Link>
 
-          {/* Card 4: Medication Adherence */}
           <Link
             href="/medications"
-            className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100/90 hover:border-emerald-300 transition-all flex flex-col justify-between"
+            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-200 sm:p-5"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Medications</span>
+              <span className="text-xs font-bold text-[var(--foreground)]">
+                Medications
+              </span>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <Pill className="h-3.5 w-3.5" />
               </div>
             </div>
             <div className="mt-3">
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-extrabold text-slate-900">4 of 4</span>
-                <span className="text-xs text-slate-400 font-medium">Active</span>
+                <span className="text-xl font-extrabold text-[var(--foreground)]">
+                  {takenCount} of 4
+                </span>
+                <span className="text-xs text-[var(--muted-foreground)]">today</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
+              <span className="mt-0.5 block text-[10px] font-bold text-emerald-600">
                 Daily protocol active
               </span>
             </div>
-            {/* Mini Progress Circles */}
             <div className="mt-3 flex items-center gap-1.5">
-              <div className="h-2 flex-1 rounded-full bg-emerald-500" />
-              <div className="h-2 flex-1 rounded-full bg-emerald-500" />
-              <div className="h-2 flex-1 rounded-full bg-emerald-500" />
-              <div className="h-2 flex-1 rounded-full bg-slate-200" />
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={`h-2 flex-1 rounded-full ${
+                    i < takenCount ? "bg-emerald-500" : "bg-[var(--border)]"
+                  }`}
+                />
+              ))}
             </div>
           </Link>
         </div>
-      </div>
+      </section>
 
-      {/* 5. Top Doctor & Appointment (Exact style from Image 1 & 3) */}
-      <div>
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Next Doctor Appointment
-          </h3>
-          <Link href="/appointments" className="text-xs font-bold text-emerald-600 hover:underline">
-            View Schedule
-          </Link>
-        </div>
-
-        <div className="rounded-3xl bg-white p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] border border-slate-100/90 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-500 text-white font-extrabold text-sm shadow-sm ring-4 ring-emerald-50">
-              CW
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-extrabold text-slate-900">
-                  {nextAppointment.doctor_name}
-                </span>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 fill-emerald-50" />
-              </div>
-              <span className="text-xs text-slate-500 font-medium block">
-                {nextAppointment.specialty} • {nextAppointment.clinic_or_hospital}
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1 mt-0.5">
-                <Clock className="h-3 w-3" />
-                {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
-              </span>
-            </div>
+      {/* Desktop two-column: appointment + meds */}
+      <section className="grid gap-5 lg:grid-cols-2">
+        <div>
+          <div className="mb-3 flex items-center justify-between px-0.5">
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+              Next appointment
+            </h3>
+            <Link
+              href="/appointments"
+              className="text-xs font-bold text-emerald-600 hover:underline"
+            >
+              Schedule
+            </Link>
           </div>
 
-          <Link
-            href="/appointments"
-            className="rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs shrink-0"
-          >
-            Prep Visit
-          </Link>
+          <div className="soft-card flex items-center justify-between gap-3 p-4 sm:p-5">
+            <div className="flex min-w-0 items-center gap-3.5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-extrabold text-white shadow-md shadow-emerald-600/25 ring-4 ring-emerald-50">
+                CW
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-extrabold text-[var(--foreground)]">
+                    {nextAppointment.doctor_name}
+                  </span>
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                </div>
+                <span className="block truncate text-xs font-medium text-[var(--muted-foreground)]">
+                  {nextAppointment.specialty} · {nextAppointment.clinic_or_hospital}
+                </span>
+                <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                  <Clock className="h-3 w-3" />
+                  {formatDate(nextAppointment.appointment_date)} at{" "}
+                  {formatTime(nextAppointment.appointment_time)}
+                </span>
+              </div>
+            </div>
+
+            <Link
+              href="/appointments"
+              className="shrink-0 rounded-2xl bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
+            >
+              Prep
+            </Link>
+          </div>
         </div>
-      </div>
 
-      {/* 6. Daily Medication Checklist (Structured Card List) */}
-      <div>
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Today's Medications
-          </h3>
-          <Link href="/medications" className="text-xs font-bold text-emerald-600 hover:underline">
-            Adherence Matrix
-          </Link>
-        </div>
+        <div>
+          <div className="mb-3 flex items-center justify-between px-0.5">
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+              Today&apos;s medications
+            </h3>
+            <Link
+              href="/medications"
+              className="text-xs font-bold text-emerald-600 hover:underline"
+            >
+              All meds
+            </Link>
+          </div>
 
-        <div className="rounded-3xl bg-white border border-slate-100/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] divide-y divide-slate-100 overflow-hidden">
-          {mockMedications.map((med) => {
-            const isTaken = loggedMeds[med.id];
-            return (
-              <div
-                key={med.id}
-                onClick={() => toggleMed(med.id)}
-                className="flex items-center justify-between px-4 sm:px-5 py-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <button
-                    type="button"
-                    aria-label={`Mark ${med.name} as taken`}
-                    className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all shrink-0 ${
-                      isTaken
-                        ? "bg-emerald-500 border-emerald-500 text-white shadow-xs scale-105"
-                        : "border-slate-300 hover:border-slate-400 bg-white"
-                    }`}
-                  >
-                    {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
-                  </button>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs font-bold truncate ${
-                          isTaken ? "text-slate-400 line-through" : "text-slate-900"
-                        }`}
-                      >
-                        {med.name}
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        {med.strength}
+          <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden">
+            {mockMedications.map((med) => {
+              const isTaken = loggedMeds[med.id];
+              return (
+                <button
+                  key={med.id}
+                  type="button"
+                  onClick={() => toggleMed(med.id)}
+                  className="flex w-full cursor-pointer items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-[var(--muted)]/70 sm:px-5"
+                >
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all ${
+                        isTaken
+                          ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
+                          : "border-[var(--border)] bg-white"
+                      }`}
+                    >
+                      {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`truncate text-xs font-bold ${
+                            isTaken
+                              ? "text-[var(--muted-foreground)] line-through"
+                              : "text-[var(--foreground)]"
+                          }`}
+                        >
+                          {med.name}
+                        </span>
+                        <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                          {med.strength}
+                        </span>
+                      </div>
+                      <span className="mt-0.5 block truncate text-[11px] text-[var(--muted-foreground)]">
+                        {med.frequency}
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-500 block truncate mt-0.5">
-                      {med.frequency}
-                    </span>
                   </div>
-                </div>
-
-                <span
-                  className={`text-[11px] font-bold ${
-                    isTaken ? "text-emerald-600" : "text-slate-400"
-                  }`}
-                >
-                  {isTaken ? "Logged" : "Tap to log"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 7. Clinical Copilot Intelligence Banner (Professional Healthcare Guidance) */}
-      <div className="rounded-3xl bg-gradient-to-tr from-emerald-700 to-green-600 p-5 text-white shadow-lg shadow-emerald-600/20">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
-            <Stethoscope className="h-4 w-4 text-white" />
+                  <span
+                    className={`shrink-0 text-[11px] font-bold ${
+                      isTaken ? "text-emerald-600" : "text-[var(--muted-foreground)]"
+                    }`}
+                  >
+                    {isTaken ? "Logged" : "Tap"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-100">
-            Clinical Health Intelligence
+        </div>
+      </section>
+
+      {/* Copilot banner */}
+      <section className="relative overflow-hidden rounded-3xl forest-surface p-5 text-white shadow-[var(--shadow-lift)] sm:p-6">
+        <div className="pointer-events-none absolute -right-6 -top-10 h-40 w-40 rounded-full bg-emerald-400/20 blur-3xl" />
+        <div className="relative flex items-center gap-2 mb-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15 backdrop-blur-md">
+            <Stethoscope className="h-4 w-4" />
+          </div>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-300">
+            Clinical intelligence
           </span>
         </div>
-        <h4 className="text-base font-extrabold leading-tight">
-          Review your medical records with your Clinical Copilot
+        <h4 className="relative text-base font-extrabold leading-tight sm:text-lg">
+          Review your records with Clinical Copilot
         </h4>
-        <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
-          Grounded directly in Quest Diagnostics panels, clinical notes, and active prescriptions.
+        <p className="relative mt-1 text-xs leading-relaxed text-emerald-100/90 sm:text-sm">
+          Grounded in your lab panels, notes, and active prescriptions.
         </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="relative mt-4 flex flex-wrap gap-2">
           {[
             "Compare my HbA1c trajectory",
-            "What questions for Dr. Wei on Dec 8?",
-            "Explain my kidney eGFR 68",
-          ].map((prompt, i) => (
+            "Questions for Dr. Wei?",
+            "Explain eGFR 68",
+          ].map((prompt) => (
             <Link
-              key={i}
+              key={prompt}
               href="/assistant"
-              className="rounded-full bg-white/20 backdrop-blur-md border border-white/30 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-white/30 transition-colors"
+              className="rounded-2xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20"
             >
               {prompt}
             </Link>
           ))}
         </div>
-      </div>
+      </section>
+        </>
+      )}
+
+      {/* Quick Vitals Logger Modal */}
+      {showVitalsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <Activity className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 leading-tight">
+                    Log Daily Biometrics
+                  </h3>
+                  <span className="text-[11px] text-slate-400">
+                    Encrypted patient entry · Elena Vance
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVitalsModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveVitals} className="space-y-4 text-xs">
+              {/* Glucose Section */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800">Blood Glucose</span>
+                  <div className="flex items-center gap-1 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setGlucoseType("fasting")}
+                      className={`px-2 py-0.5 rounded-lg transition-colors ${
+                        glucoseType === "fasting"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white text-slate-600 border border-slate-200"
+                      }`}
+                    >
+                      Fasting
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGlucoseType("postprandial")}
+                      className={`px-2 py-0.5 rounded-lg transition-colors ${
+                        glucoseType === "postprandial"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white text-slate-600 border border-slate-200"
+                      }`}
+                    >
+                      Post-Meal
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    required
+                    min="40"
+                    max="450"
+                    value={glucoseInput}
+                    onChange={(e) => setGlucoseInput(e.target.value)}
+                    className="flex-1 h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                  <span className="text-xs font-bold text-slate-400">mg/dL</span>
+                </div>
+                <span className="text-[10px] text-slate-400 block">
+                  Target for Elena: 70–130 mg/dL (HbA1c &lt; 7.0%)
+                </span>
+              </div>
+
+              {/* Blood Pressure Section */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2.5">
+                <span className="font-bold text-slate-800 block">Blood Pressure & Pulse</span>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Systolic</label>
+                    <input
+                      type="number"
+                      required
+                      min="70"
+                      max="240"
+                      value={sysInput}
+                      onChange={(e) => setSysInput(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Diastolic</label>
+                    <input
+                      type="number"
+                      required
+                      min="40"
+                      max="140"
+                      value={diaInput}
+                      onChange={(e) => setDiaInput(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Pulse (bpm)</label>
+                    <input
+                      type="number"
+                      required
+                      min="40"
+                      max="200"
+                      value={hrInput}
+                      onChange={(e) => setHrInput(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowVitalsModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-xs font-bold text-white shadow-md shadow-green-600/30 transition-all cursor-pointer"
+                >
+                  Save Entry
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,15 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  UserRound,
-  ShieldAlert,
-  AlertTriangle,
   Phone,
-  Heart,
-  Save,
   CheckCircle2,
-  Calendar,
-  Activity,
   ChevronRight,
   Share2,
   UserCheck,
@@ -19,6 +12,7 @@ import {
 } from "lucide-react";
 import { mockProfile } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(mockProfile);
@@ -30,76 +24,86 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Profile Header (Apple Health Style) */}
-      <div className="flex items-center gap-3.5 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-800 text-white font-extrabold text-lg shrink-0 shadow-xs">
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Identity"
+        title="Health Profile"
+        description="Emergency card, allergies, and care-team links"
+      />
+
+      {/* Profile identity */}
+      <section className="soft-card flex items-center gap-3.5 p-4 sm:p-5">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--forest)] text-lg font-extrabold text-white shadow-md">
           EV
         </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-base font-extrabold text-slate-900 leading-tight">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-extrabold leading-tight text-[var(--foreground)]">
             {profile.full_name}
-          </h1>
-          <span className="text-xs text-slate-500 block mt-0.5">
+          </h2>
+          <span className="mt-0.5 block text-xs text-[var(--muted-foreground)]">
             DOB: {formatDate(profile.date_of_birth)} (Age 64)
           </span>
-          <span className="text-[11px] font-semibold text-teal-800 block mt-0.5">
-            Blood Type: {profile.blood_group} • {profile.height_cm} cm • {profile.weight_kg} kg
+          <span className="mt-0.5 block text-[11px] font-semibold text-emerald-700">
+            Blood Type: {profile.blood_group} · {profile.height_cm} cm · {profile.weight_kg} kg
           </span>
         </div>
-      </div>
+      </section>
 
       {saved && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           Health profile changes successfully updated.
         </div>
       )}
 
-      {/* Emergency Identification Card */}
+      {/* Emergency card */}
       <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
-          Emergency Health Card
+        <span className="mb-2 block px-1 text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
+          Emergency health card
         </span>
-        <div className="rounded-2xl border border-red-200 bg-red-50/40 p-4 shadow-xs space-y-2.5">
-          <div className="flex items-center justify-between pb-2 border-b border-red-200/60">
-            <span className="text-xs text-red-900 font-semibold">Blood Group</span>
-            <span className="text-sm font-extrabold text-red-700">{profile.blood_group}</span>
+        <div className="space-y-2.5 rounded-2xl border border-rose-200 bg-rose-50/40 p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-rose-200/60 pb-2">
+            <span className="text-xs font-semibold text-rose-900">Blood group</span>
+            <span className="text-sm font-extrabold text-rose-700">{profile.blood_group}</span>
           </div>
 
-          <div className="flex items-center justify-between pb-2 border-b border-red-200/60">
+          <div className="flex items-center justify-between border-b border-rose-200/60 pb-2">
             <div>
-              <span className="text-xs text-slate-700 font-bold block">{profile.emergency_contact?.name}</span>
-              <span className="text-[11px] text-slate-500">{profile.emergency_contact?.relationship}</span>
+              <span className="block text-xs font-bold text-[var(--foreground)]">
+                {profile.emergency_contact?.name}
+              </span>
+              <span className="text-[11px] text-[var(--muted-foreground)]">
+                {profile.emergency_contact?.relationship}
+              </span>
             </div>
             <a
               href={`tel:${profile.emergency_contact?.phone}`}
-              className="flex items-center gap-1.5 rounded-full bg-red-700 text-white px-3 py-1 text-xs font-semibold hover:bg-red-800"
+              className="flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-rose-700"
             >
               <Phone className="h-3 w-3" />
               Call
             </a>
           </div>
 
-          <div className="text-[11px] text-red-800">
-            <strong>Critical Alert:</strong> Severe Penicillin allergy. Carries MedicAlert identifier.
+          <div className="text-[11px] text-rose-800">
+            <strong>Critical alert:</strong> Severe Penicillin allergy. Carries MedicAlert identifier.
           </div>
         </div>
       </div>
 
-      {/* Confirmed Allergies (Grouped List) */}
+      {/* Allergies */}
       <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
-          Documented Drug Allergies
+        <span className="mb-2 block px-1 text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
+          Documented drug allergies
         </span>
-        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+        <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden p-0">
           {profile.allergies.map((a) => (
-            <div key={a.id} className="p-3.5 flex items-center justify-between">
+            <div key={a.id} className="flex items-center justify-between p-3.5">
               <div>
-                <span className="text-xs font-bold text-slate-900 block">{a.substance}</span>
-                <span className="text-[11px] text-red-700 font-semibold mt-0.5 block">{a.reaction}</span>
+                <span className="block text-xs font-bold text-[var(--foreground)]">{a.substance}</span>
+                <span className="mt-0.5 block text-[11px] font-semibold text-rose-700">{a.reaction}</span>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+              <span className="rounded-full border border-rose-100 bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700">
                 {a.severity}
               </span>
             </div>
@@ -107,78 +111,90 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Chronic Health Conditions (Grouped List) */}
+      {/* Conditions */}
       <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
-          Active Chronic Conditions
+        <span className="mb-2 block px-1 text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
+          Active chronic conditions
         </span>
-        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+        <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden p-0">
           {profile.chronic_conditions.map((c) => (
-            <div key={c.id} className="p-3.5 space-y-1">
+            <div key={c.id} className="space-y-1 p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">{c.name}</span>
-                <span className="text-[10px] font-semibold text-slate-400">ICD: {c.icd10}</span>
+                <span className="text-xs font-bold text-[var(--foreground)]">{c.name}</span>
+                <span className="text-[10px] font-semibold text-[var(--muted-foreground)]">
+                  ICD: {c.icd10}
+                </span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                {c.notes}
-              </p>
+              <p className="text-[11px] leading-relaxed text-[var(--muted-foreground)]">{c.notes}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Navigation Sections (Settings style) */}
+      {/* Navigation */}
       <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1 block mb-2">
-          Care Team & Clinical Sharing
+        <span className="mb-2 block px-1 text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
+          Care team &amp; clinical sharing
         </span>
-        <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+        <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden p-0">
           <Link
             href="/doctors"
-            className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-between p-3.5 transition-colors hover:bg-[var(--muted)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-800">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
                 <UserCheck className="h-4 w-4" />
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-900 block">Healthcare Providers</span>
-                <span className="text-[11px] text-slate-400">Dr. Wei, Dr. Vance, Dr. Jenkins</span>
+                <span className="block text-xs font-bold text-[var(--foreground)]">
+                  Healthcare providers
+                </span>
+                <span className="text-[11px] text-[var(--muted-foreground)]">
+                  Dr. Wei, Dr. Vance, Dr. Jenkins
+                </span>
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)]" />
           </Link>
 
           <Link
             href="/summaries"
-            className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-between p-3.5 transition-colors hover:bg-[var(--muted)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-800">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
                 <Share2 className="h-4 w-4" />
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-900 block">Printable Clinical Summary</span>
-                <span className="text-[11px] text-slate-400">Export for doctor appointments & share links</span>
+                <span className="block text-xs font-bold text-[var(--foreground)]">
+                  Printable clinical summary
+                </span>
+                <span className="text-[11px] text-[var(--muted-foreground)]">
+                  Export for appointments &amp; share links
+                </span>
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)]" />
           </Link>
 
           <Link
             href="/settings"
-            className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-between p-3.5 transition-colors hover:bg-[var(--muted)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--muted-foreground)]">
                 <Settings className="h-4 w-4" />
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-900 block">Preferences & Data Export</span>
-                <span className="text-[11px] text-slate-400">AI explanation depth, units, download JSON</span>
+                <span className="block text-xs font-bold text-[var(--foreground)]">
+                  Preferences &amp; data export
+                </span>
+                <span className="text-[11px] text-[var(--muted-foreground)]">
+                  AI depth, units, download JSON
+                </span>
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)]" />
           </Link>
         </div>
       </div>

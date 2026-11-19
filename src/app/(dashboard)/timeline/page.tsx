@@ -3,24 +3,17 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  Clock,
-  Search,
   Plus,
-  Calendar,
   FileText,
   Building,
-  CheckCircle2,
-  Stethoscope,
-  Activity,
-  Pill,
-  ShieldCheck,
-  ChevronRight,
   X,
-  Share2,
 } from "lucide-react";
 import { mockTimelineEvents } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
 import { TimelineEvent, TimelineEventType } from "@/types/medical";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function TimelinePage() {
   const [events, setEvents] = useState<TimelineEvent[]>(mockTimelineEvents);
@@ -70,72 +63,67 @@ export default function TimelinePage() {
   const getEventBadge = (t: TimelineEventType) => {
     switch (t) {
       case "visit":
-        return { label: "DOCTOR VISIT", color: "bg-blue-50 text-blue-700 border-blue-200" };
+        return { label: "DOCTOR VISIT", color: "bg-sky-50 text-sky-700 border-sky-100" };
       case "lab_test":
-        return { label: "LAB REPORT", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+        return { label: "LAB REPORT", color: "bg-emerald-50 text-emerald-700 border-emerald-100" };
       case "medication_start":
-        return { label: "MEDICATION REFILL", color: "bg-amber-50 text-amber-700 border-amber-200" };
+        return { label: "MEDICATION REFILL", color: "bg-amber-50 text-amber-700 border-amber-100" };
       case "diagnosis":
-        return { label: "DIAGNOSIS CONFIRMED", color: "bg-purple-50 text-purple-700 border-purple-200" };
+        return { label: "DIAGNOSIS CONFIRMED", color: "bg-rose-50 text-rose-700 border-rose-100" };
       default:
-        return { label: "CLINICAL RECORD", color: "bg-slate-50 text-slate-700 border-slate-200" };
+        return { label: "CLINICAL RECORD", color: "bg-[var(--muted)] text-[var(--muted-foreground)] border-[var(--border)]" };
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Header (Inspired by Image 4 & 7) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-            CareSight Patient Timeline
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Chronological longitudinal patient journey across {events.length} documented milestones.
-          </p>
-        </div>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="History"
+        title="Patient Timeline"
+        description={`Chronological journey across ${events.length} documented milestones`}
+        actions={
+          <Button onClick={() => setShowAddModal(true)} size="sm">
+            <Plus className="h-3.5 w-3.5" />
+            Add event
+          </Button>
+        }
+      />
 
-        <button
-          type="button"
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-full bg-gradient-to-tr from-emerald-600 to-green-500 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add Timeline Event</span>
-        </button>
-      </div>
-
-      {/* Manual Entry Sheet */}
       {showAddModal && (
-        <div className="rounded-3xl border border-emerald-300 bg-white p-5 shadow-lg space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-sm font-extrabold text-slate-900">Add Clinical Timeline Entry</span>
+        <div className="soft-card-lift space-y-4 border-emerald-200 p-5">
+          <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+            <span className="text-sm font-extrabold text-[var(--foreground)]">
+              Add timeline entry
+            </span>
             <button
               type="button"
               onClick={() => setShowAddModal(false)}
-              className="text-slate-400 hover:text-slate-700"
+              className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
           <form onSubmit={handleCreate} className="space-y-3 text-xs">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Event Title *</label>
-              <input
+              <label className="mb-1 block font-bold text-[var(--foreground)]">
+                Event title *
+              </label>
+              <Input
                 required
                 placeholder="e.g. Ophthalmology Retinal Exam"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Category</label>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Category
+                </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as TimelineEventType)}
-                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
+                  className="flex h-11 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
                 >
                   <option value="visit">Doctor Visit</option>
                   <option value="lab_test">Lab Report</option>
@@ -144,101 +132,90 @@ export default function TimelinePage() {
                 </select>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Event Date</label>
-                <input
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Event date
+                </label>
+                <Input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
                 />
               </div>
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Healthcare Facility / Clinician</label>
-              <input
+              <label className="mb-1 block font-bold text-[var(--foreground)]">
+                Facility / clinician
+              </label>
+              <Input
                 placeholder="e.g. Quest Diagnostics / Dr. Catherine Wei"
                 value={facility}
                 onChange={(e) => setFacility(e.target.value)}
-                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-xs"
               />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Clinical Notes & Findings</label>
+              <label className="mb-1 block font-bold text-[var(--foreground)]">
+                Clinical notes
+              </label>
               <textarea
                 rows={2}
                 placeholder="Diagnostic findings, lab values, or instructions..."
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 p-3 text-xs"
+                className="w-full rounded-2xl border border-[var(--border)] bg-white p-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
               />
             </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-              >
+            <div className="flex justify-end gap-2.5 border-t border-[var(--border)] pt-3">
+              <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
                 Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-xl bg-emerald-600 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
-              >
-                Save to Timeline
-              </button>
+              </Button>
+              <Button type="submit">Save to timeline</Button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Featured Clinical Lab Result Card with Visual Gradient Spectrum Slider (Exact design from Image 7) */}
-      <div className="rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-6 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.06)] space-y-4">
-        <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+      {/* Featured lab result */}
+      <div className="soft-card space-y-4 p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)]/80 pb-3">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 block">
-              Featured Diagnostic Lab Screening · Quest Diagnostics
+            <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+              Featured diagnostic · Quest Diagnostics
             </span>
-            <h2 className="text-base font-extrabold text-slate-900 mt-0.5">
+            <h2 className="mt-0.5 text-base font-extrabold text-[var(--foreground)]">
               Glucose in Serum or Plasma [Mass/volume]
             </h2>
-            <span className="text-xs text-slate-500 block mt-0.5">
-              November 2, 2026 · Facility: Boulder Community Health · Provider: Simon Jones, MD
+            <span className="mt-0.5 block text-xs text-[var(--muted-foreground)]">
+              November 2, 2026 · Boulder Community Health · Simon Jones, MD
             </span>
           </div>
-
-          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
-            Normal Result
+          <span className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+            Normal
           </span>
         </div>
 
-        {/* Current Result Spectrum Slider (Image 7 style: 91 mg/dL) */}
-        <div className="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3">
+        <div className="soft-inset space-y-3 p-4">
           <div className="flex items-baseline justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-500 block">
+              <span className="block text-xs font-semibold text-[var(--muted-foreground)]">
                 Fasting Serum Glucose
               </span>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-extrabold text-slate-900">91</span>
-                <span className="text-xs text-slate-500 font-bold">mg/dL</span>
+              <div className="mt-0.5 flex items-baseline gap-1.5">
+                <span className="text-2xl font-extrabold text-[var(--foreground)]">91</span>
+                <span className="text-xs font-bold text-[var(--muted-foreground)]">mg/dL</span>
               </div>
             </div>
-            <span className="text-xs font-bold text-emerald-600">
-              ● Normal / Ideal Range
-            </span>
+            <span className="text-xs font-bold text-emerald-600">● Normal / Ideal</span>
           </div>
 
-          {/* Color Gradient Spectrum Bar (Blue -> Emerald -> Yellow -> Red) with Indicator Pin at 91 */}
-          <div className="relative pt-3 pb-1">
-            <div className="h-3.5 w-full rounded-full bg-gradient-to-r from-blue-400 via-emerald-400 via-amber-400 to-rose-500 relative shadow-inner">
-              {/* Pin indicator at 91 mg/dL on 0-150 scale ~ 60% */}
+          <div className="relative pb-1 pt-3">
+            <div className="relative h-3.5 w-full rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 via-amber-400 to-rose-500 shadow-inner">
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-emerald-700 shadow-md ring-2 ring-emerald-200"
+                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-emerald-700 bg-white shadow-md ring-2 ring-emerald-200"
                 style={{ left: "59%" }}
                 title="Measured Value: 91 mg/dL"
               />
             </div>
-            <div className="flex justify-between text-[11px] text-slate-400 font-bold mt-1.5 px-1">
+            <div className="mt-1.5 flex justify-between px-1 text-[11px] font-bold text-[var(--muted-foreground)]">
               <span>0</span>
               <span>50</span>
               <span>100</span>
@@ -246,43 +223,39 @@ export default function TimelinePage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-            <span className="text-slate-500">
-              Ideal Clinical Range: <strong>70 – 100 mg/dL</strong>
+          <div className="flex items-center justify-between border-t border-[var(--border)]/60 pt-2 text-xs">
+            <span className="text-[var(--muted-foreground)]">
+              Ideal range: <strong className="text-[var(--foreground)]">70 – 100 mg/dL</strong>
             </span>
-            <Link href="/assistant" className="text-emerald-700 font-bold hover:underline">
-              ↑ Learn More with Copilot
+            <Link href="/assistant" className="font-bold text-emerald-700 hover:underline">
+              Learn more
             </Link>
           </div>
         </div>
 
-        {/* Prior Baseline Result Comparison (Image 7 style: 145 mg/dL) */}
-        <div className="p-4 rounded-2xl bg-rose-50/40 border border-rose-100 space-y-3">
+        <div className="space-y-3 rounded-2xl border border-rose-100 bg-rose-50/40 p-4">
           <div className="flex items-baseline justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-500 block">
+              <span className="block text-xs font-semibold text-[var(--muted-foreground)]">
                 Prior Screening (May 14, 2026)
               </span>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-extrabold text-slate-900">145</span>
-                <span className="text-xs text-slate-500 font-bold">mg/dL</span>
+              <div className="mt-0.5 flex items-baseline gap-1.5">
+                <span className="text-2xl font-extrabold text-[var(--foreground)]">145</span>
+                <span className="text-xs font-bold text-[var(--muted-foreground)]">mg/dL</span>
               </div>
             </div>
-            <span className="text-xs font-bold text-rose-600">
-              ● Abnormal Result (Elevated)
-            </span>
+            <span className="text-xs font-bold text-rose-600">● Elevated</span>
           </div>
 
-          {/* Color Gradient Spectrum Bar with Pin at 145 near red end */}
-          <div className="relative pt-3 pb-1">
-            <div className="h-3.5 w-full rounded-full bg-gradient-to-r from-blue-400 via-emerald-400 via-amber-400 to-rose-500 relative shadow-inner">
+          <div className="relative pb-1 pt-3">
+            <div className="relative h-3.5 w-full rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 via-amber-400 to-rose-500 shadow-inner">
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-rose-600 shadow-md ring-2 ring-rose-200"
+                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-rose-600 bg-white shadow-md ring-2 ring-rose-200"
                 style={{ left: "94%" }}
                 title="Measured Value: 145 mg/dL"
               />
             </div>
-            <div className="flex justify-between text-[11px] text-slate-400 font-bold mt-1.5 px-1">
+            <div className="mt-1.5 flex justify-between px-1 text-[11px] font-bold text-[var(--muted-foreground)]">
               <span>0</span>
               <span>50</span>
               <span>100</span>
@@ -290,18 +263,98 @@ export default function TimelinePage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs pt-1 border-t border-rose-100/60">
-            <span className="text-slate-500">
-              Improvement: <strong>-54 mg/dL reduction</strong> since starting Metformin regimen.
+          <div className="flex items-center justify-between border-t border-rose-100/60 pt-2 text-xs">
+            <span className="text-[var(--muted-foreground)]">
+              Improvement: <strong className="text-[var(--foreground)]">−54 mg/dL</strong> since Metformin
             </span>
-            <span className="text-emerald-700 font-bold">
-              Marked Clinical Progress
-            </span>
+            <span className="font-bold text-emerald-700">Marked progress</span>
           </div>
         </div>
       </div>
 
-      {/* Search & Timeline Filter Pills (Image 4 style) */}
+      {/* CareSight Multi-Tier Horizontal Branched Timeline (Image 4 Replica) */}
+      <section className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-[var(--shadow-soft)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-sm font-extrabold text-[var(--foreground)] leading-tight">
+              CareSight Longitudinal Trajectory
+            </h2>
+            <span className="text-[11px] text-[var(--muted-foreground)] block">
+              Multi-tier clinical milestone branch: Inpatient events, care orders, and active EMR feeds.
+            </span>
+          </div>
+
+          {/* Quick Date Range Selectors */}
+          <div className="flex items-center gap-1 text-[10px] font-bold overflow-x-auto pb-1 no-scrollbar">
+            {["Last 30 Days", "Last 90 Days", "Last Year", "Last 5 Years", "All History"].map((r, i) => (
+              <span
+                key={r}
+                className={`px-2.5 py-1 rounded-full cursor-pointer transition-colors whitespace-nowrap ${
+                  i === 2
+                    ? "bg-[#18261F] text-white shadow-2xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {r}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Visual Branched SVG / Node Spine */}
+        <div className="relative py-4 overflow-x-auto">
+          <div className="min-w-[620px] relative px-4">
+            {/* Top Branch: Inpatient & SNF Badges */}
+            <div className="flex justify-between items-center pb-3 text-[10px] font-bold">
+              <span className="rounded-lg bg-amber-100 text-amber-900 px-2 py-0.5 border border-amber-200">
+                ADMISSION SNF · Valley
+              </span>
+              <span className="rounded-lg bg-rose-100 text-rose-900 px-2 py-0.5 border border-rose-200">
+                HOSPITALIZATION · St. Jude
+              </span>
+              <span className="rounded-lg bg-amber-100 text-amber-900 px-2 py-0.5 border border-amber-200">
+                ADMISSION SNF · Rehab
+              </span>
+            </div>
+
+            {/* Central Timeline Spine Line */}
+            <div className="relative h-2 w-full bg-slate-200 rounded-full my-3 flex items-center justify-between px-6">
+              {/* Connected Dots */}
+              {["2022", "2023", "2024", "2025", "2026"].map((yr, idx) => (
+                <div key={yr} className="relative flex flex-col items-center">
+                  <span
+                    className={`h-4 w-4 rounded-full border-2 border-white shadow-sm ring-2 ${
+                      idx === 4
+                        ? "bg-emerald-500 ring-emerald-300"
+                        : idx === 3
+                        ? "bg-teal-500 ring-teal-200"
+                        : "bg-slate-400 ring-slate-200"
+                    }`}
+                  />
+                  <span className="absolute -bottom-5 text-[10px] font-bold text-slate-500">
+                    {yr}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Branch: Orders & Prescriptions */}
+            <div className="flex justify-between items-center pt-5 text-[10px] font-bold">
+              <span className="rounded-lg bg-slate-800 text-white px-2 py-0.5 shadow-xs">
+                NEW MED: Lisinopril
+              </span>
+              <span className="rounded-lg bg-teal-800 text-white px-2 py-0.5 shadow-xs">
+                NEW ORDER: HbA1c Panel
+              </span>
+              <span className="rounded-lg bg-emerald-800 text-white px-2 py-0.5 shadow-xs">
+                ACTIVE EMR DATA FEED
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Filters */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs hide-scrollbar">
         {[
           { id: "all", label: "All Events" },
@@ -312,11 +365,12 @@ export default function TimelinePage() {
         ].map((cat) => (
           <button
             key={cat.id}
+            type="button"
             onClick={() => setTypeFilter(cat.id)}
-            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-bold transition-all cursor-pointer ${
+            className={`cursor-pointer whitespace-nowrap rounded-2xl px-4 py-1.5 text-xs font-bold transition-all ${
               typeFilter === cat.id
-                ? "bg-slate-900 text-white shadow-xs"
-                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                ? "bg-[var(--forest)] text-white shadow-sm"
+                : "border border-[var(--border)] bg-white text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
             }`}
           >
             {cat.label}
@@ -324,50 +378,49 @@ export default function TimelinePage() {
         ))}
       </div>
 
-      {/* Chronological Milestone Feed (Image 4 CareSight style) */}
-      <div className="space-y-4">
+      {/* Event feed */}
+      <div className="space-y-3.5">
         {filteredEvents.map((ev) => {
           const badge = getEventBadge(ev.event_type);
           return (
-            <div
+            <article
               key={ev.id}
-              className="rounded-3xl bg-white border border-slate-100/90 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:border-emerald-300 transition-all space-y-3"
+              className="soft-card space-y-3 p-5 transition-all hover:border-emerald-200"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="flex flex-col justify-between gap-2 border-b border-[var(--border)]/80 pb-3 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-2.5">
                   <span
-                    className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider border ${badge.color}`}
+                    className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${badge.color}`}
                   >
                     {badge.label}
                   </span>
-                  <h3 className="text-sm font-extrabold text-slate-900">
+                  <h3 className="text-sm font-extrabold text-[var(--foreground)]">
                     {ev.title}
                   </h3>
                 </div>
-
-                <span className="text-xs font-bold text-slate-500">
+                <span className="text-xs font-bold text-[var(--muted-foreground)]">
                   {formatDate(ev.event_date)}
                 </span>
               </div>
 
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
                 {ev.description}
               </p>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                <span className="flex items-center gap-1 font-semibold text-slate-600">
-                  <Building className="h-3.5 w-3.5 text-slate-400" />
+              <div className="flex items-center justify-between pt-1 text-[11px]">
+                <span className="flex items-center gap-1 font-semibold text-[var(--foreground)]">
+                  <Building className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
                   {ev.facility_or_doctor}
                 </span>
 
                 {ev.document_id && (
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                  <span className="flex items-center gap-1 font-bold text-emerald-700">
                     <FileText className="h-3.5 w-3.5" />
-                    Source Report Linked
+                    Source linked
                   </span>
                 )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

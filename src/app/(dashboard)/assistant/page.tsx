@@ -1,26 +1,132 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   Send,
   Stethoscope,
   FileText,
   AlertTriangle,
-  ChevronRight,
   RefreshCw,
   ShieldCheck,
   CheckCircle2,
-  Info,
   Loader2,
   Activity,
   Pill,
   Calendar,
+  Paperclip,
+  X,
+  Copy,
+  Check,
+  MessageSquare,
+  Plus,
+  Clock,
+  Sparkles,
+  ChevronDown,
+  Share2,
+  BookmarkPlus,
+  Sliders,
 } from "lucide-react";
-import { mockMessages } from "@/lib/mock-data";
-import { AIMessage, AICitation } from "@/types/medical";
+import { mockMessages, mockDocuments, mockConversations } from "@/lib/mock-data";
+import { AIMessage, AICitation, AIConversation, MedicalDocument } from "@/types/medical";
 import { formatDate } from "@/lib/utils";
 
-const suggestedQuestions = [
+interface ChatSession {
+  id: string;
+  title: string;
+  date: string;
+  messages: AIMessage[];
+}
+
+const initialSessions: ChatSession[] = [
+  {
+    id: "conv-1",
+    title: "Comparing HbA1c & Glucose Trajectory",
+    date: "Today, 10:00 AM",
+    messages: mockMessages,
+  },
+  {
+    id: "conv-2",
+    title: "Metformin & Lisinopril Safety Review",
+    date: "Nov 16, 2026",
+    messages: [
+      {
+        id: "m-201",
+        conversation_id: "conv-2",
+        role: "user",
+        content: "Are there any interactions between Metformin 1000mg and Lisinopril 20mg?",
+        created_at: "2026-11-16T14:20:00Z",
+      },
+      {
+        id: "m-202",
+        conversation_id: "conv-2",
+        role: "assistant",
+        content: `### Clinical Interaction Analysis: Metformin + Lisinopril
+
+**Safety Assessment:** Safe & Standard Practice (No Adverse Drug Interaction).
+
+1. **Cardio-Renal Synergy:** 
+   - **Metformin** suppresses hepatic gluconeogenesis to maintain glycemic control without causing hypoglycemia.
+   - **Lisinopril** acts as an ACE inhibitor, reducing intraglomerular pressure and slowing diabetic nephropathy progression.
+2. **Renal Monitoring:**
+   - Both medications require adequate renal clearance. Your latest eGFR on Nov 2, 2026 was **68 mL/min/1.73m²** (Creatinine 1.04 mg/dL), confirming stable Stage 2 CKD with no contraindication.
+3. **Recommendation:**
+   - Continue morning and evening schedule as prescribed. Stay adequately hydrated, especially during acute gastrointestinal illnesses.`,
+        citations: [
+          {
+            document_id: "doc-103",
+            document_title: "Active_Rx_Metformin_Lisinopril.pdf",
+            date: "2026-06-12",
+            page: 1,
+            snippet: "Metformin 1000mg BID + Lisinopril 20mg daily. Verified drug profile.",
+          },
+        ],
+        created_at: "2026-11-16T14:20:18Z",
+      },
+    ],
+  },
+  {
+    id: "conv-3",
+    title: "Pre-Visit Preparation for Dr. Catherine Wei",
+    date: "Nov 12, 2026",
+    messages: [
+      {
+        id: "m-301",
+        conversation_id: "conv-3",
+        role: "user",
+        content: "Help me prepare 3 clinical questions for my appointment with Dr. Wei on December 8.",
+        created_at: "2026-11-12T09:15:00Z",
+      },
+      {
+        id: "m-302",
+        conversation_id: "conv-3",
+        role: "assistant",
+        content: `### Consultation Briefing: Dr. Catherine Wei (Dec 8, 2026)
+
+Based on your November lab results and medication adherence logs, here are the 3 most pertinent clinical checkpoints:
+
+1. **HbA1c Target Achievement (6.8%):**
+   - Note that your HbA1c dropped below 7.0% for the first time in 18 months. Ask: *"Should we maintain the current 1000mg Metformin dose or consider tapering?"*
+2. **Kidney Filtration Checkpoint (eGFR 68):**
+   - Confirm that your annual urine microalbumin-to-creatinine ratio is scheduled for Q1 2027 to verify continued renal stability.
+3. **Retinal Screening Follow-up:**
+   - Provide the Valley Eye Center screening report (Nov 14, 2026) confirming zero diabetic retinopathy findings.`,
+        citations: [
+          {
+            document_id: "doc-101",
+            document_title: "Metabolic_Lipid_Panel_Nov2026.pdf",
+            date: "2026-11-02",
+            page: 1,
+            snippet: "HbA1c: 6.8% | eGFR: 68 mL/min | Fasting Glucose: 118 mg/dL",
+          },
+        ],
+        created_at: "2026-11-12T09:15:22Z",
+      },
+    ],
+  },
+];
+
+const promptSuggestions = [
   { text: "Compare my HbA1c from May to November", category: "Labs", icon: Activity },
   { text: "Are there any interactions with Metformin and Lisinopril?", category: "Meds", icon: Pill },
   { text: "What key questions should I ask Dr. Catherine Wei?", category: "Visits", icon: Calendar },
@@ -28,13 +134,23 @@ const suggestedQuestions = [
 ];
 
 export default function AssistantPage() {
-  const [messages, setMessages] = useState<AIMessage[]>(mockMessages);
+  const [sessions, setSessions] = useState<ChatSession[]>(initialSessions);
+  const [activeSessionId, setActiveSessionId] = useState<string>("conv-1");
+  const [showHistoryMobile, setShowHistoryMobile] = useState(false);
+  const [explanationDepth, setExplanationDepth] = useState<"plain" | "clinical">("plain");
+
   const [inputQuery, setInputQuery] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [activeCitation, setActiveCitation] = useState<AICitation | null>(null);
   const [emergencyWarning, setEmergencyWarning] = useState<string | null>(null);
+  const [attachedDoc, setAttachedDoc] = useState<MedicalDocument | null>(null);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const currentSession =
+    sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,32 +158,89 @@ export default function AssistantPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [currentSession.messages, isTyping]);
+
+  const handleCreateNewSession = () => {
+    const newSession: ChatSession = {
+      id: `conv-${Date.now()}`,
+      title: "New Health Consultation",
+      date: "Just now",
+      messages: [
+        {
+          id: `msg-welcome-${Date.now()}`,
+          conversation_id: `conv-${Date.now()}`,
+          role: "assistant",
+          content: `Hello Elena. I am your Clinical Copilot, grounded directly in your verified medical records from Quest Diagnostics, Valley Eye Center, and St. Jude Heart Institute.
+
+How can I assist you with your health records, lab panels, or medication schedule today?`,
+          created_at: new Date().toISOString(),
+        },
+      ],
+    };
+
+    setSessions((prev) => [newSession, ...prev]);
+    setActiveSessionId(newSession.id);
+    setShowHistoryMobile(false);
+    setAttachedDoc(null);
+  };
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2500);
+  };
 
   const handleSend = (textToSend?: string) => {
     const query = textToSend || inputQuery;
     if (!query.trim()) return;
 
     // Red flag emergency check
-    const redFlags = ["chest pain", "shortness of breath", "severe bleeding", "stroke", "loss of consciousness", "can't breathe"];
+    const redFlags = [
+      "chest pain",
+      "shortness of breath",
+      "severe bleeding",
+      "stroke",
+      "loss of consciousness",
+      "can't breathe",
+      "heart attack",
+    ];
     const hasRedFlag = redFlags.some((rf) => query.toLowerCase().includes(rf));
 
     if (hasRedFlag) {
-      setEmergencyWarning("Urgent: Your symptoms may indicate an emergency. Please call 911 or visit the nearest emergency facility immediately.");
+      setEmergencyWarning(
+        "Critical Triage Alert: The symptoms you described may indicate a medical emergency. Please call 911 or go to the nearest emergency room immediately."
+      );
     } else {
       setEmergencyWarning(null);
     }
 
     const userMessage: AIMessage = {
       id: `msg-${Date.now()}`,
-      conversation_id: "conv-1",
+      conversation_id: activeSessionId,
       role: "user",
-      content: query,
+      content: query + (attachedDoc ? `\n[Attached Reference: ${attachedDoc.file_name}]` : ""),
       created_at: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Update active session messages
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id === activeSessionId) {
+          const isDefaultTitle = s.title === "New Health Consultation";
+          return {
+            ...s,
+            title: isDefaultTitle ? query.slice(0, 36) + "..." : s.title,
+            messages: [...s.messages, userMessage],
+          };
+        }
+        return s;
+      })
+    );
+
     if (!textToSend) setInputQuery("");
+    const sentAttachedDoc = attachedDoc;
+    setAttachedDoc(null);
+    setShowAttachMenu(false);
     setIsTyping(true);
 
     setTimeout(() => {
@@ -75,27 +248,68 @@ export default function AssistantPage() {
       let citations: AICitation[] = [];
 
       const lower = query.toLowerCase();
-      if (lower.includes("metformin") || lower.includes("interaction") || lower.includes("lisinopril")) {
-        responseContent = `Based on your active prescription profile:
 
-1. **Metformin 1000 mg** (Oral, Twice daily) and **Lisinopril 10 mg** (Oral, Once daily) are safe and standard practice in dual-management of Type 2 Diabetes and Hypertension.
-2. **Safety Check:** No significant adverse drug-drug interactions detected. Metformin supports glycemic control, while Lisinopril provides renal-protective benefits for your kidneys.
-3. **Clinical Guideline:** Maintain adequate hydration and continue routine annual renal monitoring (eGFR was stable at 68 mL/min in your Nov 2026 panel).`;
+      if (sentAttachedDoc) {
+        responseContent = `I have cross-examined **${sentAttachedDoc.file_name}** (${sentAttachedDoc.facility_name}):
+
+• **Key Finding:** The report confirms routine follow-up status with no critical variance from your baseline.
+• **Clinical Context:** Biomarkers remain aligned with your primary care protocol under Dr. Catherine Wei.
+• **Action Point:** The extracted parameters have been verified and linked to your lifelong medical timeline.`;
+        citations = [
+          {
+            document_id: sentAttachedDoc.id,
+            document_title: sentAttachedDoc.file_name,
+            date: sentAttachedDoc.document_date || "2026-11-02",
+            page: 1,
+            snippet: "Direct OCR extraction verified by patient verification engine.",
+          },
+        ];
+      } else if (
+        lower.includes("metformin") ||
+        lower.includes("interaction") ||
+        lower.includes("lisinopril") ||
+        lower.includes("advil") ||
+        lower.includes("ibuprofen")
+      ) {
+        if (explanationDepth === "plain") {
+          responseContent = `Based on your verified prescriptions:
+
+• **Metformin (1000 mg)** and **Lisinopril (20 mg)** are completely safe and routinely prescribed together.
+• They work as a team: Metformin helps lower your blood sugar, while Lisinopril protects your kidneys and manages your blood pressure.
+• **Safety Tip:** If you ever need pain medicine, avoid NSAIDs like Advil/Ibuprofen because they can strain your kidneys. Tylenol (Acetaminophen) is much safer for you.`;
+        } else {
+          responseContent = `### Pharmacological Profile & Renal Safety Evaluation
+
+1. **Dual Regimen Assessment (Metformin + Lisinopril):**
+   - **Metformin ER 1000mg BID:** Primary biguanide antihyperglycemic. Enhances peripheral insulin sensitivity and reduces intestinal glucose absorption.
+   - **Lisinopril 20mg QD:** Angiotensin-Converting Enzyme (ACE) inhibitor. Reduces efferent arteriolar resistance, providing intraglomerular pressure reduction and diabetic renoprotection.
+2. **Interaction Risk:** None identified between active prescription agents.
+3. **Renal Clearance Caution:**
+   - Baseline eGFR is **68 mL/min/1.73m²**. Concurrent use of non-steroidal anti-inflammatory drugs (NSAIDs) is contraindicated due to acute renal hemodynamic reduction risk.`;
+        }
         citations = [
           {
             document_id: "doc-103",
             document_title: "Active_Rx_Metformin_Lisinopril.pdf",
             date: "2026-06-12",
             page: 1,
-            snippet: "Metformin 1000mg BID + Lisinopril 10mg daily. Renal protective regimen.",
+            snippet: "Metformin 1000mg BID + Lisinopril 20mg daily. Renal protective regimen.",
           },
         ];
-      } else if (lower.includes("wei") || lower.includes("doctor") || lower.includes("visit") || lower.includes("question")) {
+      } else if (
+        lower.includes("wei") ||
+        lower.includes("doctor") ||
+        lower.includes("visit") ||
+        lower.includes("question")
+      ) {
         responseContent = `Here are 3 tailored discussion checkpoints for your upcoming consultation with **Dr. Catherine Wei** on December 8, 2026:
 
-1. **Glycemic Milestone:** Note that your HbA1c improved to **6.8%** (down from 7.1%), reaching your sub-7.0% clinical target. Ask whether your current dosage of Metformin should remain unchanged.
-2. **Kidney eGFR Stability:** Your eGFR remains steady at **68 mL/min** (Creatinine 1.04). Confirm that the Lisinopril 10 mg renal protection remains optimal.
-3. **Next Screening Checkpoints:** Request follow-up orders for your annual diabetic eye exam and urine microalbumin screening for early 2027.`;
+1. **HbA1c Target Milestone (6.8%):**
+   - Point out that your HbA1c improved from 7.1% down to **6.8%**, reaching your clinician-defined target (< 7.0%). Ask if your current Metformin dosage should stay steady.
+2. **Renal Function Stability:**
+   - Your eGFR is steady at **68 mL/min** (Creatinine 1.04). Confirm that Lisinopril 20 mg continues to provide adequate kidney protection.
+3. **Annual Diabetic Checkpoint:**
+   - Present your clear retinal eye exam findings from Valley Eye Center and request annual urine microalbumin orders for early 2027.`;
         citations = [
           {
             document_id: "doc-101",
@@ -108,9 +322,11 @@ export default function AssistantPage() {
       } else {
         responseContent = `Based on your verified medical records from Quest Diagnostics (Nov 2, 2026):
 
-• Your **HbA1c is 6.8%**, down from 7.1% in May 2026, successfully meeting your target goal (< 7.0%).
-• Your **Fasting Blood Glucose is 118 mg/dL** (improved from 126 mg/dL). 
-• Renal filtration markers indicate an **eGFR of 68 mL/min** and **Creatinine of 1.04 mg/dL**, confirming stable renal function under your current care plan.`;
+• **HbA1c:** **6.8%** — down from 7.1% in May 2026, successfully meeting your clinical target goal (< 7.0%).
+• **Fasting Plasma Glucose:** **118 mg/dL** — improved from 126 mg/dL.
+• **Renal Filtration:** eGFR is **68 mL/min** and Serum Creatinine is **1.04 mg/dL**, confirming stable Stage 2 CKD on current ACE inhibitor therapy.
+
+Would you like me to generate a 1-page summary of these findings to bring to your next doctor visit?`;
         citations = [
           {
             document_id: "doc-101",
@@ -124,179 +340,442 @@ export default function AssistantPage() {
 
       const assistantMessage: AIMessage = {
         id: `msg-${Date.now()}`,
-        conversation_id: "conv-1",
+        conversation_id: activeSessionId,
         role: "assistant",
         content: responseContent,
         citations,
         created_at: new Date().toISOString(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === activeSessionId
+            ? { ...s, messages: [...s.messages, assistantMessage] }
+            : s
+        )
+      );
       setIsTyping(false);
     }, 700);
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-125px)] sm:h-[calc(100vh-140px)] max-w-4xl mx-auto">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 mb-3 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-500 text-white shadow-md shadow-emerald-500/20">
-            <Stethoscope className="h-5 w-5" />
+    <div className="flex h-[calc(100vh-125px)] sm:h-[calc(100vh-140px)] max-w-6xl mx-auto gap-4">
+      {/* 1. Left Sidebar: Chat History & Clinical Sessions (Desktop) */}
+      <aside className="hidden md:flex w-72 flex-col rounded-3xl bg-white border border-slate-200/80 p-4 shadow-sm shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-emerald-600" />
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+              Consultation History
+            </h2>
           </div>
-          <div>
-            <h1 className="text-sm font-extrabold text-slate-900 leading-tight">
-              Clinical Copilot
-            </h1>
-            <span className="text-[11px] text-emerald-700 font-bold block flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3 text-emerald-600 inline" />
-              Grounded in Elena Vance's Verified Clinical Records
-            </span>
-          </div>
+          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+            {sessions.length}
+          </span>
         </div>
 
+        {/* New Consultation Button */}
         <button
           type="button"
-          onClick={() => setMessages(mockMessages)}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+          onClick={handleCreateNewSession}
+          className="mt-3 flex items-center justify-center gap-2 w-full rounded-2xl bg-gradient-to-tr from-[#22C55E] to-[#16A34A] text-white py-2.5 px-4 text-xs font-bold shadow-md shadow-green-600/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
         >
-          <RefreshCw className="h-3 w-3" />
-          <span>Reset Session</span>
+          <Plus className="h-4 w-4 stroke-[2.5]" />
+          <span>New Consultation</span>
         </button>
-      </div>
 
-      {/* Emergency Red-Flag Alert */}
-      {emergencyWarning && (
-        <div className="mb-3 rounded-2xl bg-red-50 border border-red-200 p-3.5 text-red-900 shadow-sm shrink-0">
-          <div className="flex items-start gap-2.5">
-            <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-            <div className="flex-1 text-xs leading-relaxed">
-              <span className="font-bold block">Medical Warning Detected</span>
-              {emergencyWarning}
-            </div>
-          </div>
+        {/* Sessions List */}
+        <div className="mt-4 flex-1 overflow-y-auto space-y-1.5 pr-1">
+          {sessions.map((sess) => {
+            const isActive = sess.id === activeSessionId;
+            return (
+              <button
+                key={sess.id}
+                type="button"
+                onClick={() => {
+                  setActiveSessionId(sess.id);
+                  setAttachedDoc(null);
+                }}
+                className={`w-full text-left p-3 rounded-2xl transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-emerald-50/90 border border-emerald-200/90 shadow-2xs"
+                    : "hover:bg-slate-50 border border-transparent"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <MessageSquare
+                    className={`h-3.5 w-3.5 shrink-0 ${
+                      isActive ? "text-emerald-700" : "text-slate-400"
+                    }`}
+                  />
+                  <span
+                    className={`text-xs font-bold truncate block ${
+                      isActive ? "text-emerald-950 font-extrabold" : "text-slate-700"
+                    }`}
+                  >
+                    {sess.title}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 block mt-1 pl-5.5 font-medium">
+                  {sess.date} · {sess.messages.length} messages
+                </span>
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      {/* Citation Inspector Drawer */}
-      {activeCitation && (
-        <div className="mb-3 rounded-2xl bg-emerald-50/90 border border-emerald-200 p-3 text-xs shadow-xs shrink-0">
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-bold text-emerald-950 flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5 text-emerald-600" />
-              Verified Source: {activeCitation.document_title} (Page {activeCitation.page})
-            </span>
+        {/* Clinical Safety Protocol Footnote */}
+        <div className="p-3 mt-2 rounded-2xl bg-slate-50 border border-slate-100 text-[10px] text-slate-500 leading-relaxed">
+          <span className="font-bold text-slate-700 block mb-0.5">Clinical Protocol</span>
+          Responses cross-reference verified Quest Diagnostics lab panels and active prescriptions.
+        </div>
+      </aside>
+
+      {/* 2. Main Chat Conversation Pane */}
+      <section className="flex flex-1 flex-col rounded-3xl bg-white border border-slate-200/80 shadow-sm overflow-hidden min-w-0">
+        {/* Top Header Row with Depth Toggle & Session Info */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white/95 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile History Toggle */}
             <button
               type="button"
-              onClick={() => setActiveCitation(null)}
-              className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 cursor-pointer"
+              onClick={() => setShowHistoryMobile(!showHistoryMobile)}
+              className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+              title="View History"
             >
-              Dismiss
+              <Clock className="h-4 w-4" />
+            </button>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#22C55E] to-[#16A34A] text-white shadow-md shadow-green-600/20 shrink-0">
+              <Stethoscope className="h-5 w-5" />
+            </div>
+
+            <div className="min-w-0">
+              <h1 className="text-sm font-extrabold text-slate-900 truncate leading-tight">
+                {currentSession.title}
+              </h1>
+              <span className="text-[11px] text-emerald-700 font-bold block truncate flex items-center gap-1 mt-0.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 inline" />
+                Grounded in Elena Vance's Verified Clinical Records
+              </span>
+            </div>
+          </div>
+
+          {/* Right Action: Explanation Complexity Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center rounded-full bg-slate-100 p-1 border border-slate-200 text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setExplanationDepth("plain")}
+                className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                  explanationDepth === "plain"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Plain Language
+              </button>
+              <button
+                type="button"
+                onClick={() => setExplanationDepth("clinical")}
+                className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                  explanationDepth === "clinical"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Clinical Detail
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCreateNewSession}
+              className="md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-[#22C55E] text-white"
+              title="New Consultation"
+            >
+              <Plus className="h-4 w-4" />
             </button>
           </div>
-          <p className="bg-white rounded-xl p-2.5 border border-emerald-100 text-slate-700 text-[11px] leading-relaxed font-mono">
-            "{activeCitation.snippet}"
-          </p>
         </div>
-      )}
 
-      {/* Messages Stream */}
-      <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex gap-3 text-xs ${
-              msg.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            {msg.role === "assistant" && (
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white mt-0.5 shadow-xs">
-                <Stethoscope className="h-4 w-4" />
-              </div>
-            )}
-
-            <div
-              className={`rounded-3xl p-4 max-w-[88%] leading-relaxed space-y-2 shadow-xs ${
-                msg.role === "user"
-                  ? "bg-emerald-600 text-white font-medium rounded-br-xs"
-                  : "bg-white border border-slate-200/80 text-slate-800 rounded-bl-xs"
-              }`}
-            >
-              <div className="whitespace-pre-line text-xs font-normal leading-relaxed">{msg.content}</div>
-
-              {msg.citations && msg.citations.length > 0 && (
-                <div className="pt-2.5 border-t border-slate-100 flex flex-wrap gap-1.5">
-                  {msg.citations.map((cite, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setActiveCitation(cite)}
-                      className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors cursor-pointer"
-                    >
-                      <FileText className="h-3 w-3 text-emerald-700" />
-                      <span className="truncate max-w-[160px]">{cite.document_title}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+        {/* Mobile History Drawer Sheet (Collapsible) */}
+        {showHistoryMobile && (
+          <div className="md:hidden p-3 border-b border-slate-200 bg-slate-50 space-y-2">
+            <div className="flex items-center justify-between pb-1">
+              <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                Recent Consultations
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowHistoryMobile(false)}
+                className="text-xs text-slate-400 hover:text-slate-700"
+              >
+                Close
+              </button>
             </div>
-          </div>
-        ))}
-
-        {isTyping && (
-          <div className="flex gap-2.5 items-center text-xs text-slate-500 py-1">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {sessions.map((sess) => (
+                <button
+                  key={sess.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveSessionId(sess.id);
+                    setShowHistoryMobile(false);
+                  }}
+                  className={`w-full text-left p-2.5 rounded-xl text-xs font-bold block ${
+                    sess.id === activeSessionId
+                      ? "bg-emerald-600 text-white"
+                      : "bg-white text-slate-700 border border-slate-200"
+                  }`}
+                >
+                  {sess.title}
+                </button>
+              ))}
             </div>
-            <span className="font-medium">Cross-referencing verified health records...</span>
           </div>
         )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Suggested Questions Pill Scroller */}
-      <div className="py-2.5 overflow-x-auto flex gap-2 no-scrollbar shrink-0">
-        {suggestedQuestions.map((q, idx) => {
-          const Icon = q.icon;
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleSend(q.text)}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white border border-slate-200/90 px-3.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800 hover:bg-emerald-50/50 transition-all shadow-2xs shrink-0 cursor-pointer"
-            >
-              <Icon className="h-3.5 w-3.5 text-emerald-600" />
-              <span>{q.text}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Input Bar */}
-      <div className="pt-2 border-t border-slate-200/80 bg-[#F6F8FA] shrink-0">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-          className="flex items-center gap-2"
-        >
-          <div className="relative flex-1">
-            <input
-              placeholder="Ask about lab trends, prescriptions, visit preparation..."
-              value={inputQuery}
-              onChange={(e) => setInputQuery(e.target.value)}
-              className="h-11 w-full rounded-2xl border border-slate-200/90 bg-white pl-4 pr-10 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
-            />
+        {/* Emergency Warning Banner */}
+        {emergencyWarning && (
+          <div className="m-4 mb-0 rounded-2xl bg-red-50 border border-red-200 p-3.5 text-red-900 shadow-xs shrink-0">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+              <div className="flex-1 text-xs leading-relaxed">
+                <span className="font-bold block">Medical Warning Detected</span>
+                {emergencyWarning}
+              </div>
+            </div>
           </div>
-          <button
-            type="submit"
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all shrink-0 cursor-pointer"
+        )}
+
+        {/* Active Citation Inspection Drawer */}
+        {activeCitation && (
+          <div className="m-4 mb-0 rounded-2xl bg-emerald-50/90 border border-emerald-200 p-3.5 text-xs shadow-xs shrink-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-extrabold text-emerald-950 flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-emerald-700" />
+                Verified Clinical Source: {activeCitation.document_title} (Page {activeCitation.page})
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveCitation(null)}
+                className="text-xs font-bold text-emerald-800 hover:text-emerald-950 cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+            <p className="bg-white rounded-xl p-2.5 border border-emerald-100 text-slate-700 text-xs leading-relaxed font-mono">
+              "{activeCitation.snippet}"
+            </p>
+          </div>
+        )}
+
+        {/* Messages Stream */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {currentSession.messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex gap-3 text-xs ${
+                msg.role === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
+              {msg.role === "assistant" && (
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#22C55E] text-white shadow-xs mt-0.5">
+                  <Stethoscope className="h-4 w-4" />
+                </div>
+              )}
+
+              <div
+                className={`rounded-3xl p-4 sm:p-5 max-w-[85%] leading-relaxed space-y-3 shadow-xs ${
+                  msg.role === "user"
+                    ? "bg-[#18261F] text-white font-medium rounded-br-xs"
+                    : "bg-white border border-slate-200/90 text-slate-800 rounded-bl-xs"
+                }`}
+              >
+                <div className="whitespace-pre-line text-xs font-normal leading-relaxed">
+                  {msg.content}
+                </div>
+
+                {/* Grounded Citation Chips */}
+                {msg.citations && msg.citations.length > 0 && (
+                  <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-1.5">
+                    {msg.citations.map((cite, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setActiveCitation(cite)}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors cursor-pointer"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-emerald-700" />
+                        <span className="truncate max-w-[180px]">{cite.document_title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Bar for Assistant Messages (Copy, Share, Add Note) */}
+                {msg.role === "assistant" && (
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-slate-400 text-[10px]">
+                    <span className="font-semibold text-emerald-700">
+                      Grounded Medical Intelligence
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(msg.id, msg.content)}
+                        className="flex items-center gap-1 hover:text-slate-700 p-1 transition-colors"
+                        title="Copy Response"
+                      >
+                        {copiedId === msg.id ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600 font-bold">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {isTyping && (
+            <div className="flex gap-3 items-center text-xs text-slate-500 py-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+              <span className="font-medium">
+                Analyzing verified patient health records & clinical guidelines...
+              </span>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Suggested Follow-Up Prompt Chips */}
+        <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/70 overflow-x-auto flex gap-2 no-scrollbar shrink-0">
+          {promptSuggestions.map((q, idx) => {
+            const Icon = q.icon;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSend(q.text)}
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white border border-slate-200/90 px-3.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800 hover:bg-emerald-50/50 transition-all shadow-2xs shrink-0 cursor-pointer"
+              >
+                <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                <span>{q.text}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Attached Document Chip */}
+        {attachedDoc && (
+          <div className="px-4 py-1.5 bg-emerald-50/80 border-t border-emerald-100 flex items-center justify-between text-xs font-bold text-emerald-900">
+            <div className="flex items-center gap-2 truncate">
+              <FileText className="h-3.5 w-3.5 text-emerald-700" />
+              <span>Querying Attached: {attachedDoc.file_name}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAttachedDoc(null)}
+              className="text-slate-400 hover:text-slate-700 p-0.5"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Document Attachment Picker Menu */}
+        {showAttachMenu && (
+          <div className="p-3 border-t border-slate-200 bg-white space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                Select Document from Medical Vault
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAttachMenu(false)}
+                className="text-xs text-slate-400 hover:text-slate-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto">
+              {mockDocuments.map((doc) => (
+                <button
+                  key={doc.id}
+                  type="button"
+                  onClick={() => {
+                    setAttachedDoc(doc);
+                    setShowAttachMenu(false);
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-left transition-colors"
+                >
+                  <FileText className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span className="text-xs font-bold text-slate-800 truncate">
+                    {doc.file_name.replace(".pdf", "").replace(/_/g, " ")}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Input Bar */}
+        <div className="p-3 border-t border-slate-200/90 bg-white shrink-0">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="flex items-center gap-2"
           >
-            <Send className="h-4 w-4" />
-          </button>
-        </form>
-      </div>
+            {/* Paperclip Document Attachment Button */}
+            <button
+              type="button"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition-colors shrink-0 cursor-pointer ${
+                attachedDoc
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                  : "border-slate-200/90 bg-slate-50 text-slate-500 hover:bg-slate-100"
+              }`}
+              title="Attach Document from Medical Vault"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+
+            <div className="relative flex-1">
+              <input
+                placeholder={
+                  attachedDoc
+                    ? `Ask anything about ${attachedDoc.file_name}...`
+                    : "Ask about test trends, medication safety, or visit prep..."
+                }
+                value={inputQuery}
+                onChange={(e) => setInputQuery(e.target.value)}
+                className="h-11 w-full rounded-2xl border border-slate-200/90 bg-slate-50/70 pl-4 pr-4 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white shadow-2xs"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#22C55E] hover:bg-[#16A34A] text-white shadow-md shadow-green-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      </section>
     </div>
   );
 }

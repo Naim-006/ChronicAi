@@ -1,9 +1,22 @@
 import type { Metadata } from "next";
+import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Universal Personal Medical AI — Lifelong Health Intelligence",
-  description: "Your Entire Medical Life. One Intelligent Platform.",
+  title: "ChronicAI — Lifelong Health Intelligence",
+  description: "Your medical life in one calm, intelligent place.",
 };
 
 export default function RootLayout({
@@ -12,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full bg-slate-50">
-      <body className="h-full text-slate-900 antialiased selection:bg-teal-100 selection:text-teal-900">
+    <html lang="en" className={`${plusJakarta.variable} ${manrope.variable} h-full`}>
+      <body className="h-full font-sans text-[var(--foreground)] antialiased selection:bg-emerald-100 selection:text-emerald-900">
         {children}
       </body>
     </html>
