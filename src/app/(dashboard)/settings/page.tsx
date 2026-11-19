@@ -159,8 +159,8 @@ export default function SettingsPage() {
                 className={cn(
                   "p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer active:scale-98",
                   isSelected
-                    ? "bg-white dark:bg-slate-800/90 border-emerald-500 shadow-sm ring-1 ring-emerald-500/30"
-                    : "bg-white/60 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    ? "bg-emerald-50/40 dark:bg-slate-800 border-emerald-500 shadow-sm ring-2 ring-emerald-500/25"
+                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                 )}
               >
                 <div className="flex items-center justify-between w-full mb-3">
@@ -204,7 +204,7 @@ export default function SettingsPage() {
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
           {t("settings.lang_group", "Language & Regional Standards")}
         </span>
-        <div className="rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800/60 overflow-hidden text-xs">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden text-xs">
           <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="font-bold text-slate-900 dark:text-white block flex items-center gap-2">
@@ -242,7 +242,7 @@ export default function SettingsPage() {
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
           {t("settings.ai_depth_group", "AI Explanation Complexity")}
         </span>
-        <div className="rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800/60 overflow-hidden">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
           {[
             {
               id: "simple",
@@ -286,7 +286,7 @@ export default function SettingsPage() {
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
           {t("settings.reminders_group", "Reminders & Alerts")}
         </span>
-        <div className="rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800/60 overflow-hidden text-xs">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden text-xs">
           <label className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
             <div>
               <span className="font-bold text-slate-900 dark:text-white block">
@@ -328,7 +328,7 @@ export default function SettingsPage() {
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
           {t("settings.data_group", "Data Ownership & Portability")}
         </span>
-        <div className="rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xs p-5 space-y-3 text-xs">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs p-5 space-y-3 text-xs">
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
             {t("settings.data_desc", "Download an encrypted, structured JSON archive containing your entire personal health life record, verified laboratory values, and prescriptions.")}
           </p>

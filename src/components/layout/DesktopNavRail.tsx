@@ -82,7 +82,7 @@ export function DesktopNavRail() {
 
   return (
     <aside className={cn(
-      "hidden lg:flex shrink-0 flex-col border-r border-[var(--border)] bg-white/95 backdrop-blur-xl select-none transition-all duration-300",
+      "hidden lg:flex shrink-0 flex-col border-r border-[var(--border)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl select-none transition-all duration-300",
       isCollapsed ? "w-[72px]" : "w-[280px]"
     )}>
       <div className="flex h-[72px] items-center px-5 border-b border-[var(--border)]">
@@ -141,8 +141,8 @@ export function DesktopNavRail() {
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all group",
                       isActive
-                        ? "bg-emerald-50 text-emerald-900 shadow-sm"
-                        : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)]",
+                        ? "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white",
                       isCollapsed && "justify-center px-2.5"
                     )}
                     title={isCollapsed ? getLocalizedName(item.href, item.name) : undefined}

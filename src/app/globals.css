@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-manrope), var(--font-plus-jakarta), ui-sans-serif,
@@ -14,6 +16,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     /* Modern Mobile-First Design System */
     --background: #fafbfc;
     --foreground: #0f172a;
@@ -55,6 +58,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: #090e17;
     --foreground: #f1f5f9;
     --card: #111827;
@@ -164,7 +168,8 @@
       var(--background) !important;
   }
 
-  .dark .bg-white {
+  .dark .bg-white,
+  .dark [class*="bg-white"] {
     background-color: #111827 !important;
   }
 
@@ -188,18 +193,25 @@
     color: #94a3b8 !important;
   }
 
+  .dark .text-slate-400 {
+    color: #64748b !important;
+  }
+
   .dark .border-slate-200,
-  .dark .border-slate-200\/80,
-  .dark .border-slate-100 {
+  .dark [class*="border-slate-100"],
+  .dark [class*="border-slate-200"],
+  .dark [class*="border-slate-300"] {
     border-color: #1e293b !important;
   }
 
   .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-  .dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  .dark [class*="divide-slate-100"] > :not([hidden]) ~ :not([hidden]),
+  .dark [class*="divide-slate-200"] > :not([hidden]) ~ :not([hidden]) {
     border-color: #1e293b !important;
   }
 
-  .dark .bg-slate-50 {
+  .dark .bg-slate-50,
+  .dark [class*="bg-slate-50"] {
     background-color: #162032 !important;
   }
 
@@ -207,7 +219,8 @@
     background-color: #1e293b !important;
   }
 
-  .dark .bg-slate-100 {
+  .dark .bg-slate-100,
+  .dark [class*="bg-slate-100"] {
     background-color: #1e293b !important;
   }
 

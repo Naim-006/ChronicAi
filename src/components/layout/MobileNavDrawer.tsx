@@ -160,9 +160,9 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
       />
 
       {/* Left Sidebar Drawer */}
-      <div className="relative z-10 h-full w-[285px] max-w-[85vw] flex flex-col bg-white border-r border-slate-200 shadow-2xl overflow-hidden animate-in slide-in-from-left duration-250">
+      <div className="relative z-10 h-full w-[285px] max-w-[85vw] flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in slide-in-from-left duration-250">
         {/* Compact Clean Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-emerald-50/50 to-white dark:from-emerald-950/40 dark:to-slate-900">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
               <ShieldCheck className="h-5 w-5" />

@@ -12,11 +12,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
+import { useTheme } from "@/context/ThemeContext";
 
 export function MobileTabBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useLanguage();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(420);
 
@@ -190,7 +193,10 @@ export function MobileTabBar() {
       >
         {/* Frosted Translucent Glass Layer with soft blur */}
         <div
-          className="absolute inset-0 pointer-events-none backdrop-blur-[5px] bg-white/92 dark:bg-slate-900/90"
+          className={cn(
+            "absolute inset-0 pointer-events-none backdrop-blur-[6px]",
+            isDark ? "bg-[#111827]/96" : "bg-white/95"
+          )}
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,
@@ -226,7 +232,7 @@ export function MobileTabBar() {
 
         {/* Crisp Border and Smooth Dome Silhouette */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(15,23,42,0.10)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(0,0,0,0.12)]"
           width="100%"
           height={H}
           viewBox={`0 0 ${width} ${H}`}
@@ -235,10 +241,10 @@ export function MobileTabBar() {
         >
           <path
             d={svgPath}
-            fill="rgba(255, 255, 255, 0.65)"
-            stroke="#475569"
+            fill={isDark ? "rgba(17, 24, 39, 0.96)" : "rgba(255, 255, 255, 0.95)"}
+            stroke={isDark ? "#334155" : "#475569"}
             strokeWidth="1.25"
-            strokeOpacity="0.75"
+            strokeOpacity={isDark ? "0.9" : "0.75"}
             strokeLinejoin="round"
             strokeLinecap="round"
           />

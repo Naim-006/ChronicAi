@@ -293,7 +293,7 @@ export default function VaultPage() {
           reference_range: l.reference_range,
           is_abnormal: l.is_abnormal,
         })),
-        instructions: ["Record manually confirmed and integrated into health intelligence timeline."],
+        instructions: ["You confirmed this record. It is now part of your health timeline."],
       },
       confirmed_data: {
         document_type: editCategory,

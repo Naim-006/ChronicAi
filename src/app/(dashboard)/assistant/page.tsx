@@ -261,7 +261,7 @@ How can I assist you with your health records, lab panels, or medication schedul
             document_title: sentAttachedDoc.file_name,
             date: sentAttachedDoc.document_date || "2026-11-02",
             page: 1,
-            snippet: "Direct OCR extraction verified by patient verification engine.",
+            snippet: "Values were read from the scan and checked by you before saving.",
           },
         ];
       } else if (
