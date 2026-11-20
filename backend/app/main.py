@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import health, ocr, rag, copilot
+from app.routers import health, ocr, rag, copilot, scheduler
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -26,6 +26,7 @@ app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(ocr.router, prefix=settings.API_V1_STR)
 app.include_router(rag.router, prefix=settings.API_V1_STR)
 app.include_router(copilot.router, prefix=settings.API_V1_STR)
+app.include_router(scheduler.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", tags=["Root"])
