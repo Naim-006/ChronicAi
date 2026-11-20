@@ -11,6 +11,7 @@ import {
   Calendar,
   Pill,
   Clock,
+  HeartPulse,
   User,
   ShieldCheck,
   Settings,
@@ -41,6 +42,7 @@ const navSections = [
     title: "Health",
     items: [
       { name: "Chronic Care", href: "/chronic-care", icon: ShieldCheck },
+      { name: "Screenings", href: "/screenings", icon: HeartPulse },
       { name: "Analytics", href: "/metrics", icon: Activity },
       { name: "Medications", href: "/medications", icon: Pill },
       { name: "Appointments", href: "/appointments", icon: Calendar },
@@ -84,6 +86,7 @@ export function DesktopNavRail() {
       case "/vault": return t("nav.records", fallback);
       case "/timeline": return t("nav.timeline", fallback);
       case "/chronic-care": return t("nav.chronic_care", fallback);
+      case "/screenings": return t("nav.screenings", "Screenings");
       case "/metrics": return t("nav.analytics", fallback);
       case "/medications": return t("nav.meds", fallback);
       case "/appointments": return t("nav.appointments", fallback);

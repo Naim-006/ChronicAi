@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/appointments",
   "/assistant",
   "/chronic-care",
+  "/screenings",
   "/doctors",
   "/medications",
   "/metrics",

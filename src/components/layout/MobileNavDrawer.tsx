@@ -12,6 +12,7 @@ import {
   Activity,
   Pill,
   Calendar,
+  HeartPulse,
   Bell,
   User,
   Settings,
@@ -83,6 +84,11 @@ const navGroups: NavGroup[] = [
         icon: ShieldCheck,
       },
       {
+        name: "Health Screenings",
+        href: "/screenings",
+        icon: HeartPulse,
+      },
+      {
         name: "Biomarker Analytics",
         href: "/metrics",
         icon: Activity,
@@ -142,6 +148,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
       case "/vault": return t("nav.records", fallback);
       case "/timeline": return t("nav.timeline", fallback);
       case "/chronic-care": return t("nav.chronic_care", fallback);
+      case "/screenings": return t("nav.screenings", "Health Screenings");
       case "/metrics": return t("nav.analytics", fallback);
       case "/medications": return t("nav.meds", fallback);
       case "/appointments": return t("nav.appointments", fallback);
