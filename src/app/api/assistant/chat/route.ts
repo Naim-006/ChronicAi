@@ -154,12 +154,12 @@ export async function POST(req: NextRequest) {
     let retrievedGuidelines: any[] = [];
 
     try {
-      const embedUrl = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`;
+      const embedUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-embedding-001:embedContent?key=${apiKey}`;
       const embedRes = await fetch(embedUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "models/text-embedding-004",
+          model: "models/gemini-embedding-001",
           content: { parts: [{ text: query.slice(0, 1024) }] },
           outputDimensionality: 768,
         }),
@@ -294,7 +294,7 @@ Return a JSON object with:
       parts: [{ text: query }],
     });
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
     const geminiPayload = {
       systemInstruction: {

@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
       ? fileBase64.split(";base64,").pop()
       : fileBase64;
 
-    // Call Google Gemini API (gemini-2.5-flash / gemini-1.5-flash)
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // Call Google Gemini Multimodal Vision API
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
     const promptText = `You are a board-certified clinical medical AI and expert optical character recognition (OCR) engine for ChronicAI.
 Analyze this scanned medical record / document carefully and extract all clinical entities.

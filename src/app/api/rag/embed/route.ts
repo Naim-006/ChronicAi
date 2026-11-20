@@ -54,13 +54,13 @@ export async function POST(req: NextRequest) {
       const chunkText = chunks[i];
       if (!chunkText || typeof chunkText !== "string") continue;
 
-      // Call Gemini text-embedding-004 API (768 dimensions)
-      const embedUrl = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`;
+      // Call Gemini Embedding API (768 dimensions)
+      const embedUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-embedding-001:embedContent?key=${apiKey}`;
       const embedRes = await fetch(embedUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "models/text-embedding-004",
+          model: "models/gemini-embedding-001",
           content: { parts: [{ text: chunkText.slice(0, 2048) }] },
           outputDimensionality: 768,
         }),

@@ -59,7 +59,7 @@ async def generate_gemini_embedding(text: str) -> List[float]:
             detail="GEMINI_API_KEY is not configured.",
         )
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_EMBEDDING_MODEL}:embedContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/{settings.GEMINI_EMBEDDING_MODEL}:embedContent?key={api_key}"
     payload = {
         "model": f"models/{settings.GEMINI_EMBEDDING_MODEL}",
         "content": {"parts": [{"text": text[:2048]}]},
