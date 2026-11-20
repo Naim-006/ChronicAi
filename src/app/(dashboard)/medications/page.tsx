@@ -17,18 +17,28 @@ import {
   Clock,
   Sparkles,
   Info,
+  Edit3,
+  Trash2,
+  PlayCircle,
+  PauseCircle,
+  CheckCircle2,
+  RefreshCw,
+  Sliders,
 } from "lucide-react";
-import { Medication, MedicationLog } from "@/types/medical";
+import { Medication, MedicationLog, MedicationStatus } from "@/types/medical";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import {
   getMedications,
   createMedication,
+  updateMedication,
+  deleteMedication,
   logMedicationAdherence,
   getMedicationLogs,
 } from "@/lib/supabase/services/medications";
 import { useRealtimeTables } from "@/hooks/useRealtime";
+import { formatDate } from "@/lib/utils";
 
 interface DayAdherenceData {
   dayLabel: string;
@@ -47,7 +57,15 @@ export default function MedicationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({});
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed" | "inactive">("all");
+  
+  // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingMed, setEditingMed] = useState<Medication | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Safety checker state
   const [testDrugInput, setTestDrugInput] = useState("");
   const [interactionResult, setInteractionResult] = useState<{
     drug: string;
@@ -57,14 +75,19 @@ export default function MedicationsPage() {
     alternative?: string;
   } | null>(null);
 
-  // Form state
-  const [name, setName] = useState("");
-  const [dose, setDose] = useState("");
-  const [freq, setFreq] = useState("Once daily");
-  const [doc, setDoc] = useState("");
-  const [condition, setCondition] = useState("");
-  const [notes, setNotes] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Add / Edit Form State
+  const [formName, setFormName] = useState("");
+  const [formGeneric, setFormGeneric] = useState("");
+  const [formStrength, setFormStrength] = useState("");
+  const [formFrequency, setFormFrequency] = useState("Once daily");
+  const [formTiming, setFormTiming] = useState("Morning after meal");
+  const [formRoute, setFormRoute] = useState("oral");
+  const [formDoc, setFormDoc] = useState("");
+  const [formCondition, setFormCondition] = useState("");
+  const [formNotes, setFormNotes] = useState("");
+  const [formStartDate, setFormStartDate] = useState("");
+  const [formEndDate, setFormEndDate] = useState("");
+  const [formStatus, setFormStatus] = useState<MedicationStatus>("active");
 
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -134,7 +157,6 @@ export default function MedicationsPage() {
           recorded_time: new Date().toISOString(),
           status: nextState ? "taken" : "missed",
         });
-        // Refresh logs to update chart in real time
         const updatedLogs = await getMedicationLogs(effectiveUserId, 14);
         setMedLogs(updatedLogs || []);
       } catch (err) {
@@ -143,34 +165,138 @@ export default function MedicationsPage() {
     }
   };
 
+  // Open Edit Modal for a Medication
+  const handleOpenEdit = (med: Medication) => {
+    setEditingMed(med);
+    setFormName(med.name || "");
+    setFormGeneric(med.generic_name || "");
+    setFormStrength(med.strength || med.dosage || "");
+    setFormFrequency(med.frequency || "Once daily");
+    setFormTiming(med.instructions?.split(" - ")[0] || "Morning after meal");
+    setFormRoute(med.route || "oral");
+    setFormDoc(med.prescribing_doctor || "");
+    setFormCondition(med.related_condition || "");
+    setFormNotes(med.instructions || "");
+    setFormStartDate(med.start_date || todayStr);
+    setFormEndDate(med.end_date || "");
+    setFormStatus(med.status || "active");
+  };
+
+  // Helper to add duration days to start date
+  const setQuickDuration = (days: number) => {
+    const baseDate = formStartDate ? new Date(formStartDate) : new Date();
+    baseDate.setDate(baseDate.getDate() + days);
+    setFormEndDate(baseDate.toISOString().split("T")[0]);
+  };
+
+  // Quick Toggle Active / Inactive / Completed
+  const handleQuickStatusToggle = async (med: Medication, newStatus: "active" | "discontinued" | "completed") => {
+    if (!effectiveUserId) return;
+    try {
+      setMedications((prev) =>
+        prev.map((m) => (m.id === med.id ? { ...m, status: newStatus } : m))
+      );
+      await updateMedication(med.id, effectiveUserId, {
+        status: newStatus,
+      });
+    } catch (err) {
+      console.error("Failed to toggle medication status:", err);
+      loadData();
+    }
+  };
+
+  // Save Edit Handler
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMed || !effectiveUserId || !formName.trim()) return;
+    setIsSubmitting(true);
+
+    try {
+      const updates = {
+        name: formName.trim(),
+        generic_name: formGeneric.trim() || undefined,
+        strength: formStrength.trim() || undefined,
+        dosage: formStrength.trim() || "As directed",
+        frequency: formFrequency.trim() || "Once daily",
+        route: formRoute.trim() || "oral",
+        instructions: formNotes.trim() || `${formTiming}. Take as directed.`,
+        prescribing_doctor: formDoc.trim() || undefined,
+        related_condition: formCondition.trim() || undefined,
+        start_date: formStartDate || todayStr,
+        end_date: formEndDate || undefined,
+        status: formStatus,
+      };
+
+      const updated = await updateMedication(editingMed.id, effectiveUserId, updates);
+      if (updated) {
+        setMedications((prev) =>
+          prev.map((m) => (m.id === editingMed.id ? { ...m, ...updates } : m))
+        );
+      }
+      setEditingMed(null);
+    } catch (err) {
+      console.error("Failed to save medication changes:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Delete Medication Handler
+  const handleDelete = async () => {
+    if (!editingMed || !effectiveUserId) return;
+    if (!window.confirm(`Are you sure you want to remove "${editingMed.name}" from your active records?`)) return;
+
+    setIsDeleting(true);
+    try {
+      const ok = await deleteMedication(editingMed.id, effectiveUserId);
+      if (ok) {
+        setMedications((prev) => prev.filter((m) => m.id !== editingMed.id));
+        setEditingMed(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete medication:", err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Add prescription handler
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !dose.trim() || !effectiveUserId) return;
+    if (!formName.trim() || !effectiveUserId) return;
     setIsSubmitting(true);
 
     try {
       const newMed = await createMedication({
         user_id: effectiveUserId,
-        name: name.trim(),
-        strength: dose.trim(),
-        dosage: dose.trim(),
-        frequency: freq.trim() || "Once daily",
-        instructions: notes.trim() || "Take as prescribed with water.",
-        start_date: todayStr,
-        prescribing_doctor: doc.trim() || "Consulting Physician",
-        related_condition: condition.trim() || "General Care",
-        status: "active",
+        name: formName.trim(),
+        generic_name: formGeneric.trim() || undefined,
+        strength: formStrength.trim() || "Standard",
+        dosage: formStrength.trim() || "Standard",
+        frequency: formFrequency.trim() || "Once daily",
+        route: formRoute.trim() || "oral",
+        instructions: formNotes.trim() || `${formTiming}. Take as prescribed.`,
+        start_date: formStartDate || todayStr,
+        end_date: formEndDate || undefined,
+        prescribing_doctor: formDoc.trim() || "Prescribing Physician",
+        related_condition: formCondition.trim() || "General Care",
+        status: formStatus,
       });
 
       setMedications((prev) => [newMed, ...prev]);
       setShowAddModal(false);
-      setName("");
-      setDose("");
-      setFreq("Once daily");
-      setDoc("");
-      setCondition("");
-      setNotes("");
+      // Reset form
+      setFormName("");
+      setFormGeneric("");
+      setFormStrength("");
+      setFormFrequency("Once daily");
+      setFormTiming("Morning after meal");
+      setFormDoc("");
+      setFormCondition("");
+      setFormNotes("");
+      setFormStartDate(todayStr);
+      setFormEndDate("");
+      setFormStatus("active");
     } catch (err) {
       console.error("Failed to add medication", err);
     } finally {
@@ -238,9 +364,26 @@ export default function MedicationsPage() {
       setInteractionResult({
         drug: drugName,
         level: "safe",
-        mechanism: `No critical clinical contraindications detected between ${drugName} and your ${medications.length} active prescriptions. Always verify with your pharmacist.`,
+        mechanism: `No critical clinical contraindications detected between ${drugName} and your ${medications.length} prescriptions. Always verify with your pharmacist.`,
       });
     }
+  };
+
+  // Helper for dynamic range status
+  const getMedRangeStatus = (med: Medication) => {
+    if (med.status === "discontinued") {
+      return { label: "Paused / Inactive", color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300", isActive: false };
+    }
+    if (med.status === "completed") {
+      return { label: "Course Completed", color: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800", isActive: false };
+    }
+    if (med.end_date && med.end_date < todayStr) {
+      return { label: "Course Completed", color: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800", isActive: false };
+    }
+    if (med.start_date && med.start_date > todayStr) {
+      return { label: `Starts ${formatDate(med.start_date)}`, color: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200", isActive: false };
+    }
+    return { label: "Active Course", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800", isActive: true };
   };
 
   // Dynamic category options derived from real data
@@ -252,30 +395,40 @@ export default function MedicationsPage() {
       }
     });
     return [
-      { id: "all", label: "All Active" },
+      { id: "all", label: "All Conditions" },
       ...Array.from(cats).map((c) => ({ id: c.toLowerCase(), label: c })),
     ];
   }, [medications]);
 
   // Filtered medication list
   const filteredMedications = useMemo(() => {
-    if (categoryFilter === "all") return medications;
-    return medications.filter(
-      (m) => m.related_condition?.toLowerCase() === categoryFilter.toLowerCase()
-    );
-  }, [medications, categoryFilter]);
+    return medications.filter((m) => {
+      const matchCategory =
+        categoryFilter === "all" ||
+        m.related_condition?.toLowerCase() === categoryFilter.toLowerCase();
+      
+      const rangeStatus = getMedRangeStatus(m);
+      let matchStatus = true;
+      if (statusFilter === "active") matchStatus = rangeStatus.isActive;
+      if (statusFilter === "completed") matchStatus = rangeStatus.label === "Course Completed";
+      if (statusFilter === "inactive") matchStatus = !rangeStatus.isActive;
+
+      return matchCategory && matchStatus;
+    });
+  }, [medications, categoryFilter, statusFilter, todayStr]);
 
   // Today's summary numbers
+  const activeMeds = useMemo(() => medications.filter((m) => getMedRangeStatus(m).isActive), [medications, todayStr]);
   const takenCount = useMemo(
     () => Object.values(loggedMeds).filter(Boolean).length,
     [loggedMeds]
   );
   const todayAdherence = useMemo(
     () =>
-      medications.length > 0
-        ? Math.round((takenCount / medications.length) * 100)
+      activeMeds.length > 0
+        ? Math.round((takenCount / activeMeds.length) * 100)
         : 0,
-    [takenCount, medications.length]
+    [takenCount, activeMeds.length]
   );
 
   // REAL 7-Day Adherence Chart Calculation
@@ -297,12 +450,11 @@ export default function MedicationsPage() {
         : d.toLocaleDateString("en-US", { weekday: "narrow" });
 
       if (isToday) {
-        const total = medications.length;
+        const total = activeMeds.length;
         const taken = takenCount;
         const rate = total > 0 ? Math.round((taken / total) * 100) : 0;
         days.push({ dayLabel, dayShort, dateKey, taken, total, rate, isToday });
       } else {
-        // Calculate from real database logs for that specific date
         const dayLogs = medLogs.filter(
           (l) =>
             (l.scheduled_time?.startsWith(dateKey) ||
@@ -310,7 +462,7 @@ export default function MedicationsPage() {
             l.status === "taken"
         );
         const uniqueMedIdsTaken = new Set(dayLogs.map((l) => l.medication_id)).size;
-        const total = medications.length;
+        const total = activeMeds.length;
         const rate =
           total > 0
             ? Math.min(100, Math.round((uniqueMedIdsTaken / total) * 100))
@@ -327,34 +479,49 @@ export default function MedicationsPage() {
       }
     }
     return days;
-  }, [medications.length, takenCount, medLogs]);
+  }, [activeMeds.length, takenCount, medLogs]);
 
   // Overall 7-day adherence average
   const weeklyAverageRate = useMemo(() => {
-    if (medications.length === 0) return 0;
+    if (activeMeds.length === 0) return 0;
     const sum = weekChartData.reduce((acc, d) => acc + d.rate, 0);
     return Math.round(sum / weekChartData.length);
-  }, [weekChartData, medications.length]);
+  }, [weekChartData, activeMeds.length]);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Medications & Prescriptions
           </h1>
-          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
-            {medications.length} active prescriptions · {todayAdherence}% logged today
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            {activeMeds.length} active courses ({medications.length} total on file) · {todayAdherence}% taken today
           </p>
         </div>
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add Prescription
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            onClick={() => {
+              setFormName("");
+              setFormGeneric("");
+              setFormStrength("");
+              setFormFrequency("Once daily");
+              setFormTiming("Morning after meal");
+              setFormDoc("");
+              setFormCondition("");
+              setFormNotes("");
+              setFormStartDate(todayStr);
+              setFormEndDate("");
+              setFormStatus("active");
+              setShowAddModal(true);
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add Prescription
+          </Button>
+        </div>
       </div>
 
       {/* Hero Summary Protocol Banner */}
@@ -367,10 +534,10 @@ export default function MedicationsPage() {
             </div>
             <div>
               <h2 className="text-lg font-extrabold tracking-tight text-white">
-                Daily Medication Protocol
+                Daily Medication & Course Tracking
               </h2>
               <p className="text-xs text-emerald-100/90 mt-0.5">
-                {takenCount} of {medications.length} doses logged today
+                {takenCount} of {activeMeds.length} active daily doses logged today
               </p>
             </div>
           </div>
@@ -387,28 +554,48 @@ export default function MedicationsPage() {
           </div>
         </div>
 
-        {/* Dynamic Category Filter Bar */}
-        {availableCategories.length > 1 && (
-          <div className="relative mt-5 flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-            {availableCategories.map((cat) => (
+        {/* Dynamic Category & Status Filter Bar */}
+        <div className="relative mt-5 flex flex-wrap items-center gap-2">
+          {/* Status Filter Pills */}
+          <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl">
+            {(["all", "active", "completed", "inactive"] as const).map((s) => (
               <button
-                key={cat.id}
+                key={s}
                 type="button"
-                onClick={() => setCategoryFilter(cat.id)}
-                className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-                  categoryFilter === cat.id
+                onClick={() => setStatusFilter(s)}
+                className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize transition-all ${
+                  statusFilter === s
                     ? "bg-white text-emerald-900 shadow-sm dark:bg-emerald-400 dark:text-emerald-950"
-                    : "bg-white/15 text-white/90 hover:bg-white/25 hover:text-white dark:bg-white/10"
+                    : "text-white/80 hover:text-white"
                 }`}
               >
-                {cat.label}
+                {s}
               </button>
             ))}
           </div>
-        )}
+
+          {availableCategories.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar">
+              {availableCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategoryFilter(cat.id)}
+                  className={`shrink-0 cursor-pointer rounded-xl px-3 py-1 text-xs font-bold transition-all ${
+                    categoryFilter === cat.id
+                      ? "bg-white text-emerald-900 shadow-sm dark:bg-emerald-400 dark:text-emerald-950"
+                      : "bg-white/15 text-white/90 hover:bg-white/25 hover:text-white dark:bg-white/10"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* REAL MEDICATION ADHERENCE & FREQUENCY CHART */}
+      {/* 7-DAY ADHERENCE & ANALYTICS CHART */}
       <section className="soft-card p-5 sm:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-4">
           <div className="flex items-center gap-2.5">
@@ -420,7 +607,7 @@ export default function MedicationsPage() {
                 7-Day Adherence Analytics
               </h2>
               <span className="text-xs text-[var(--muted-foreground)] block">
-                Calculated in real-time from your active prescriptions and confirmed dose logs.
+                Calculated from confirmed daily doses and active prescription schedules.
               </span>
             </div>
           </div>
@@ -442,7 +629,7 @@ export default function MedicationsPage() {
               No active medications registered
             </h3>
             <p className="text-xs text-[var(--muted-foreground)] max-w-sm mx-auto">
-              Add your medications or import them from a scanned medical report in your Vault to visualize real-time adherence charts.
+              Add your medications or import them from a scanned prescription in your Vault to enable adherence tracking.
             </p>
             <Button
               size="sm"
@@ -472,7 +659,6 @@ export default function MedicationsPage() {
                       key={day.dateKey}
                       className="flex flex-col items-center justify-end h-full gap-2 group"
                     >
-                      {/* Rate label above bar */}
                       <span
                         className={`text-[10px] font-extrabold transition-opacity ${
                           day.isToday
@@ -483,7 +669,6 @@ export default function MedicationsPage() {
                         {day.rate}%
                       </span>
 
-                      {/* Bar track */}
                       <div className="w-full max-w-[48px] h-24 rounded-xl bg-[var(--secondary)] flex items-end p-1 overflow-hidden">
                         <div
                           style={{ height: `${barHeight}%` }}
@@ -497,7 +682,6 @@ export default function MedicationsPage() {
                         />
                       </div>
 
-                      {/* Day Label */}
                       <div className="text-center">
                         <span
                           className={`text-xs block font-bold truncate ${
@@ -518,97 +702,164 @@ export default function MedicationsPage() {
                 })}
               </div>
             </div>
-
-            {/* Real Per-Medication Protocol Table */}
-            <div className="space-y-3 pt-3 border-t border-[var(--border)]">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted-foreground)] block">
-                Active Regimen & Dose Frequency
-              </span>
-
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[500px] text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-[var(--border)] text-[11px] font-extrabold uppercase text-[var(--muted-foreground)]">
-                      <th className="py-2.5 pl-2">Medication</th>
-                      <th className="py-2.5 px-3">Strength & Frequency</th>
-                      <th className="py-2.5 px-3">Indication</th>
-                      <th className="py-2.5 px-3">Today&apos;s Status</th>
-                      <th className="py-2.5 pr-2 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border)]/70">
-                    {medications.map((med) => {
-                      const isTaken = loggedMeds[med.id];
-                      return (
-                        <tr
-                          key={med.id}
-                          className="transition-colors hover:bg-[var(--muted)]/50"
-                        >
-                          <td className="py-3 pl-2 font-bold text-[var(--foreground)]">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                <Pill className="h-4 w-4" />
-                              </div>
-                              <div>
-                                <span className="block font-bold">{med.name}</span>
-                                <span className="text-[10px] text-[var(--muted-foreground)]">
-                                  {med.prescribing_doctor || "Physician Prescribed"}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 text-[var(--muted-foreground)]">
-                            <div className="font-semibold text-[var(--foreground)]">
-                              {med.strength || med.dosage}
-                            </div>
-                            <div className="text-[10px]">{med.frequency}</div>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span className="inline-block rounded-md border border-[var(--border)] bg-[var(--secondary)] px-2 py-0.5 text-[10px] font-bold text-[var(--foreground)]">
-                              {med.related_condition || "General Care"}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-                                isTaken
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-                              }`}
-                            >
-                              {isTaken ? (
-                                <>
-                                  <Check className="h-3 w-3" /> Logged Taken
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="h-3 w-3" /> Scheduled
-                                </>
-                              )}
-                            </span>
-                          </td>
-                          <td className="py-3 pr-2 text-right">
-                            <button
-                              type="button"
-                              onClick={() => toggleMed(med.id)}
-                              className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                                isTaken
-                                  ? "border border-[var(--border)] bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
-                                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                              }`}
-                            >
-                              {isTaken ? "Undo" : "Take Dose"}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </div>
         )}
+      </section>
+
+      {/* DETAILED PRESCRIPTIONS & RANGE MANAGEMENT TABLE */}
+      <section className="soft-card p-5 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-2">
+            <Pill className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-sm font-extrabold text-[var(--foreground)] tracking-tight">
+              Prescription Regimens & Date Ranges ({filteredMedications.length})
+            </h2>
+          </div>
+          <span className="text-xs text-[var(--muted-foreground)]">
+            Click <strong>Edit</strong> to modify timings, dose ranges, active status, or doctor instructions.
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left text-xs">
+            <thead>
+              <tr className="border-b border-[var(--border)] text-[10px] font-extrabold uppercase text-[var(--muted-foreground)]">
+                <th className="py-2.5 pl-3">Medication & Doctor</th>
+                <th className="py-2.5 px-3">Strength & Timing</th>
+                <th className="py-2.5 px-3">Date Range / Duration</th>
+                <th className="py-2.5 px-3">Course Status</th>
+                <th className="py-2.5 px-3">Today Log</th>
+                <th className="py-2.5 pr-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {filteredMedications.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-xs text-[var(--muted-foreground)]">
+                    No medications match the current filter.
+                  </td>
+                </tr>
+              ) : (
+                filteredMedications.map((med) => {
+                  const isTaken = loggedMeds[med.id];
+                  const rangeInfo = getMedRangeStatus(med);
+
+                  return (
+                    <tr key={med.id} className="hover:bg-[var(--muted)]/40 transition-colors">
+                      {/* Name & Doctor */}
+                      <td className="py-3 pl-3">
+                        <div className="font-extrabold text-sm text-[var(--foreground)] flex items-center gap-1.5">
+                          {med.name}
+                          {med.generic_name && (
+                            <span className="text-[11px] font-normal text-[var(--muted-foreground)]">
+                              ({med.generic_name})
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[var(--muted-foreground)] mt-0.5">
+                          {med.prescribing_doctor || "Physician"} ·{" "}
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            {med.related_condition || "General"}
+                          </span>
+                        </div>
+                        {med.instructions && (
+                          <div className="text-[10px] text-slate-500 italic mt-0.5">
+                            {med.instructions}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Strength & Timing */}
+                      <td className="py-3 px-3">
+                        <div className="font-bold text-[var(--foreground)]">
+                          {med.strength || med.dosage}
+                        </div>
+                        <div className="text-[11px] text-[var(--muted-foreground)]">
+                          {med.frequency}
+                        </div>
+                        <div className="text-[10px] font-semibold text-slate-500 uppercase">
+                          Route: {med.route || "oral"}
+                        </div>
+                      </td>
+
+                      {/* Date Range / Duration */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-[var(--foreground)]">
+                          <Calendar className="h-3 w-3 text-emerald-600 shrink-0" />
+                          <span>{med.start_date ? formatDate(med.start_date) : "Ongoing"}</span>
+                          {med.end_date ? (
+                            <span>→ {formatDate(med.end_date)}</span>
+                          ) : (
+                            <span className="text-slate-400 font-normal">(Indefinite)</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Course Status */}
+                      <td className="py-3 px-3">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${rangeInfo.color}`}
+                        >
+                          {rangeInfo.label}
+                        </span>
+                      </td>
+
+                      {/* Today Log */}
+                      <td className="py-3 px-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleMed(med.id)}
+                          className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                            isTaken
+                              ? "bg-emerald-500 text-white shadow-xs"
+                              : "border border-[var(--border)] bg-[var(--background)] hover:border-emerald-500 text-[var(--foreground)]"
+                          }`}
+                        >
+                          <Check className={`h-3.5 w-3.5 ${isTaken ? "opacity-100" : "opacity-30"}`} />
+                          <span>{isTaken ? "Taken" : "Log"}</span>
+                        </button>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 pr-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(med)}
+                            className="cursor-pointer p-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--muted)] text-[var(--foreground)] transition-colors"
+                            title="Edit Medication"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+
+                          {med.status === "active" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleQuickStatusToggle(med, "discontinued")}
+                              className="cursor-pointer p-1.5 rounded-lg border border-amber-200 dark:border-amber-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
+                              title="Pause / Inactivate"
+                            >
+                              <PauseCircle className="h-3.5 w-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleQuickStatusToggle(med, "active")}
+                              className="cursor-pointer p-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                              title="Reactivate Course"
+                            >
+                              <PlayCircle className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {/* Clinical Drug-Drug Interaction Safety Engine */}
@@ -628,7 +879,7 @@ export default function MedicationsPage() {
             </div>
           </div>
           <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-3 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hidden sm:inline">
-            {medications.length} Prescriptions Screened
+            {activeMeds.length} Active Prescriptions Screened
           </span>
         </div>
 
@@ -653,7 +904,7 @@ export default function MedicationsPage() {
           <button
             type="button"
             onClick={() => checkDrugInteraction(testDrugInput)}
-            className="flex h-11 shrink-0 items-center justify-center gap-1.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-xs font-bold shadow-sm transition-all cursor-pointer active:scale-95"
+            className="flex h-11 shrink-0 items-center justify-center gap-1.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer active:scale-95"
           >
             <span>Analyze Safety</span>
           </button>
@@ -729,135 +980,68 @@ export default function MedicationsPage() {
         )}
       </section>
 
-      {/* Today's Checklist */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between px-0.5">
-          <h2 className="text-sm font-extrabold text-[var(--foreground)]">
-            Today&apos;s Doses Checklist
-          </h2>
-          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-            {takenCount} of {filteredMedications.length} logged
-          </span>
-        </div>
-
-        <div className="soft-card divide-y divide-[var(--border)]/70 overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-12">
-              <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
-            </div>
-          ) : filteredMedications.length === 0 ? (
-            <div className="p-10 text-center space-y-2">
-              <Pill className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
-              <h3 className="text-sm font-bold text-[var(--foreground)]">
-                No medications in this category
-              </h3>
-              <p className="text-xs text-[var(--muted-foreground)]">
-                Try selecting &quot;All Active&quot; or add a new prescription above.
-              </p>
-            </div>
-          ) : (
-            filteredMedications.map((med) => {
-              const isTaken = loggedMeds[med.id];
-              return (
-                <button
-                  key={med.id}
-                  type="button"
-                  onClick={() => toggleMed(med.id)}
-                  className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors hover:bg-[var(--muted)]/50"
-                >
-                  <div className="flex min-w-0 items-center gap-3.5">
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all ${
-                        isTaken
-                          ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                          : "border-[var(--border)] bg-[var(--background)] hover:border-emerald-500/60"
-                      }`}
-                    >
-                      {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3
-                          className={`truncate text-sm font-extrabold ${
-                            isTaken
-                              ? "text-[var(--muted-foreground)] line-through"
-                              : "text-[var(--foreground)]"
-                          }`}
-                        >
-                          {med.name}
-                        </h3>
-                        <span className="rounded-lg border border-emerald-200/60 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
-                          {med.strength || med.dosage}
-                        </span>
-                      </div>
-                      <span className="mt-0.5 block truncate text-xs text-[var(--muted-foreground)]">
-                        {med.frequency} · {med.prescribing_doctor || "Physician"} · {med.related_condition || "General Care"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <span
-                      className={`block text-xs font-bold ${
-                        isTaken
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-[var(--muted-foreground)]"
-                      }`}
-                    >
-                      {isTaken ? "Logged Taken" : "Tap to Log"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      {/* Add Prescription Modal */}
-      {showAddModal && (
+      {/* EDIT MEDICATION MODAL */}
+      {editingMed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md space-y-4 p-6 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl">
+          <div className="w-full max-w-lg space-y-4 p-6 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
-                  <Pill className="h-4 w-4" />
+                  <Edit3 className="h-4 w-4" />
                 </div>
-                <h3 className="text-base font-extrabold text-[var(--foreground)]">
-                  Add Prescription
-                </h3>
+                <div>
+                  <h3 className="text-base font-extrabold text-[var(--foreground)]">
+                    Edit Prescription & Course Range
+                  </h3>
+                  <span className="text-[11px] text-[var(--muted-foreground)]">
+                    Update dose timings, start/end dates, and physician instructions.
+                  </span>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
-                className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                onClick={() => setEditingMed(null)}
+                className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAdd} className="space-y-3.5 text-xs">
-              <div>
-                <label className="mb-1 block font-bold text-[var(--foreground)]">
-                  Medication Name *
-                </label>
-                <Input
-                  required
-                  placeholder="e.g. Lisinopril, Metformin"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block font-bold text-[var(--foreground)]">
-                    Dose / Strength *
+                    Brand Name *
                   </label>
                   <Input
                     required
-                    placeholder="e.g. 20 mg"
-                    value={dose}
-                    onChange={(e) => setDose(e.target.value)}
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder="e.g. Candifast SB, Clavurox"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Generic Chemical Name
+                  </label>
+                  <Input
+                    value={formGeneric}
+                    onChange={(e) => setFormGeneric(e.target.value)}
+                    placeholder="e.g. Fluconazole, Cefuroxime"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Strength / Dose *
+                  </label>
+                  <Input
+                    required
+                    value={formStrength}
+                    onChange={(e) => setFormStrength(e.target.value)}
+                    placeholder="e.g. 130 mg, 625 mg"
                   />
                 </div>
                 <div>
@@ -865,22 +1049,362 @@ export default function MedicationsPage() {
                     Frequency
                   </label>
                   <Input
-                    placeholder="e.g. Once daily"
-                    value={freq}
-                    onChange={(e) => setFreq(e.target.value)}
+                    value={formFrequency}
+                    onChange={(e) => setFormFrequency(e.target.value)}
+                    placeholder="e.g. 1-0-1, Once daily"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Route
+                  </label>
+                  <select
+                    value={formRoute}
+                    onChange={(e) => setFormRoute(e.target.value)}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)]"
+                  >
+                    <option value="oral">Oral (Capsule/Tablet)</option>
+                    <option value="topical">Topical (Cream/Lotion)</option>
+                    <option value="inhaler">Inhaler / Resp</option>
+                    <option value="injection">SubQ / Injection</option>
+                    <option value="ophthalmic">Eye / Ear Drops</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Timing & Schedule */}
+              <div>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Daily Timing & Meal Schedule
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                  {["Morning after meal", "Night after meal", "Morning & Night", "Before breakfast"].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFormTiming(t)}
+                      className={`px-2 py-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-colors ${
+                        formTiming === t
+                          ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                          : "border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)]"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <Input
+                  value={formTiming}
+                  onChange={(e) => setFormTiming(e.target.value)}
+                  placeholder="e.g. Morning after breakfast and Night before bedtime"
+                />
+              </div>
+
+              {/* Date Range & Duration (Doctor Time Range Feature) */}
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--secondary)]/40 p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-emerald-600" />
+                    Doctor Prescribed Course Range
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-bold">
+                    Range-based active/inactive lifecycle
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block font-bold text-[var(--foreground)] text-[11px]">
+                      Course Start Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={formStartDate}
+                      onChange={(e) => setFormStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block font-bold text-[var(--foreground)] text-[11px]">
+                      Course End Date (Optional)
+                    </label>
+                    <Input
+                      type="date"
+                      value={formEndDate}
+                      onChange={(e) => setFormEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Quick duration presets */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-[10px] font-bold text-[var(--muted-foreground)] mr-1">
+                    Quick Duration:
+                  </span>
+                  {[
+                    { label: "7 Days", days: 7 },
+                    { label: "14 Days", days: 14 },
+                    { label: "1 Month", days: 30 },
+                    { label: "6 Weeks", days: 42 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setQuickDuration(preset.days)}
+                      className="px-2.5 py-1 rounded-md border border-[var(--border)] bg-[var(--card)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[10px] font-bold text-[var(--foreground)] cursor-pointer"
+                    >
+                      +{preset.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setFormEndDate("")}
+                    className="px-2 py-1 rounded-md text-[10px] text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                  >
+                    Continuous / No End
+                  </button>
+                </div>
+              </div>
+
+              {/* Status and Doctor */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Current Course Status
+                  </label>
+                  <select
+                    value={formStatus}
+                    onChange={(e) => setFormStatus(e.target.value as any)}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)]"
+                  >
+                    <option value="active">Active (Taking Regularly)</option>
+                    <option value="discontinued">Paused / Inactive</option>
+                    <option value="completed">Completed (Course Ended)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Prescribing Doctor
+                  </label>
+                  <Input
+                    value={formDoc}
+                    onChange={(e) => setFormDoc(e.target.value)}
+                    placeholder="e.g. Prof. Dr. Quazi Salim Yazdi"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Clinical Instructions & Notes
+                </label>
+                <Input
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  placeholder="e.g. Apply thin layer to affected skin twice daily"
+                />
+              </div>
+
+              <div className="flex items-center justify-between border-t border-[var(--border)] pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="text-rose-600 border-rose-300 hover:bg-rose-50 text-xs font-bold"
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  {isDeleting ? "Deleting..." : "Delete Prescription"}
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingMed(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD PRESCRIPTION MODAL */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg space-y-4 p-6 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  <Pill className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-extrabold text-[var(--foreground)]">
+                  Add New Prescription
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdd} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Brand Name *
+                  </label>
+                  <Input
+                    required
+                    placeholder="e.g. Lisinopril, Metformin"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Generic Name
+                  </label>
+                  <Input
+                    placeholder="e.g. Fluconazole"
+                    value={formGeneric}
+                    onChange={(e) => setFormGeneric(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Strength / Dose *
+                  </label>
+                  <Input
+                    required
+                    placeholder="e.g. 20 mg, 500 mg"
+                    value={formStrength}
+                    onChange={(e) => setFormStrength(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Frequency
+                  </label>
+                  <Input
+                    placeholder="e.g. Once daily, 1-0-1"
+                    value={formFrequency}
+                    onChange={(e) => setFormFrequency(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Route
+                  </label>
+                  <select
+                    value={formRoute}
+                    onChange={(e) => setFormRoute(e.target.value)}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)]"
+                  >
+                    <option value="oral">Oral (Tablet/Capsule)</option>
+                    <option value="topical">Topical (Cream/Lotion)</option>
+                    <option value="inhaler">Inhaler / Respiratory</option>
+                    <option value="injection">Injection / SubQ</option>
+                    <option value="ophthalmic">Eye / Ear Drops</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Course Duration & Date Range */}
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--secondary)]/40 p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-emerald-600" />
+                    Doctor Time Range & Duration
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-bold">
+                    Auto-manages course completion
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block font-bold text-[var(--foreground)] text-[11px]">
+                      Start Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={formStartDate}
+                      onChange={(e) => setFormStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block font-bold text-[var(--foreground)] text-[11px]">
+                      End Date (Optional)
+                    </label>
+                    <Input
+                      type="date"
+                      value={formEndDate}
+                      onChange={(e) => setFormEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-[10px] font-bold text-[var(--muted-foreground)] mr-1">
+                    Quick Duration:
+                  </span>
+                  {[
+                    { label: "7 Days", days: 7 },
+                    { label: "14 Days", days: 14 },
+                    { label: "1 Month", days: 30 },
+                    { label: "6 Weeks", days: 42 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setQuickDuration(preset.days)}
+                      className="px-2.5 py-1 rounded-md border border-[var(--border)] bg-[var(--card)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[10px] font-bold text-[var(--foreground)] cursor-pointer"
+                    >
+                      +{preset.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setFormEndDate("")}
+                    className="px-2 py-1 rounded-md text-[10px] text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                  >
+                    Continuous Maintenance
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block font-bold text-[var(--foreground)]">
                     Prescribing Doctor
                   </label>
                   <Input
                     placeholder="e.g. Dr. Catherine Wei"
-                    value={doc}
-                    onChange={(e) => setDoc(e.target.value)}
+                    value={formDoc}
+                    onChange={(e) => setFormDoc(e.target.value)}
                   />
                 </div>
                 <div>
@@ -889,8 +1413,8 @@ export default function MedicationsPage() {
                   </label>
                   <Input
                     placeholder="e.g. Hypertension, Diabetes"
-                    value={condition}
-                    onChange={(e) => setCondition(e.target.value)}
+                    value={formCondition}
+                    onChange={(e) => setFormCondition(e.target.value)}
                   />
                 </div>
               </div>
@@ -901,8 +1425,8 @@ export default function MedicationsPage() {
                 </label>
                 <Input
                   placeholder="e.g. Take with morning meal and full glass of water"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
                 />
               </div>
 

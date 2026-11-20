@@ -165,3 +165,94 @@ export async function getMedicationLogs(
     created_at: d.created_at,
   }));
 }
+
+export async function updateMedication(
+  id: string,
+  userId: string,
+  updates: Partial<Omit<Medication, "id" | "user_id" | "created_at">>
+): Promise<Medication | null> {
+  // If running in browser, use server route with service-role to avoid client RLS blocks
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/medications/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, userId, updates }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success && json.medication) {
+        return json.medication;
+      }
+    } catch (apiErr) {
+      console.warn("Server medication update failed, falling back to direct client:", apiErr);
+    }
+  }
+
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("medications")
+    .update(updates)
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error || !data) {
+    console.error("Failed to update medication:", error);
+    return null;
+  }
+
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    document_id: data.document_id || undefined,
+    name: data.name,
+    generic_name: data.generic_name || undefined,
+    strength: data.strength || undefined,
+    dosage: data.dosage,
+    frequency: data.frequency,
+    route: data.route || undefined,
+    instructions: data.instructions || undefined,
+    start_date: data.start_date,
+    end_date: data.end_date || undefined,
+    prescribing_doctor: data.prescribing_doctor || undefined,
+    related_condition: data.related_condition || undefined,
+    status: data.status,
+    created_at: data.created_at,
+  };
+}
+
+export async function deleteMedication(id: string, userId: string): Promise<boolean> {
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/medications/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, userId }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return true;
+      }
+    } catch (apiErr) {
+      console.warn("Server medication delete failed, falling back to direct client:", apiErr);
+    }
+  }
+
+  if (!isSupabaseConfigured()) {
+    return false;
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("medications")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  return !error;
+}

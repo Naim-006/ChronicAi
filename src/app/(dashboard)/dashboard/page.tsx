@@ -428,9 +428,7 @@ export default function DashboardPage() {
       <section>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-1">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_16px_rgba(16,185,129,0.25)]">
-              <Activity className="h-5 w-5" />
-            </div>
+            
             <div>
               <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
                 Health Overview

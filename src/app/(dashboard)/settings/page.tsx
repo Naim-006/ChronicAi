@@ -18,11 +18,6 @@ import {
   User as UserIcon,
   Loader2,
   AlertCircle,
-  Key,
-  Eye,
-  EyeOff,
-  ExternalLink,
-  Cpu,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useLanguage, Language } from "@/context/LanguageContext";
@@ -39,11 +34,6 @@ export default function SettingsPage() {
   const [aiDepth, setAiDepth] = useState<"simple" | "balanced" | "detailed">("balanced");
   const [notifMeds, setNotifMeds] = useState(true);
   const [notifApts, setNotifApts] = useState(true);
-  const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [keyTesting, setKeyTesting] = useState(false);
-  const [keyStatus, setKeyStatus] = useState<"idle" | "valid" | "invalid">("idle");
-  const [keyStatusMsg, setKeyStatusMsg] = useState<string | null>(null);
 
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -89,20 +79,6 @@ export default function SettingsPage() {
     null;
 
   useEffect(() => {
-    // Check localStorage first, then profile preferences
-    const storedKey = typeof window !== "undefined" ? localStorage.getItem("chronicai_gemini_key") : null;
-    if (storedKey) {
-      setGeminiApiKey(storedKey);
-    } else if (profile?.preferences) {
-      const prefs = profile.preferences as any;
-      if (prefs.gemini_api_key) {
-        setGeminiApiKey(prefs.gemini_api_key);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("chronicai_gemini_key", prefs.gemini_api_key);
-        }
-      }
-    }
-
     if (profile?.preferences) {
       const prefs = profile.preferences as any;
       if (prefs.explanation_depth) setAiDepth(prefs.explanation_depth);
@@ -113,82 +89,9 @@ export default function SettingsPage() {
     }
   }, [profile]);
 
-  const handleTestApiKey = async () => {
-    if (!geminiApiKey.trim()) {
-      setKeyStatus("invalid");
-      setKeyStatusMsg("Please enter an API key first.");
-      setTimeout(() => setKeyStatusMsg(null), 3500);
-      return;
-    }
-
-    setKeyTesting(true);
-    setKeyStatus("idle");
-    setKeyStatusMsg(null);
-
-    try {
-      // Test Gemini model accessibility
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey.trim()}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: "ping" }] }],
-          }),
-        }
-      );
-
-      if (res.ok) {
-        setKeyStatus("valid");
-        setKeyStatusMsg("Gemini API connected successfully! Multimodal OCR and Assistant are now active.");
-        if (typeof window !== "undefined") {
-          localStorage.setItem("chronicai_gemini_key", geminiApiKey.trim());
-        }
-      } else {
-        // Fallback test on gemini-1.5-flash
-        const res2 = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey.trim()}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: "ping" }] }],
-            }),
-          }
-        );
-
-        if (res2.ok) {
-          setKeyStatus("valid");
-          setKeyStatusMsg("Gemini API (v1.5) connected successfully!");
-          if (typeof window !== "undefined") {
-            localStorage.setItem("chronicai_gemini_key", geminiApiKey.trim());
-          }
-        } else {
-          setKeyStatus("invalid");
-          setKeyStatusMsg("Invalid Gemini API key or quota exceeded. Please verify at Google AI Studio.");
-        }
-      }
-    } catch {
-      setKeyStatus("invalid");
-      setKeyStatusMsg("Connection test failed. Please check network connectivity.");
-    } finally {
-      setKeyTesting(false);
-      setTimeout(() => setKeyStatusMsg(null), 5000);
-    }
-  };
-
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const trimmedKey = geminiApiKey.trim();
-      if (typeof window !== "undefined") {
-        if (trimmedKey) {
-          localStorage.setItem("chronicai_gemini_key", trimmedKey);
-        } else {
-          localStorage.removeItem("chronicai_gemini_key");
-        }
-      }
-
       if (effectiveUserId) {
         await updateHealthProfile(effectiveUserId, {
           preferences: {
@@ -196,7 +99,6 @@ export default function SettingsPage() {
             theme,
             explanation_depth: aiDepth,
             notifications_enabled: notifMeds || notifApts,
-            ...(trimmedKey ? { gemini_api_key: trimmedKey } : {}),
           },
         });
         await refreshProfile();
@@ -276,89 +178,9 @@ export default function SettingsPage() {
       {isSaved && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 dark:border-emerald-800 p-3.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in duration-200">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          Settings and AI configurations successfully saved.
+          Settings and preferences successfully saved.
         </div>
       )}
-
-      {/* Group 0: Google Gemini AI & Scanner Engine */}
-      <div>
-        <div className="flex items-center justify-between px-1 mb-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-            <Cpu className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            Google Gemini AI &amp; Multimodal OCR Engine
-          </span>
-          <a
-            href="https://aistudio.google.com/app/apikey"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-          >
-            Get Free Gemini Key
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs p-5 space-y-4">
-          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            ChronicAI uses Google Gemini to read scanned prescriptions, lab panels, and medical documents, auto-extract biomarkers into your lifelong database, and provide verified clinical reasoning.
-          </p>
-
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Google Gemini API Key
-            </label>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <Key className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type={showApiKey ? "text" : "password"}
-                  value={geminiApiKey}
-                  onChange={(e) => {
-                    setGeminiApiKey(e.target.value);
-                    setKeyStatus("idle");
-                  }}
-                  placeholder="AIzaSy..."
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-9 pr-10 py-2 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                >
-                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleTestApiKey}
-                disabled={keyTesting}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {keyTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                Test Connection
-              </button>
-            </div>
-
-            {keyStatusMsg && (
-              <div
-                className={`flex items-center gap-2 rounded-xl p-3 text-xs font-semibold ${
-                  keyStatus === "valid"
-                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                    : "bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
-                }`}
-              >
-                {keyStatus === "valid" ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                )}
-                <span>{keyStatusMsg}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Group 1: Appearance */}
       <div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   UserCheck,
   Plus,
@@ -11,6 +12,7 @@ import {
   X,
   Loader2,
   Stethoscope,
+  Calendar,
 } from "lucide-react";
 import { Doctor } from "@/types/medical";
 import { useAuth } from "@/context/AuthContext";
@@ -225,15 +227,24 @@ export default function DoctorsPage() {
                   </div>
                 </div>
 
-                {doc.phone && (
-                  <a
-                    href={`tel:${doc.phone}`}
-                    className="flex items-center gap-1 rounded-full bg-[var(--muted)] text-[var(--foreground)] px-3 py-1 text-xs font-semibold hover:bg-[var(--mint-deep)]"
+                <div className="flex items-center gap-2">
+                  {doc.phone && (
+                    <a
+                      href={`tel:${doc.phone}`}
+                      className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 px-3 py-1 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
+                    >
+                      <Phone className="h-3 w-3" />
+                      <span>Call</span>
+                    </a>
+                  )}
+                  <Link
+                    href={`/appointments?docName=${encodeURIComponent(doc.name)}&specialty=${encodeURIComponent(doc.specialty)}&facility=${encodeURIComponent(doc.clinic_name || "")}`}
+                    className="flex items-center gap-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold transition-all shadow-xs cursor-pointer"
                   >
-                    <Phone className="h-3 w-3" />
-                    <span>Call</span>
-                  </a>
-                )}
+                    <Calendar className="h-3 w-3" />
+                    <span>Schedule Visit</span>
+                  </Link>
+                </div>
               </div>
 
               {doc.notes && (

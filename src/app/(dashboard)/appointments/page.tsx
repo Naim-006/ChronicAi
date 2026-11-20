@@ -64,6 +64,21 @@ export default function AppointmentsPage() {
     loadApts();
   }, [loadApts]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const qDocName = params.get("docName");
+      const qSpecialty = params.get("specialty");
+      const qFacility = params.get("facility");
+      if (qDocName) {
+        setDocName(qDocName);
+        if (qSpecialty) setSpecialty(qSpecialty);
+        if (qFacility) setLoc(qFacility);
+        setShowAddModal(true);
+      }
+    }
+  }, []);
+
   // Realtime subscription: syncs scheduled appointments live
   useRealtimeTables({
     tables: ["appointments"],
