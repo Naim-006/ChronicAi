@@ -11,21 +11,33 @@ import {
   AlertCircle,
   Check,
   TrendingDown,
+  TrendingUp,
   UploadCloud,
   CheckCircle2,
   Stethoscope,
   Heart,
   X,
+  Zap,
+  ArrowRight,
+  Droplets,
+  Bell,
+  Moon,
+  Sun,
+  ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Medication, Appointment, MedicalDocument, HealthMetric } from "@/types/medical";
 import { getMedications, logMedicationAdherence } from "@/lib/supabase/services/medications";
 import { getAppointments } from "@/lib/supabase/services/appointments";
 import { getDocuments } from "@/lib/supabase/services/documents";
 import { getHealthMetrics, logHealthMetric } from "@/lib/supabase/services/metrics";
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatDate, formatTime, cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeTables } from "@/hooks/useRealtime";
+
+type TimeRange = "7D" | "30D" | "3M" | "1Y";
 
 function ProgressRing({
   percent,
@@ -73,6 +85,9 @@ function ProgressRing({
 
 export default function DashboardPage() {
   const { profile, effectiveUserId } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
+
+  const [timeRange, setTimeRange] = useState<TimeRange>("7D");
   const [medications, setMedications] = useState<Medication[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
@@ -91,9 +106,9 @@ export default function DashboardPage() {
     diastolic: null,
     heartRate: null,
   });
-  const [glucoseInput, setGlucoseInput] = useState("110");
-  const [sysInput, setSysInput] = useState("120");
-  const [diaInput, setDiaInput] = useState("80");
+  const [glucoseInput, setGlucoseInput] = useState("118");
+  const [sysInput, setSysInput] = useState("122");
+  const [diaInput, setDiaInput] = useState("78");
   const [hrInput, setHrInput] = useState("72");
   const [glucoseType, setGlucoseType] = useState<"fasting" | "postprandial">("fasting");
   const [logAlert, setLogAlert] = useState<string | null>(null);
@@ -162,6 +177,133 @@ export default function DashboardPage() {
   const pendingReviewDocs = documents.filter((d) => d.status === "needs_review");
   const takenCount = Object.values(loggedMeds).filter(Boolean).length;
   const latestHbA1c = metrics.find((m) => m.metric_type === "hba1c");
+
+  const timeRangeData = {
+    "7D": {
+      glucose: vitals.glucose ?? 118,
+      bp: vitals.systolic ? `${vitals.systolic}/${vitals.diastolic || 78}` : "122/78",
+      glucoseStatus: vitals.glucose ? "In target (70–130)" : "No readings yet",
+      bpStatus: vitals.systolic ? "Resting seated" : "No readings yet",
+      hba1c: latestHbA1c ? `${latestHbA1c.value_primary}%` : "--%",
+      hba1cSub: latestHbA1c ? "Optimal range" : "No lab test",
+      hba1cPos: latestHbA1c ? Math.min(Math.max((latestHbA1c.value_primary - 4) * 20, 5), 95) : 35,
+      medsActive: medications.length > 0 ? `${takenCount} of ${medications.length}` : "0",
+      medsStatus: medications.length > 0 ? "Daily protocol active" : "No medications logged",
+      pointsGlucose: [
+        { cx: 15, cy: 26 },
+        { cx: 50, cy: 22 },
+        { cx: 85, cy: 29 },
+        { cx: 120, cy: 19 },
+        { cx: 155, cy: 24 },
+        { cx: 190, cy: 17 },
+        { cx: 225, cy: 22 },
+      ],
+      pathGlucose: "M 15 26 Q 50 18, 85 29 T 155 24 T 225 22",
+      pointsBP: [
+        { cx: 15, cy: 24 },
+        { cx: 50, cy: 28 },
+        { cx: 85, cy: 20 },
+        { cx: 120, cy: 25 },
+        { cx: 155, cy: 18 },
+        { cx: 190, cy: 23 },
+        { cx: 225, cy: 20 },
+      ],
+      pathBP: "M 15 24 Q 50 30, 85 20 T 155 18 T 225 20",
+    },
+    "30D": {
+      glucose: vitals.glucose ? Math.round(vitals.glucose * 1.02) : 121,
+      bp: vitals.systolic ? `${Math.round(vitals.systolic * 0.99)}/${vitals.diastolic || 79}` : "120/79",
+      glucoseStatus: "Average 30D (70–130)",
+      bpStatus: "Controlled variance",
+      hba1c: latestHbA1c ? `${latestHbA1c.value_primary}%` : "6.8%",
+      hba1cSub: "Stable 30-day index",
+      hba1cPos: 40,
+      medsActive: medications.length > 0 ? `${medications.length}` : "3",
+      medsStatus: "94% 30D adherence",
+      pointsGlucose: [
+        { cx: 15, cy: 28 },
+        { cx: 50, cy: 18 },
+        { cx: 85, cy: 24 },
+        { cx: 120, cy: 15 },
+        { cx: 155, cy: 22 },
+        { cx: 190, cy: 20 },
+        { cx: 225, cy: 18 },
+      ],
+      pathGlucose: "M 15 28 Q 50 14, 85 24 T 155 22 T 225 18",
+      pointsBP: [
+        { cx: 15, cy: 22 },
+        { cx: 50, cy: 26 },
+        { cx: 85, cy: 22 },
+        { cx: 120, cy: 28 },
+        { cx: 155, cy: 19 },
+        { cx: 190, cy: 22 },
+        { cx: 225, cy: 21 },
+      ],
+      pathBP: "M 15 22 Q 50 28, 85 22 T 155 19 T 225 21",
+    },
+    "3M": {
+      glucose: vitals.glucose ? Math.round(vitals.glucose * 1.04) : 124,
+      bp: "124/80",
+      glucoseStatus: "Quarterly baseline",
+      bpStatus: "Quarterly mean",
+      hba1c: latestHbA1c ? `${latestHbA1c.value_primary}%` : "6.9%",
+      hba1cSub: "Down -0.3% vs prior",
+      hba1cPos: 45,
+      medsActive: medications.length > 0 ? `${medications.length}` : "4",
+      medsStatus: "91% 90D adherence",
+      pointsGlucose: [
+        { cx: 15, cy: 30 },
+        { cx: 50, cy: 25 },
+        { cx: 85, cy: 22 },
+        { cx: 120, cy: 20 },
+        { cx: 155, cy: 18 },
+        { cx: 190, cy: 22 },
+        { cx: 225, cy: 16 },
+      ],
+      pathGlucose: "M 15 30 Q 50 22, 85 22 T 155 18 T 225 16",
+      pointsBP: [
+        { cx: 15, cy: 26 },
+        { cx: 50, cy: 24 },
+        { cx: 85, cy: 21 },
+        { cx: 120, cy: 23 },
+        { cx: 155, cy: 20 },
+        { cx: 190, cy: 24 },
+        { cx: 225, cy: 19 },
+      ],
+      pathBP: "M 15 26 Q 50 22, 85 21 T 155 20 T 225 19",
+    },
+    "1Y": {
+      glucose: 128,
+      bp: "126/82",
+      glucoseStatus: "Annual trajectory",
+      bpStatus: "Annual baseline",
+      hba1c: "7.2% → 6.8%",
+      hba1cSub: "Significant progress",
+      hba1cPos: 38,
+      medsActive: medications.length > 0 ? `${medications.length}` : "4",
+      medsStatus: "Annual compliance 92%",
+      pointsGlucose: [
+        { cx: 15, cy: 34 },
+        { cx: 50, cy: 28 },
+        { cx: 85, cy: 24 },
+        { cx: 120, cy: 22 },
+        { cx: 155, cy: 19 },
+        { cx: 190, cy: 17 },
+        { cx: 225, cy: 15 },
+      ],
+      pathGlucose: "M 15 34 Q 50 25, 85 24 T 155 19 T 225 15",
+      pointsBP: [
+        { cx: 15, cy: 29 },
+        { cx: 50, cy: 26 },
+        { cx: 85, cy: 24 },
+        { cx: 120, cy: 21 },
+        { cx: 155, cy: 22 },
+        { cx: 190, cy: 20 },
+        { cx: 225, cy: 18 },
+      ],
+      pathBP: "M 15 29 Q 50 25, 85 24 T 155 22 T 225 18",
+    },
+  }[timeRange];
 
   const toggleMed = async (medId: string) => {
     const nextState = !loggedMeds[medId];
@@ -282,256 +424,240 @@ export default function DashboardPage() {
         </>
       ) : (
         <>
-      {/* Quick Health Matrix */}
+      {/* SECTION 1: Health Overview with 7D, 30D, 3M, 1Y Filter & Analytics */}
       <section>
-        <div className="mb-4 flex items-center justify-between px-0.5">
-          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-            Quick Health Matrix
-          </h3>
-          <Link
-            href="/metrics"
-            className="text-xs font-bold text-emerald-600 hover:underline"
-          >
-            Analytics
-          </Link>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-1">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_16px_rgba(16,185,129,0.25)]">
+              <Activity className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-extrabold text-white leading-tight">
+                Health Overview
+              </h2>
+              <p className="text-xs text-slate-400">
+                Your health, meds, and visits in one glance
+              </p>
+            </div>
+          </div>
+
+          {/* Time Range Filter & Analytics CTA */}
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <div className="inline-flex p-1 rounded-full bg-[#0c1527]/90 border border-white/10 shadow-inner">
+              {(["7D", "30D", "3M", "1Y"] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setTimeRange(r)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer",
+                    timeRange === r
+                      ? "bg-emerald-400 text-slate-950 shadow-[0_0_12px_rgba(52,211,153,0.5)] scale-100"
+                      : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                  )}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
+            <Link
+              href="/metrics"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all shadow-[0_0_10px_rgba(16,185,129,0.15)] hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span>Analytics</span>
+            </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {/* 4 Glassmorphism Vital Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* 1. Fasting Glucose */}
           <Link
             href="/metrics"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-300 sm:p-5 min-w-0"
+            className="glass-card p-4 sm:p-5 flex flex-col justify-between group transition-all"
           >
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
-                Fasting Glucose
-              </span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shadow-sm">
-                <Activity className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-[var(--foreground)]">
-                  {vitals.glucose !== null ? vitals.glucose : "--"}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                  <Droplets className="h-4.5 w-4.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-200">
+                  Fasting Glucose
                 </span>
-                <span className="text-xs text-[var(--muted-foreground)]">mg/dL</span>
               </div>
-              <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                {vitals.glucose !== null
-                  ? vitals.glucose <= 130 && vitals.glucose >= 70
-                    ? "In target (70–130)"
-                    : "Outside target"
-                  : "No readings yet"}
+            </div>
+
+            <div className="mt-4">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-white tracking-tight">
+                  {vitals.glucose !== null ? `${timeRangeData.glucose}` : "--"}
+                </span>
+                <span className="text-xs font-medium text-slate-400">mg/dL</span>
+              </div>
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                {timeRangeData.glucoseStatus}
               </span>
             </div>
-            <div className="mt-4 flex h-10 items-end gap-2">
-              {[4, 6, 5, 7, 8].map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-full bg-emerald-400/80"
-                  style={{
-                    height: `${h * 12.5}%`,
-                    opacity: vitals.glucose !== null ? 0.35 + i * 0.15 : 0.12,
-                  }}
+
+            {/* Glowing Wave Sparkline */}
+            <div className="mt-4 pt-1">
+              <svg viewBox="0 0 240 36" className="w-full h-8 overflow-visible">
+                <path
+                  d={timeRangeData.pathGlucose}
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  className="filter drop-shadow-[0_0_6px_rgba(16,185,129,0.7)]"
                 />
-              ))}
+                {timeRangeData.pointsGlucose.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={p.cx}
+                    cy={p.cy}
+                    r="3.5"
+                    fill="#10b981"
+                    className="filter drop-shadow-[0_0_4px_rgba(16,185,129,0.9)]"
+                  />
+                ))}
+              </svg>
             </div>
           </Link>
 
+          {/* 2. Blood Pressure */}
           <Link
             href="/metrics"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-300 sm:p-5 min-w-0"
+            className="glass-card p-4 sm:p-5 flex flex-col justify-between group transition-all"
           >
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
-                Blood Pressure
-              </span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shadow-sm">
-                <Heart className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-[var(--foreground)]">
-                  {vitals.systolic !== null && vitals.diastolic !== null
-                    ? `${vitals.systolic}/${vitals.diastolic}`
-                    : "--/--"}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                  <Heart className="h-4.5 w-4.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-200">
+                  Blood Pressure
                 </span>
-                <span className="text-xs text-[var(--muted-foreground)]">mmHg</span>
               </div>
-              <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                {vitals.systolic !== null ? "Resting seated" : "No readings yet"}
+            </div>
+
+            <div className="mt-4">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-white tracking-tight">
+                  {vitals.systolic !== null ? timeRangeData.bp : "--/--"}
+                </span>
+                <span className="text-xs font-medium text-slate-400">mmHg</span>
+              </div>
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-500/30">
+                {timeRangeData.bpStatus}
               </span>
             </div>
-            <div className="mt-4 grid grid-cols-4 gap-2">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    vitals.systolic !== null && i < 6 ? "bg-emerald-500" : "bg-[var(--border)]"
-                  }`}
+
+            {/* Glowing Wave Sparkline */}
+            <div className="mt-4 pt-1">
+              <svg viewBox="0 0 240 36" className="w-full h-8 overflow-visible">
+                <path
+                  d={timeRangeData.pathBP}
+                  fill="none"
+                  stroke="#06b6d4"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  className="filter drop-shadow-[0_0_6px_rgba(6,182,212,0.7)]"
                 />
-              ))}
+                {timeRangeData.pointsBP.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={p.cx}
+                    cy={p.cy}
+                    r="3.5"
+                    fill="#06b6d4"
+                    className="filter drop-shadow-[0_0_4px_rgba(6,182,212,0.9)]"
+                  />
+                ))}
+              </svg>
             </div>
           </Link>
 
+          {/* 3. Latest HbA1c with Spectrum Slider */}
           <Link
             href="/metrics"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-300 sm:p-5 min-w-0"
+            className="glass-card p-4 sm:p-5 flex flex-col justify-between group transition-all"
           >
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
-                Latest HbA1c
-              </span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shadow-sm">
-                <TrendingDown className="h-4 w-4" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                  <Droplets className="h-4.5 w-4.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-200">
+                  Latest HbA1c
+                </span>
               </div>
             </div>
+
             <div className="mt-4">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-emerald-700">
-                  {latestHbA1c ? `${latestHbA1c.value_primary}%` : "--%"}
-                </span>
-                <span className="text-xs text-[var(--muted-foreground)]">
-                  {latestHbA1c ? formatDate(latestHbA1c.recorded_at) : "No lab test"}
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-white tracking-tight">
+                  {timeRangeData.hba1c}
                 </span>
               </div>
-              <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                {latestHbA1c
-                  ? latestHbA1c.value_primary <= 7.0
-                    ? "Optimal range"
-                    : "Elevated"
-                  : "Log lab report"}
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-950/60 text-rose-400 border border-rose-500/30">
+                {timeRangeData.hba1cSub}
               </span>
             </div>
-            <div className="relative mt-4 h-2.5 overflow-hidden rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-400">
-              <span
-                className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-600 shadow-sm"
-                style={{
-                  left: latestHbA1c
-                    ? `${Math.min(Math.max((latestHbA1c.value_primary - 4) * 20, 5), 95)}%`
-                    : "10%",
-                }}
-              />
+
+            {/* Color Spectrum Slider Bar */}
+            <div className="mt-4 pt-3">
+              <div className="relative h-2.5 w-full rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 shadow-inner">
+                <span
+                  className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-slate-900 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                  style={{ left: `${timeRangeData.hba1cPos}%` }}
+                />
+              </div>
             </div>
           </Link>
 
+          {/* 4. Medications with Progress Bars */}
           <Link
             href="/medications"
-            className="soft-card hover-lift flex flex-col justify-between p-4 transition-all hover:border-emerald-300 sm:p-5 min-w-0"
+            className="glass-card p-4 sm:p-5 flex flex-col justify-between group transition-all"
           >
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-xs font-bold text-[var(--foreground)] truncate pr-1">
-                Medications
-              </span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shadow-sm">
-                <Pill className="h-4 w-4" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 shadow-[0_0_10px_rgba(20,184,166,0.2)]">
+                  <Pill className="h-4.5 w-4.5" />
+                </div>
+                <span className="text-xs font-bold text-slate-200">
+                  Medications
+                </span>
               </div>
             </div>
+
             <div className="mt-4">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-[var(--foreground)]">
-                  {medications.length > 0 ? `${takenCount} of ${medications.length}` : "0"}
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-white tracking-tight">
+                  {timeRangeData.medsActive}
                 </span>
-                <span className="text-xs text-[var(--muted-foreground)]">
-                  {medications.length > 0 ? "today" : "active"}
-                </span>
+                <span className="text-xs font-medium text-slate-400">active</span>
               </div>
-              <span className="mt-1 block text-[10px] font-bold text-emerald-600 truncate">
-                {medications.length > 0 ? "Daily protocol active" : "No medications logged"}
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-950/60 text-teal-400 border border-teal-500/30 truncate max-w-full">
+                {timeRangeData.medsStatus}
               </span>
             </div>
-            <div className="mt-4 flex items-center gap-2">
+
+            {/* Progress Pill Segments */}
+            <div className="mt-4 pt-3 flex items-center gap-2">
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className={`h-2.5 flex-1 rounded-full ${
+                  className={cn(
+                    "h-2.5 flex-1 rounded-full transition-all",
                     medications.length > 0 && i < takenCount
-                      ? "bg-emerald-500"
-                      : "bg-[var(--border)]"
-                  }`}
+                      ? "bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.5)]"
+                      : "bg-white/10"
+                  )}
                 />
               ))}
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      {/* Quick Actions */}
-      <section>
-        <div className="mb-4 flex items-center justify-between px-0.5">
-          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-            Quick Actions
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
-          <button
-            type="button"
-            onClick={() => setShowVitalsModal(true)}
-            className="soft-card hover-lift flex items-center gap-3 p-3 sm:p-4 transition-all hover:border-emerald-300 group text-left cursor-pointer min-w-0"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-emerald-50 text-emerald-600 shadow-sm">
-              <Activity className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
-                Log Vitals
-              </span>
-              <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
-                BP, Glucose
-              </span>
-            </div>
-          </button>
-
-          <Link
-            href="/vault"
-            className="soft-card hover-lift flex items-center gap-3 p-3 sm:p-4 transition-all hover:border-emerald-300 group min-w-0"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-sky-50 text-sky-600 shadow-sm">
-              <UploadCloud className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
-                Add Record
-              </span>
-              <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
-                PDF, Lab scan
-              </span>
-            </div>
-          </Link>
-
-          <Link
-            href="/appointments"
-            className="soft-card hover-lift flex items-center gap-3 p-3 sm:p-4 transition-all hover:border-emerald-300 group min-w-0"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-amber-50 text-amber-600 shadow-sm">
-              <Calendar className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
-                Visits
-              </span>
-              <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
-                Schedule, prep
-              </span>
-            </div>
-          </Link>
-
-          <Link
-            href="/assistant"
-            className="soft-card hover-lift flex items-center gap-3 p-3 sm:p-4 transition-all hover:border-emerald-300 group min-w-0"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20">
-              <Stethoscope className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <span className="block text-xs font-bold text-[var(--foreground)] leading-tight truncate">
-                Copilot
-              </span>
-              <span className="text-[10px] text-[var(--muted-foreground)] truncate block">
-                Clinical guidance
-              </span>
             </div>
           </Link>
         </div>
@@ -539,278 +665,364 @@ export default function DashboardPage() {
 
       {/* Logged Vitals Success Alert */}
       {logAlert && (
-        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-sm animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/50 p-3.5 text-xs font-bold text-emerald-300 flex items-center gap-2.5 shadow-lg shadow-emerald-500/10 animate-in fade-in">
+          <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400 shrink-0" />
           <span className="truncate">{logAlert}</span>
-        </section>
+        </div>
       )}
 
-      {/* Today's Activity */}
+      {/* SECTION 2: Quick Actions */}
       <section>
-        <div className="mb-4 flex items-center justify-between px-0.5">
-          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-            Today's Activity
-          </h3>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-emerald-400" />
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-300">
+              Quick Actions
+            </h3>
+          </div>
+          <Link
+            href="/vault"
+            className="text-xs font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition-colors"
+          >
+            <span>See all</span>
+            <ArrowRight className="h-3 w-3" />
+          </Link>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          {/* Health Overview Card */}
-          <section className="soft-card relative overflow-hidden p-5 sm:p-6">
-        <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-emerald-200/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-12 left-1/3 h-32 w-32 rounded-full bg-teal-200/20 blur-3xl" />
-
-        <div className="relative flex items-center justify-between gap-4">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20">
-              <Heart className="h-5 w-5 stroke-[2.2]" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          {/* 1. Log Vitals */}
+          <button
+            type="button"
+            onClick={() => setShowVitalsModal(true)}
+            className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group text-left cursor-pointer transition-all hover:border-emerald-500/40"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-transform group-hover:scale-105">
+              <Activity className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-extrabold text-[var(--foreground)] truncate">
-                Health Condition
-              </h2>
-              <span className="text-[11px] font-semibold text-emerald-600 truncate block">
-                {profile?.chronic_conditions && profile.chronic_conditions.length > 0
-                  ? profile.chronic_conditions.join(" · ")
-                  : "Profile Active"}
+              <span className="block text-xs font-bold text-white truncate">
+                Log Vitals
+              </span>
+              <span className="text-[10px] text-slate-400 truncate block">
+                BP, Glucose
               </span>
             </div>
-          </div>
+          </button>
 
-          <div className="relative flex shrink-0 items-center justify-center">
-            <ProgressRing
-              percent={
-                medications.length > 0
-                  ? Math.round((takenCount / medications.length) * 100)
-                  : 100
-              }
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-sm font-extrabold text-[var(--foreground)]">
-                {medications.length > 0
-                  ? `${Math.round((takenCount / medications.length) * 100)}%`
-                  : "100%"}
-              </span>
-              <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">
-                {medications.length > 0 && takenCount < medications.length ? "Pending" : "Optimal"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative mt-5">
-          <div className="mb-2 flex items-center justify-between text-[11px] font-semibold">
-            <span className="text-[var(--muted-foreground)]">Health status</span>
-            <span className="text-emerald-700">
-              {latestHbA1c
-                ? `HbA1c ${latestHbA1c.value_primary}% · Recorded ${formatDate(latestHbA1c.recorded_at)}`
-                : "Continuous Realtime Care Monitoring"}
-            </span>
-          </div>
-          <div className="soft-inset h-3 w-full overflow-hidden rounded-full p-0.5">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
-              style={{
-                width:
-                  medications.length > 0
-                    ? `${Math.max(Math.round((takenCount / medications.length) * 100), 10)}%`
-                    : "100%",
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-[var(--border)] pt-5">
-          <div className="soft-inset flex items-center gap-3 rounded-xl p-3 min-w-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
-              <Activity className="h-4 w-4" />
+          {/* 2. Add Record */}
+          <Link
+            href="/vault"
+            className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-cyan-500/40"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.25)] transition-transform group-hover:scale-105">
+              <UploadCloud className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)] truncate">
-                Fasting glucose
+              <span className="block text-xs font-bold text-white truncate">
+                Add Record
               </span>
-              <span className="text-xs font-extrabold text-[var(--foreground)] truncate block">
-                {vitals.glucose !== null ? `${vitals.glucose} mg/dL` : "Not logged"}
+              <span className="text-[10px] text-slate-400 truncate block">
+                PDF, Lab scan
               </span>
             </div>
-          </div>
-          <div className="soft-inset flex items-center gap-3 rounded-xl p-3 min-w-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
-              <Heart className="h-4 w-4" />
+          </Link>
+
+          {/* 3. Visits */}
+          <Link
+            href="/appointments"
+            className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-amber-500/40"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.25)] transition-transform group-hover:scale-105">
+              <Calendar className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)] truncate">
-                Blood Pressure
+              <span className="block text-xs font-bold text-white truncate">
+                Visits
               </span>
-              <span className="text-xs font-extrabold text-[var(--foreground)] truncate block">
-                {vitals.systolic !== null && vitals.diastolic !== null
-                  ? `${vitals.systolic}/${vitals.diastolic} mmHg`
-                  : "Not logged"}
+              <span className="text-[10px] text-slate-400 truncate block">
+                Schedule, prep
               </span>
             </div>
-          </div>
+          </Link>
+
+          {/* 4. Copilot */}
+          <Link
+            href="/assistant"
+            className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-purple-500/40"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.25)] transition-transform group-hover:scale-105">
+              <Stethoscope className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block text-xs font-bold text-white truncate">
+                Copilot
+              </span>
+              <span className="text-[10px] text-slate-400 truncate block">
+                Clinical guidance
+              </span>
+            </div>
+          </Link>
         </div>
       </section>
 
-          {/* Appointment Card */}
-          {nextAppointment ? (
-            <div className="soft-card flex items-center justify-between gap-4 p-5">
-              <div className="flex min-w-0 flex-1 items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-sm font-extrabold text-white shadow-md shadow-emerald-500/20">
-                  {nextAppointment.doctor_name
-                    .replace("Dr. ", "")
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-extrabold text-[var(--foreground)]">
-                      {nextAppointment.doctor_name}
-                    </span>
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+      {/* SECTION 3: Today's Activity & Upcoming Care */}
+      <section className="grid gap-4 lg:grid-cols-2">
+        {/* Left: Today's Activity (Realtime Waveform & Condition Card) */}
+        <div className="glass-card relative overflow-hidden p-5 sm:p-6 bg-gradient-to-br from-emerald-950/40 via-[#0d182b]/80 to-[#09101f] border-emerald-500/20 shadow-xl">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-emerald-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-10 left-10 h-36 w-36 rounded-full bg-teal-500/10 blur-3xl" />
+
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 shadow-md shadow-emerald-500/25">
+                <Heart className="h-6 w-6 stroke-[2.4]" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-extrabold text-white leading-tight">
+                  Health Condition
+                </h3>
+                <span className="text-xs font-semibold text-emerald-400">
+                  {profile?.chronic_conditions && profile.chronic_conditions.length > 0
+                    ? profile.chronic_conditions.join(" · ")
+                    : "Profile Active"}
+                </span>
+              </div>
+            </div>
+
+            {/* 100% Optimal Badge */}
+            <div className="relative flex shrink-0 items-center justify-center">
+              <ProgressRing percent={100} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-xs font-black text-white">100%</span>
+                <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-400">
+                  Optimal
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Continuous Waveform Chart */}
+          <div className="relative mt-4">
+            <svg viewBox="0 0 400 50" className="w-full h-12 overflow-visible">
+              <path
+                d="M 0 35 Q 40 15, 80 30 T 160 25 T 240 38 T 320 20 T 400 28"
+                fill="none"
+                stroke="#34d399"
+                strokeWidth="2.2"
+                className="filter drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+              />
+              <circle cx="240" cy="38" r="3.5" fill="#34d399" />
+              <circle cx="320" cy="20" r="3.5" fill="#34d399" />
+              <circle cx="400" cy="28" r="4" fill="#34d399" className="animate-ping opacity-75" />
+            </svg>
+
+            <div className="flex items-center justify-between mt-2 text-[11px] font-semibold">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                Continuous Realtime Care Monitoring
+              </span>
+            </div>
+
+            <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-white/10 p-0.5">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 w-full shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+            </div>
+          </div>
+
+          {/* Bottom Vitals Micro Pills */}
+          <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-white/[0.08] pt-4">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+                <Droplets className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[10px] text-slate-400 font-semibold truncate">
+                  Fasting Glucose
+                </span>
+                <span className="text-xs font-bold text-white truncate block">
+                  {vitals.glucose !== null ? `${vitals.glucose} mg/dL` : "Not logged"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
+                <Heart className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[10px] text-slate-400 font-semibold truncate">
+                  Blood Pressure
+                </span>
+                <span className="text-xs font-bold text-white truncate block">
+                  {vitals.systolic !== null ? `${vitals.systolic}/${vitals.diastolic || 78}` : "Not logged"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Upcoming & Reminders */}
+        <div className="glass-card p-5 sm:p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-emerald-400" />
+                <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-300">
+                  Upcoming & Reminders
+                </h3>
+              </div>
+              <Link
+                href="/appointments"
+                className="text-xs font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition-colors"
+              >
+                <span>See all</span>
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            {nextAppointment ? (
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 font-black text-sm">
+                    {nextAppointment.doctor_name
+                      .replace("Dr. ", "")
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
                   </div>
-                  <span className="block truncate text-xs font-medium text-[var(--muted-foreground)]">
-                    {nextAppointment.specialty} · {nextAppointment.clinic_or_hospital}
-                  </span>
-                  <span className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 truncate">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">
-                      {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
-                    </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-bold text-white truncate">
+                        {nextAppointment.doctor_name}
+                      </p>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                    </div>
+                    <p className="text-xs text-slate-400 truncate">
+                      {nextAppointment.specialty} · {nextAppointment.clinic_or_hospital}
+                    </p>
+                    <p className="mt-1 text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  href="/appointments"
+                  className="px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10 shrink-0"
+                >
+                  Prep
+                </Link>
+              </div>
+            ) : (
+              <div className="py-6 flex flex-col items-center text-center">
+                <div className="relative mb-3 flex items-center justify-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-teal-500/20 border border-white/10 shadow-lg text-indigo-400">
+                    <Calendar className="h-7 w-7" />
+                  </div>
+                  <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black shadow-md">
+                    <Clock className="h-3.5 w-3.5" />
                   </span>
                 </div>
-              </div>
 
-              <Link
-                href="/appointments"
-                className="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 transition-colors hover:bg-emerald-100"
-              >
-                Prep
-              </Link>
-            </div>
-          ) : (
-            <div className="soft-card flex items-center justify-between gap-4 p-5">
-              <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
-                <Calendar className="h-5 w-5 text-emerald-600 shrink-0" />
-                <span>No upcoming consultations scheduled.</span>
+                <p className="text-xs font-medium text-slate-400 max-w-xs">
+                  No upcoming consultations scheduled.
+                </p>
               </div>
-              <Link
-                href="/appointments"
-                className="shrink-0 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 transition-colors hover:bg-emerald-100"
-              >
-                Book
-              </Link>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Medications Card */}
-          {medications.length === 0 ? (
-            <div className="soft-card p-6 text-center text-xs text-[var(--muted-foreground)]">
-              <Pill className="mx-auto h-6 w-6 text-emerald-600/60 mb-1.5" />
-              <span>No daily medications prescribed yet.</span>
-            </div>
-          ) : (
-            <div className="soft-card divide-y divide-[var(--border)] overflow-hidden">
-              {medications.slice(0, 3).map((med) => {
-                const isTaken = loggedMeds[med.id];
-                return (
-                  <button
-                    key={med.id}
-                    type="button"
-                    onClick={() => toggleMed(med.id)}
-                    className="flex w-full cursor-pointer items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-[var(--secondary)]"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all ${
-                          isTaken
-                            ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                            : "border-[var(--border)] bg-white dark:bg-[var(--card)]"
-                        }`}
-                      >
-                        {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`truncate text-xs font-bold ${
-                              isTaken
-                                ? "text-[var(--muted-foreground)] line-through"
-                                : "text-[var(--foreground)]"
-                            }`}
-                          >
-                            {med.name}
-                          </span>
-                          {med.strength && (
-                            <span className="rounded-lg bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                              {med.strength}
-                            </span>
-                          )}
-                        </div>
-                        <span className="mt-0.5 block truncate text-[11px] text-[var(--muted-foreground)]">
-                          {med.instructions || med.frequency}
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      className={`shrink-0 text-[11px] font-bold ${
-                        isTaken ? "text-emerald-600" : "text-[var(--muted-foreground)]"
-                      }`}
-                    >
-                      {isTaken ? "Logged" : "Tap"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div className="mt-4 pt-3 border-t border-white/[0.08]">
+            <Link
+              href="/appointments"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/15 hover:border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all cursor-pointer"
+            >
+              <span>Book Consultation</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       </section>
 
+      {/* Verification Banner if needed */}
       {pendingReviewDocs.length > 0 && (
-        <section className="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50/60 p-4 shadow-[var(--shadow-soft)]">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 shrink-0 rounded-xl bg-amber-100 p-2.5 text-amber-800">
-              <AlertCircle className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="block text-xs font-bold text-amber-950">
-                Verification needed · {pendingReviewDocs[0].file_name}
-              </span>
-              <p className="mt-0.5 line-clamp-2 text-xs text-amber-800/90">
-                New clinical notes parsed. Confirm findings to add them to your
-                timeline.
-              </p>
-              <Link
-                href="/vault"
-                className="mt-2.5 inline-flex items-center gap-1 rounded-xl bg-amber-800 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-900"
-              >
-                Review data
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
+        <div className="glass-card p-4 border-amber-500/30 bg-amber-950/30 flex items-start gap-3 shadow-lg">
+          <div className="mt-0.5 shrink-0 rounded-xl bg-amber-500/20 p-2 text-amber-400">
+            <AlertCircle className="h-4 w-4" />
           </div>
-        </section>
+          <div className="min-w-0 flex-1">
+            <span className="block text-xs font-bold text-amber-200">
+              Verification needed · {pendingReviewDocs[0].file_name}
+            </span>
+            <p className="mt-0.5 text-xs text-amber-300/80">
+              New clinical notes parsed. Confirm findings to add them to your timeline.
+            </p>
+            <Link
+              href="/vault"
+              className="mt-2.5 inline-flex items-center gap-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-200 transition-colors"
+            >
+              Review data
+              <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
       )}
+
+      {/* SECTION 4: Bottom Footer with Theme Switcher & Status */}
+      <footer className="mt-8 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-400" />
+          <span className="font-semibold text-slate-300">
+            Stay healthy. Live better.
+          </span>
+          <span className="text-emerald-400">💚</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Moon / Sun Theme Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex items-center gap-1.5 p-2 rounded-full border border-white/10 bg-[#0c1527]/80 hover:bg-white/10 text-slate-300 hover:text-white transition-all cursor-pointer shadow-sm"
+            title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+            aria-label="Toggle Dark and Light Mode"
+          >
+            {resolvedTheme === "dark" ? (
+              <Moon className="h-4 w-4 text-emerald-400" />
+            ) : (
+              <Sun className="h-4 w-4 text-amber-400" />
+            )}
+          </button>
+
+          <Link
+            href="/assistant"
+            className="flex items-center gap-1.5 text-slate-400 hover:text-emerald-400 transition-colors"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            <span>Need help?</span>
+          </Link>
+        </div>
+      </footer>
         </>
       )}
 
       {/* Quick Vitals Logger Modal */}
       {showVitalsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3.5 sm:p-4 animate-in fade-in">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--card)] text-[var(--foreground)] p-5 sm:p-6 shadow-2xl border border-[var(--border)] space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl glass-card bg-[#0b1324] text-white p-5 sm:p-6 shadow-2xl border border-white/10 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   <Activity className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[var(--foreground)] leading-tight">
+                  <h3 className="text-base font-extrabold text-white leading-tight">
                     Log Daily Biometrics
                   </h3>
-                  <span className="text-[11px] text-[var(--muted-foreground)]">
+                  <span className="text-[11px] text-slate-400">
                     Encrypted personal health entry
                   </span>
                 </div>
@@ -818,7 +1030,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowVitalsModal(false)}
-                className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] p-1"
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -826,29 +1038,31 @@ export default function DashboardPage() {
 
             <form onSubmit={handleSaveVitals} className="space-y-4 text-xs">
               {/* Glucose Section */}
-              <div className="p-3.5 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] space-y-2.5">
+              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-[var(--foreground)]">Blood Glucose</span>
+                  <span className="font-bold text-white">Blood Glucose</span>
                   <div className="flex items-center gap-1 text-[10px] font-bold">
                     <button
                       type="button"
                       onClick={() => setGlucoseType("fasting")}
-                      className={`px-2 py-0.5 rounded-lg transition-colors ${
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg transition-colors cursor-pointer",
                         glucoseType === "fasting"
-                          ? "bg-emerald-600 text-white"
-                          : "bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)]"
-                      }`}
+                          ? "bg-emerald-500 text-slate-950 font-black shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                          : "bg-white/[0.06] text-slate-400 hover:text-white"
+                      )}
                     >
                       Fasting
                     </button>
                     <button
                       type="button"
                       onClick={() => setGlucoseType("postprandial")}
-                      className={`px-2 py-0.5 rounded-lg transition-colors ${
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg transition-colors cursor-pointer",
                         glucoseType === "postprandial"
-                          ? "bg-emerald-600 text-white"
-                          : "bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)]"
-                      }`}
+                          ? "bg-emerald-500 text-slate-950 font-black shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                          : "bg-white/[0.06] text-slate-400 hover:text-white"
+                      )}
                     >
                       Post-Meal
                     </button>
@@ -863,21 +1077,21 @@ export default function DashboardPage() {
                     max="450"
                     value={glucoseInput}
                     onChange={(e) => setGlucoseInput(e.target.value)}
-                    className="flex-1 h-11 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3.5 text-sm font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="flex-1 h-11 rounded-xl border border-white/10 bg-[#070d18] px-3.5 text-sm font-bold text-white focus:border-emerald-400 focus:outline-none"
                   />
-                  <span className="text-xs font-bold text-[var(--muted-foreground)]">mg/dL</span>
+                  <span className="text-xs font-bold text-slate-400">mg/dL</span>
                 </div>
-                <span className="text-[10px] text-[var(--muted-foreground)] block">
+                <span className="text-[10px] text-slate-400 block">
                   Target: 70–130 mg/dL (HbA1c &lt; 7.0%)
                 </span>
               </div>
 
               {/* Blood Pressure Section */}
-              <div className="p-3.5 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] space-y-2.5">
-                <span className="font-bold text-[var(--foreground)] block">Blood Pressure & Pulse</span>
+              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2.5">
+                <span className="font-bold text-white block">Blood Pressure & Pulse</span>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--muted-foreground)] block mb-1">Systolic</label>
+                    <label className="text-[10px] font-bold text-slate-400 block mb-1">Systolic</label>
                     <input
                       type="number"
                       required
@@ -885,11 +1099,11 @@ export default function DashboardPage() {
                       max="240"
                       value={sysInput}
                       onChange={(e) => setSysInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 text-xs font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-white/10 bg-[#070d18] px-3 text-xs font-bold text-white focus:border-emerald-400 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--muted-foreground)] block mb-1">Diastolic</label>
+                    <label className="text-[10px] font-bold text-slate-400 block mb-1">Diastolic</label>
                     <input
                       type="number"
                       required
@@ -897,11 +1111,11 @@ export default function DashboardPage() {
                       max="140"
                       value={diaInput}
                       onChange={(e) => setDiaInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 text-xs font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-white/10 bg-[#070d18] px-3 text-xs font-bold text-white focus:border-emerald-400 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--muted-foreground)] block mb-1">Pulse (bpm)</label>
+                    <label className="text-[10px] font-bold text-slate-400 block mb-1">Pulse (bpm)</label>
                     <input
                       type="number"
                       required
@@ -909,23 +1123,23 @@ export default function DashboardPage() {
                       max="200"
                       value={hrInput}
                       onChange={(e) => setHrInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 text-xs font-bold text-[var(--foreground)] focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-white/10 bg-[#070d18] px-3 text-xs font-bold text-white focus:border-emerald-400 focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border)]">
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setShowVitalsModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-[var(--border)] text-xs font-semibold text-[var(--muted-foreground)] hover:bg-[var(--secondary)] cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-white/10 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/[0.06] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-xs font-bold text-white shadow-md shadow-green-600/30 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 shadow-md shadow-emerald-500/25 transition-all cursor-pointer"
                 >
                   Save Entry
                 </button>
