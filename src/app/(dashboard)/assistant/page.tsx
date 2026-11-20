@@ -390,15 +390,15 @@ Would you like me to generate a 1-page summary of these findings to bring to you
   return (
     <div className="flex h-[calc(100dvh-170px)] lg:h-[calc(100vh-140px)] max-w-6xl mx-auto gap-4">
       {/* 1. Left Sidebar: Chat History & Clinical Sessions (Desktop) */}
-      <aside className="hidden md:flex w-72 flex-col rounded-3xl bg-white border border-slate-200/80 p-4 shadow-sm shrink-0">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <aside className="hidden md:flex w-72 flex-col rounded-3xl bg-white/80 dark:bg-[#0b1325]/85 border border-slate-200/80 dark:border-white/10 p-4 shadow-sm backdrop-blur-xl shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-white/10">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-emerald-600" />
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+            <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white">
               Consultation History
             </h2>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-full">
             {sessions.length}
           </span>
         </div>
@@ -427,25 +427,25 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                 }}
                 className={`w-full text-left p-3 rounded-2xl transition-all cursor-pointer ${
                   isActive
-                    ? "bg-emerald-50/90 border border-emerald-200/90 shadow-2xs"
-                    : "hover:bg-slate-50 border border-transparent"
+                    ? "bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200/90 dark:border-emerald-500/30 shadow-2xs"
+                    : "hover:bg-slate-100/70 dark:hover:bg-white/5 border border-transparent"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <MessageSquare
                     className={`h-3.5 w-3.5 shrink-0 ${
-                      isActive ? "text-emerald-700" : "text-slate-400"
+                      isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"
                     }`}
                   />
                   <span
                     className={`text-xs font-bold truncate block ${
-                      isActive ? "text-emerald-950 font-extrabold" : "text-slate-700"
+                      isActive ? "text-emerald-950 dark:text-emerald-300 font-extrabold" : "text-slate-700 dark:text-slate-200"
                     }`}
                   >
                     {sess.title}
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400 block mt-1 pl-5.5 font-medium">
+                <span className="text-[10px] text-slate-400 dark:text-slate-400 block mt-1 pl-5.5 font-medium">
                   {sess.date} · {sess.messages.length} messages
                 </span>
               </button>
@@ -454,22 +454,22 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         </div>
 
         {/* Clinical Safety Protocol Footnote */}
-        <div className="p-3 mt-2 rounded-2xl bg-slate-50 border border-slate-100 text-[10px] text-slate-500 leading-relaxed">
-          <span className="font-bold text-slate-700 block mb-0.5">Clinical Protocol</span>
+        <div className="p-3 mt-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          <span className="font-bold text-slate-700 dark:text-slate-200 block mb-0.5">Clinical Protocol</span>
           Responses cross-reference verified Quest Diagnostics lab panels and active prescriptions.
         </div>
       </aside>
 
       {/* 2. Main Chat Conversation Pane */}
-      <section className="flex flex-1 flex-col rounded-3xl bg-white border border-slate-200/80 shadow-sm overflow-hidden min-w-0">
+      <section className="flex flex-1 flex-col rounded-3xl bg-white/80 dark:bg-[#0b1325]/85 border border-slate-200/80 dark:border-white/10 shadow-sm backdrop-blur-xl overflow-hidden min-w-0">
         {/* Top Header Row with Depth Toggle & Session Info */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-slate-100 bg-white/95 backdrop-blur-md gap-2 shrink-0">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl gap-2 shrink-0">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
             {/* Mobile History Toggle */}
             <button
               type="button"
               onClick={() => setShowHistoryMobile(true)}
-              className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
+              className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/20"
               title="View History"
             >
               <Clock className="h-4 w-4" />
@@ -480,11 +480,11 @@ Would you like me to generate a 1-page summary of these findings to bring to you
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="text-xs sm:text-sm font-extrabold text-slate-900 truncate leading-tight">
+              <h1 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate leading-tight">
                 {currentSession.title}
               </h1>
-              <span className="text-[10px] sm:text-[11px] text-emerald-700 font-bold truncate flex items-center gap-1 mt-0.5">
-                <ShieldCheck className="h-3 w-3 text-emerald-600 shrink-0 inline" />
+              <span className="text-[10px] sm:text-[11px] text-emerald-700 dark:text-emerald-400 font-bold truncate flex items-center gap-1 mt-0.5">
+                <ShieldCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0 inline" />
                 <span className="truncate">{patientName} Verified Records</span>
               </span>
             </div>
@@ -492,14 +492,14 @@ Would you like me to generate a 1-page summary of these findings to bring to you
 
           {/* Right Action: Explanation Complexity Toggle & New Consultation */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex items-center rounded-full bg-slate-100 p-0.5 border border-slate-200 text-[10px] sm:text-[11px] font-bold">
+            <div className="flex items-center rounded-full bg-slate-100 dark:bg-white/10 p-0.5 border border-slate-200 dark:border-white/10 text-[10px] sm:text-[11px] font-bold">
               <button
                 type="button"
                 onClick={() => setExplanationDepth("plain")}
                 className={`px-2 sm:px-3 py-1 rounded-full transition-all cursor-pointer ${
                   explanationDepth === "plain"
-                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white dark:bg-emerald-500 text-slate-900 dark:text-white shadow-2xs font-extrabold"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
                 Plain
@@ -509,8 +509,8 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                 onClick={() => setExplanationDepth("clinical")}
                 className={`px-2 sm:px-3 py-1 rounded-full transition-all cursor-pointer ${
                   explanationDepth === "clinical"
-                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white dark:bg-emerald-500 text-slate-900 dark:text-white shadow-2xs font-extrabold"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
                 Clinical
@@ -530,19 +530,19 @@ Would you like me to generate a 1-page summary of these findings to bring to you
 
         {/* Mobile History Drawer Sheet (Bottom Sheet Modal) */}
         {showHistoryMobile && (
-          <div className="fixed inset-0 z-50 flex items-end lg:hidden bg-black/50 backdrop-blur-xs animate-in fade-in">
-            <div className="w-full max-h-[75vh] rounded-t-3xl bg-white p-4 space-y-3 border-t border-slate-200 shadow-2xl flex flex-col animate-in slide-in-from-bottom">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div className="fixed inset-0 z-50 flex items-end lg:hidden bg-black/60 backdrop-blur-xs animate-in fade-in">
+            <div className="w-full max-h-[75vh] rounded-t-3xl bg-white dark:bg-[#070d18] p-4 space-y-3 border-t border-slate-200 dark:border-white/10 shadow-2xl flex flex-col animate-in slide-in-from-bottom">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-emerald-600" />
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                  <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white">
                     Consultation History ({sessions.length})
                   </h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowHistoryMobile(false)}
-                  className="rounded-xl bg-slate-100 p-1.5 text-slate-500 hover:text-slate-800"
+                  className="rounded-xl bg-slate-100 dark:bg-white/10 p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -571,12 +571,12 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                     }}
                     className={`w-full text-left p-3 rounded-2xl border text-xs transition-all ${
                       sess.id === activeSessionId
-                        ? "bg-emerald-50 border-emerald-300 text-emerald-950 font-bold"
-                        : "bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100"
+                        ? "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-300 dark:border-emerald-500/30 text-emerald-950 dark:text-emerald-300 font-bold"
+                        : "bg-slate-50 dark:bg-white/5 border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
                     }`}
                   >
                     <span className="block truncate font-extrabold">{sess.title}</span>
-                    <span className="text-[10px] text-slate-400 block mt-1">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400 block mt-1">
                       {sess.date} · {sess.messages.length} messages
                     </span>
                   </button>
@@ -639,8 +639,8 @@ Would you like me to generate a 1-page summary of these findings to bring to you
               <div
                 className={`rounded-3xl p-4 sm:p-5 max-w-[85%] leading-relaxed space-y-3 shadow-xs ${
                   msg.role === "user"
-                    ? "bg-[#18261F] text-white font-medium rounded-br-xs"
-                    : "bg-white border border-slate-200/90 text-slate-800 rounded-bl-xs"
+                    ? "bg-emerald-600 dark:bg-emerald-600/90 text-white font-medium rounded-br-xs shadow-md shadow-emerald-600/20"
+                    : "bg-white dark:bg-[#070d18]/90 border border-slate-200/90 dark:border-white/10 text-slate-800 dark:text-slate-100 rounded-bl-xs"
                 }`}
               >
                 <div className="whitespace-pre-line text-xs font-normal leading-relaxed">
@@ -649,15 +649,15 @@ Would you like me to generate a 1-page summary of these findings to bring to you
 
                 {/* Grounded Citation Chips */}
                 {msg.citations && msg.citations.length > 0 && (
-                  <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-1.5">
+                  <div className="pt-3 border-t border-slate-100 dark:border-white/10 flex flex-wrap gap-1.5">
                     {msg.citations.map((cite, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => setActiveCitation(cite)}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 px-3 py-1 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-500/25 transition-colors cursor-pointer"
                       >
-                        <FileText className="h-3.5 w-3.5 text-emerald-700" />
+                        <FileText className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
                         <span className="truncate max-w-[180px]">{cite.document_title}</span>
                       </button>
                     ))}
@@ -666,8 +666,8 @@ Would you like me to generate a 1-page summary of these findings to bring to you
 
                 {/* Action Bar for Assistant Messages (Copy, Share, Add Note) */}
                 {msg.role === "assistant" && (
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-slate-400 text-[10px]">
-                    <span className="font-semibold text-emerald-700">
+                  <div className="pt-2 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-slate-400 dark:text-slate-400 text-[10px]">
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                       Grounded Medical Intelligence
                     </span>
 
@@ -675,13 +675,13 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                       <button
                         type="button"
                         onClick={() => handleCopy(msg.id, msg.content)}
-                        className="flex items-center gap-1 hover:text-slate-700 p-1 transition-colors"
+                        className="flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200 p-1 transition-colors"
                         title="Copy Response"
                       >
                         {copiedId === msg.id ? (
                           <>
-                            <Check className="h-3 w-3 text-emerald-600" />
-                            <span className="text-emerald-600 font-bold">Copied</span>
+                            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Copied</span>
                           </>
                         ) : (
                           <>
@@ -698,8 +698,8 @@ Would you like me to generate a 1-page summary of these findings to bring to you
           ))}
 
           {isTyping && (
-            <div className="flex gap-3 items-center text-xs text-slate-500 py-1">
-              <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+            <div className="flex gap-3 items-center text-xs text-slate-500 dark:text-slate-400 py-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
               <span className="font-medium">
@@ -711,7 +711,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         </div>
 
         {/* Suggested Follow-Up Prompt Chips */}
-        <div className="px-3 py-1.5 border-t border-slate-100 bg-slate-50/70 overflow-x-auto flex gap-1.5 hide-scrollbar shrink-0 max-w-full">
+        <div className="px-3 py-1.5 border-t border-slate-100 dark:border-white/10 bg-slate-50/70 dark:bg-[#070d18]/60 overflow-x-auto flex gap-1.5 hide-scrollbar shrink-0 max-w-full">
           {promptSuggestions.map((q, idx) => {
             const Icon = q.icon;
             return (
@@ -719,9 +719,9 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                 key={idx}
                 type="button"
                 onClick={() => handleSend(q.text)}
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white border border-slate-200/90 px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800 hover:bg-emerald-50/50 transition-all shadow-2xs shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white dark:bg-white/5 border border-slate-200/90 dark:border-white/10 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
               >
-                <Icon className="h-3.5 w-3.5 text-emerald-600" />
+                <Icon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>{q.text}</span>
               </button>
             );
@@ -730,15 +730,15 @@ Would you like me to generate a 1-page summary of these findings to bring to you
 
         {/* Active Attached Document Chip */}
         {attachedDoc && (
-          <div className="px-3 py-1.5 bg-emerald-50/80 border-t border-emerald-100 flex items-center justify-between text-xs font-bold text-emerald-900">
+          <div className="px-3 py-1.5 bg-emerald-50/80 dark:bg-emerald-500/15 border-t border-emerald-100 dark:border-emerald-500/30 flex items-center justify-between text-xs font-bold text-emerald-900 dark:text-emerald-300">
             <div className="flex items-center gap-2 truncate">
-              <FileText className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+              <FileText className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
               <span className="truncate">Attached: {attachedDoc.file_name}</span>
             </div>
             <button
               type="button"
               onClick={() => setAttachedDoc(null)}
-              className="text-slate-400 hover:text-slate-700 p-0.5 shrink-0"
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
@@ -747,15 +747,15 @@ Would you like me to generate a 1-page summary of these findings to bring to you
 
         {/* Document Attachment Picker Menu */}
         {showAttachMenu && (
-          <div className="p-3 border-t border-slate-200 bg-white space-y-2">
+          <div className="p-3 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#070d18] space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+              <span className="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
                 Select Document from Medical Vault
               </span>
               <button
                 type="button"
                 onClick={() => setShowAttachMenu(false)}
-                className="text-xs text-slate-400 hover:text-slate-700"
+                className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               >
                 Close
               </button>
@@ -774,9 +774,9 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                       setAttachedDoc(doc);
                       setShowAttachMenu(false);
                     }}
-                    className="flex items-center gap-2 p-2 rounded-xl border border-[var(--border)] hover:border-emerald-300 hover:bg-emerald-50/50 text-left transition-colors cursor-pointer"
+                    className="flex items-center gap-2 p-2 rounded-xl border border-[var(--border)] dark:border-white/10 hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-emerald-50/50 dark:hover:bg-white/5 text-left transition-colors cursor-pointer"
                   >
-                    <FileText className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span className="text-xs font-bold text-[var(--foreground)] truncate">
                       {doc.file_name.replace(".pdf", "").replace(/_/g, " ")}
                     </span>
@@ -788,7 +788,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         )}
 
         {/* Input Bar */}
-        <div className="p-2.5 sm:p-3 border-t border-slate-200/90 bg-white shrink-0">
+        <div className="p-2.5 sm:p-3 border-t border-slate-200/90 dark:border-white/10 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -802,8 +802,8 @@ Would you like me to generate a 1-page summary of these findings to bring to you
               onClick={() => setShowAttachMenu(!showAttachMenu)}
               className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border transition-colors shrink-0 cursor-pointer ${
                 attachedDoc
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                  : "border-slate-200/90 bg-slate-50 text-slate-500 hover:bg-slate-100"
+                  ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+                  : "border-slate-200/90 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-white"
               }`}
               title="Attach Document from Medical Vault"
             >
@@ -819,7 +819,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
                 }
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
-                className="h-10 sm:h-11 w-full rounded-2xl border border-slate-200/90 bg-slate-50/70 pl-3.5 pr-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white shadow-2xs"
+                className="h-10 sm:h-11 w-full rounded-2xl border border-slate-200/90 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 pl-3.5 pr-3 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-[#0c1527] shadow-2xs"
               />
             </div>
 
