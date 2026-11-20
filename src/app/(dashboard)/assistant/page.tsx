@@ -32,6 +32,7 @@ import {
 import { AIMessage, AICitation, AIConversation, MedicalDocument } from "@/types/medical";
 import { formatDate, cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { getDocuments } from "@/lib/supabase/services/documents";
 import {
   getConversations,
@@ -93,8 +94,16 @@ export default function AssistantPage() {
   const [attachedDoc, setAttachedDoc] = useState<MedicalDocument | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const [voiceLang, setVoiceLang] = useState<"bn-BD" | "en-US">("bn-BD");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (language === "bn") {
+      setVoiceLang("bn-BD");
+    }
+  }, [language]);
 
   const handleToggleVoice = () => {
     if (isListening) {
@@ -116,7 +125,7 @@ export default function AssistantPage() {
           const recognition = new SpeechRecognition();
           recognition.continuous = false;
           recognition.interimResults = true;
-          recognition.lang = "en-US";
+          recognition.lang = voiceLang;
 
           recognition.onstart = () => {
             setIsListening(true);
@@ -880,9 +889,13 @@ How can I assist you with your health records, lab panels, or medication schedul
               <input
                 placeholder={
                   isListening
-                    ? "Listening... Speak now into microphone..."
+                    ? voiceLang === "bn-BD"
+                      ? "শুনছি... বাংলায় কথা বলুন..."
+                      : "Listening in English... Speak now..."
                     : attachedDoc
                     ? `Ask anything about ${attachedDoc.file_name}...`
+                    : voiceLang === "bn-BD"
+                    ? "চিকিৎসা সংক্রান্ত যেকোনো প্রশ্ন বাংলায় বা ইংরেজিতে লিখুন..."
                     : "Ask about test trends, medication safety, or visit prep..."
                 }
                 value={inputQuery}
@@ -896,6 +909,41 @@ How can I assist you with your health records, lab panels, or medication schedul
               />
             </div>
 
+            {/* Voice Language Toggle Pill */}
+            <button
+              type="button"
+              onClick={() => setVoiceLang((prev) => (prev === "bn-BD" ? "en-US" : "bn-BD"))}
+              className="flex h-10 sm:h-11 items-center justify-center px-2 sm:px-2.5 rounded-2xl border border-slate-200/90 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shrink-0 cursor-pointer active:scale-95"
+              title={
+                voiceLang === "bn-BD"
+                  ? "ভয়েস ভাষা: বাংলা (ইংরেজি করতে ক্লিক করুন)"
+                  : "Voice Language: English (Click for বাংলা)"
+              }
+              aria-label="Toggle voice language"
+            >
+              <span
+                className={cn(
+                  "px-1 py-0.5 rounded text-[10px] transition-colors",
+                  voiceLang === "bn-BD"
+                    ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold"
+                    : "text-slate-400 font-medium"
+                )}
+              >
+                বাং
+              </span>
+              <span className="text-slate-300 dark:text-white/20 mx-0.5 text-[10px]">/</span>
+              <span
+                className={cn(
+                  "px-1 py-0.5 rounded text-[10px] transition-colors",
+                  voiceLang === "en-US"
+                    ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold"
+                    : "text-slate-400 font-medium"
+                )}
+              >
+                EN
+              </span>
+            </button>
+
             {/* Voice Input / Microphone Option Button */}
             <button
               type="button"
@@ -906,7 +954,11 @@ How can I assist you with your health records, lab panels, or medication schedul
                   ? "bg-rose-500 text-white border-rose-400 shadow-md shadow-rose-500/35 ring-2 ring-rose-400/50 animate-pulse scale-105"
                   : "border-slate-200/90 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-emerald-600 dark:hover:text-emerald-400"
               )}
-              title={isListening ? "Listening... Click to stop voice input" : "Voice Input (Microphone)"}
+              title={
+                isListening
+                  ? `Listening (${voiceLang === "bn-BD" ? "বাংলা" : "English"})... Click to stop`
+                  : `Voice Input (${voiceLang === "bn-BD" ? "বাংলা" : "English"})`
+              }
               aria-label="Voice Input"
             >
               {isListening ? (

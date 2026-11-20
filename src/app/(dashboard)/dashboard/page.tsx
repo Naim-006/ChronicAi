@@ -435,9 +435,7 @@ export default function DashboardPage() {
               <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
                 Health Overview
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Your health, meds, and visits in one glance
-              </p>
+             
             </div>
           </div>
 
