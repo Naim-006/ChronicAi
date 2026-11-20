@@ -191,19 +191,19 @@ export function MobileTopBar() {
   return (
     <>
       {/* Mobile / tablet top bar */}
-      <header className="sticky top-0 z-30 flex h-16 w-full max-w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/85 px-3.5 sm:px-6 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-30 flex h-16 w-full max-w-full items-center justify-between border-b border-slate-200/80 dark:border-white/[0.08] bg-white/85 dark:bg-[#070d18]/90 px-3.5 sm:px-6 backdrop-blur-xl lg:hidden">
         {/* Left Side: Menu Button + Page Context */}
         <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
           <button
             type="button"
             onClick={openDrawer}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/80 bg-white shadow-xs text-slate-800 hover:bg-slate-50 hover:border-emerald-300 transition-all active:scale-95 cursor-pointer"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-white/5 shadow-xs text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 hover:border-emerald-300 transition-all active:scale-95 cursor-pointer"
             title="Open Menu"
             aria-label="Open Menu"
           >
             {/* Modern Staggered Pill Menu Icon */}
             <svg
-              className="h-4.5 w-4.5 text-slate-800"
+              className="h-4.5 w-4.5 text-slate-800 dark:text-white"
               viewBox="0 0 20 20"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -215,7 +215,7 @@ export function MobileTopBar() {
           </button>
 
           <div className="min-w-0">
-            <h1 className="truncate text-sm sm:text-base font-extrabold text-[var(--foreground)] leading-tight">
+            <h1 className="truncate text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight">
               {isDashboard ? "ChronicAI" : pageTitle}
             </h1>
             <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
@@ -228,12 +228,12 @@ export function MobileTopBar() {
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Link
             href="/notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)] transition-colors hover:bg-[var(--mint-deep)]"
+            className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-200 dark:hover:bg-white/10"
             title="Notifications & Alerts"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
-            <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+            <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
           </Link>
 
           <ProfileDropdown />
@@ -241,9 +241,9 @@ export function MobileTopBar() {
       </header>
 
       {/* Desktop top bar */}
-      <header className="sticky top-0 z-30 hidden h-[76px] w-full items-center justify-between border-b border-white/[0.06] bg-[#070d18]/85 backdrop-blur-2xl px-8 lg:flex">
+      <header className="sticky top-0 z-30 hidden h-[76px] w-full items-center justify-between border-b border-slate-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-[#070d18]/85 backdrop-blur-2xl px-8 lg:flex">
         <div className="min-w-0">
-          <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             {isDashboard ? (
               <>
                 <span>
@@ -261,7 +261,7 @@ export function MobileTopBar() {
               pageTitle
             )}
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {isDashboard
               ? "Your health, our priority."
               : "Secure lifelong health workspace"}
@@ -274,13 +274,13 @@ export function MobileTopBar() {
             <input
               type="search"
               placeholder="Search records, meds, visits…"
-              className="h-10 w-80 rounded-full border border-white/10 bg-[#0c1527]/80 pl-10 pr-4 text-xs text-white outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400/50 focus:bg-[#0f1b32] focus:ring-2 focus:ring-emerald-500/20"
+              className="h-10 w-80 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-[#0c1527]/80 pl-10 pr-4 text-xs text-slate-900 dark:text-white outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500/50 focus:bg-white dark:focus:bg-[#0f1b32] focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
           <Link
             href="/notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#0c1527]/80 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-[#0c1527]/80 text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
             title="Notifications & Alerts"
             aria-label="Notifications"
           >
