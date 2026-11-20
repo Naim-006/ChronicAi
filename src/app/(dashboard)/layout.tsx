@@ -36,8 +36,8 @@ export default function DashboardLayout({
               <main
                 className={`mx-auto w-full max-w-6xl flex-1 px-3 sm:px-6 lg:px-8 page-transition ${
                   isAssistant
-                    ? "py-2 sm:py-4 pb-24 lg:pb-8"
-                    : "py-4 sm:py-6 pb-28 lg:pb-10"
+                    ? "py-2 sm:py-4 pb-32 sm:pb-28 lg:pb-8"
+                    : "py-3 sm:py-6 pb-36 sm:pb-32 lg:pb-12"
                 }`}
               >
                 {children}
