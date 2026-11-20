@@ -40,6 +40,8 @@ import {
   saveMessage,
 } from "@/lib/supabase/services/copilot";
 import { useRealtimeTable } from "@/hooks/useRealtime";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ChatSession {
   id: string;
@@ -699,9 +701,17 @@ How can I assist you with your health records, lab panels, or medication schedul
                     : "bg-white dark:bg-[#070d18]/90 border border-slate-200/90 dark:border-white/10 text-slate-800 dark:text-slate-100 rounded-bl-xs"
                 }`}
               >
-                <div className="whitespace-pre-line text-xs font-normal leading-relaxed">
-                  {msg.content}
-                </div>
+                {msg.role === "assistant" ? (
+                  <div className="text-xs font-normal leading-relaxed text-slate-800 dark:text-slate-100 space-y-2 [&>h3]:text-sm [&>h3]:font-bold [&>h3]:text-slate-900 dark:[&>h3]:text-white [&>h3]:mt-3 [&>h3]:mb-1 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:space-y-1 [&>p]:leading-relaxed [&_strong]:font-semibold [&_strong]:text-slate-900 dark:[&_strong]:text-emerald-300">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-line text-xs font-normal leading-relaxed">
+                    {msg.content}
+                  </div>
+                )}
 
                 {/* Grounded Citation Chips */}
                 {msg.citations && msg.citations.length > 0 && (
