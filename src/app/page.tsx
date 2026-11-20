@@ -12,6 +12,7 @@ import {
   FolderLock,
   HeartPulse,
   History,
+  Moon,
   Pill,
   Quote,
   ScanLine,
@@ -19,8 +20,10 @@ import {
   ShieldCheck,
   Sparkles,
   Stethoscope,
+  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/context/ThemeContext";
 
 const fadeUp = {
   initial: { opacity: 0, y: 28 },
@@ -123,8 +126,8 @@ function HealthRing({ percent }: { percent: number }) {
         cy="42"
         r={radius}
         fill="none"
-        stroke="#e2e8f0"
         strokeWidth="9"
+        className="stroke-slate-200 dark:stroke-white/10"
       />
       <circle
         cx="42"
@@ -149,7 +152,7 @@ function HealthRing({ percent }: { percent: number }) {
         x="42"
         y="40"
         textAnchor="middle"
-        className="fill-slate-900"
+        className="fill-slate-900 dark:fill-white"
         style={{ fontSize: 20, fontWeight: 800, fontFamily: "var(--font-display)" }}
       >
         {percent}%
@@ -158,7 +161,7 @@ function HealthRing({ percent }: { percent: number }) {
         x="42"
         y="54"
         textAnchor="middle"
-        className="fill-slate-400"
+        className="fill-slate-400 dark:fill-slate-400"
         style={{ fontSize: 8.5, fontWeight: 600 }}
       >
         ON TRACK
@@ -182,9 +185,9 @@ function DashboardPreview() {
             <p className="text-xs font-semibold text-[var(--muted-foreground)]">
               Good morning, Alex
             </p>
-            <p className="font-display text-lg font-bold">Here is your health today</p>
+            <p className="font-display text-lg font-bold text-slate-900 dark:text-white">Here is your health today</p>
           </div>
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
             <Activity className="h-4.5 w-4.5" />
           </span>
         </div>
@@ -192,19 +195,19 @@ function DashboardPreview() {
         <div className="mt-4 flex items-center gap-5">
           <HealthRing percent={88} />
           <div className="flex-1 space-y-2.5">
-            <div className="rounded-2xl bg-emerald-50/80 px-3.5 py-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+            <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-500/10 px-3.5 py-2.5 border border-transparent dark:border-emerald-500/20">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
                 Fasting glucose
               </p>
-              <p className="font-display text-lg font-bold text-slate-900">
+              <p className="font-display text-lg font-bold text-slate-900 dark:text-white">
                 118 <span className="text-xs font-medium text-[var(--muted-foreground)]">mg/dL</span>
               </p>
             </div>
-            <div className="rounded-2xl bg-sky-50/80 px-3.5 py-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-sky-600">
+            <div className="rounded-2xl bg-sky-50/80 dark:bg-sky-500/10 px-3.5 py-2.5 border border-transparent dark:border-sky-500/20">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-400">
                 Blood pressure
               </p>
-              <p className="font-display text-lg font-bold text-slate-900">
+              <p className="font-display text-lg font-bold text-slate-900 dark:text-white">
                 122/78 <span className="text-xs font-medium text-[var(--muted-foreground)]">mmHg</span>
               </p>
             </div>
@@ -219,17 +222,19 @@ function DashboardPreview() {
           ].map((row) => (
             <div
               key={row.label}
-              className="flex items-center gap-3 rounded-2xl border border-[var(--border)]/70 bg-white/80 px-3.5 py-2.5"
+              className="flex items-center gap-3 rounded-2xl border border-[var(--border)]/70 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] px-3.5 py-2.5"
             >
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-xl ${
-                  row.done ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                  row.done
+                    ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400"
                 }`}
               >
                 <row.icon className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-slate-800">{row.label}</p>
+                <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">{row.label}</p>
                 <p className="text-[10px] font-medium text-[var(--muted-foreground)]">{row.sub}</p>
               </div>
               {row.done ? (
@@ -250,11 +255,11 @@ function DashboardPreview() {
           transition={{ duration: 0.7, delay: 0.9 }}
           className="soft-card-lift flex items-center gap-3 rounded-2xl px-4 py-3"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm shadow-emerald-500/30">
             <CheckCircle2 className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-xs font-bold text-slate-900">Dose logged</p>
+            <p className="text-xs font-bold text-slate-900 dark:text-white">Dose logged</p>
             <p className="text-[10px] font-medium text-[var(--muted-foreground)]">
               Metformin · 8:00 AM
             </p>
@@ -271,22 +276,22 @@ function DashboardPreview() {
           className="soft-card-lift w-52 rounded-2xl p-4 sm:w-60"
         >
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-white shadow-sm shadow-emerald-500/30">
               <Bot className="h-4 w-4" />
             </span>
-            <p className="text-[11px] font-bold text-slate-900">AI answer</p>
+            <p className="text-[11px] font-bold text-slate-900 dark:text-white">AI answer</p>
           </div>
           <div className="mt-2 flex gap-1.5">
             <Quote className="h-3 w-3 shrink-0 text-emerald-500" />
-            <p className="text-[11px] leading-snug text-slate-600">
+            <p className="text-[11px] leading-snug text-slate-600 dark:text-slate-300">
               “Your HbA1c is 6.8%, down from 7.4% in November.”
             </p>
           </div>
           <div className="mt-2.5 flex gap-1.5">
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
+            <span className="rounded-full bg-emerald-50 dark:bg-emerald-500/20 border border-transparent dark:border-emerald-500/30 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
               Lab PDF · p.2
             </span>
-            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[9px] font-bold text-sky-700">
+            <span className="rounded-full bg-sky-50 dark:bg-sky-500/20 border border-transparent dark:border-sky-500/30 px-2 py-0.5 text-[9px] font-bold text-sky-700 dark:text-sky-300">
               Timeline
             </span>
           </div>
@@ -301,11 +306,11 @@ function DashboardPreview() {
           transition={{ duration: 0.7, delay: 1.3 }}
           className="soft-card-lift flex items-center gap-3 rounded-2xl px-4 py-3"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-transparent dark:border-violet-500/20">
             <ScanLine className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-xs font-bold text-slate-900">Record scanned</p>
+            <p className="text-xs font-bold text-slate-900 dark:text-white">Record scanned</p>
             <p className="text-[10px] font-medium text-[var(--muted-foreground)]">
               12 fields extracted · verified
             </p>
@@ -317,17 +322,19 @@ function DashboardPreview() {
 }
 
 export default function LandingPage() {
+  const { resolvedTheme, toggleTheme } = useTheme();
+
   return (
-    <div className="mint-wash min-h-screen overflow-x-hidden bg-[var(--background)]">
+    <div className="mint-wash min-h-screen overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
       {/* Ambient blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="animate-blob absolute -left-32 top-24 h-96 w-96 rounded-full bg-emerald-300/25 blur-3xl" />
-        <div className="animate-blob-slow absolute -right-24 top-1/3 h-[28rem] w-[28rem] rounded-full bg-teal-200/30 blur-3xl" />
-        <div className="animate-blob absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-emerald-200/20 blur-3xl" style={{ animationDelay: "4s" }} />
+        <div className="animate-blob absolute -left-32 top-24 h-96 w-96 rounded-full bg-emerald-300/25 dark:bg-emerald-500/10 blur-3xl" />
+        <div className="animate-blob-slow absolute -right-24 top-1/3 h-[28rem] w-[28rem] rounded-full bg-teal-200/30 dark:bg-teal-500/10 blur-3xl" />
+        <div className="animate-blob absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-emerald-200/20 dark:bg-emerald-500/5 blur-3xl" style={{ animationDelay: "4s" }} />
       </div>
 
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-[var(--border)]/60 bg-white/75 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[var(--border)]/60 dark:border-white/10 bg-white/75 dark:bg-[#070d18]/85 backdrop-blur-xl">
         <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
             <motion.span
@@ -336,8 +343,8 @@ export default function LandingPage() {
             >
               <Activity className="h-5 w-5" />
             </motion.span>
-            <span className="font-display text-lg font-bold tracking-tight">
-              Chronic<span className="text-emerald-600">AI</span>
+            <span className="font-display text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+              Chronic<span className="text-emerald-600 dark:text-emerald-400">AI</span>
             </span>
           </Link>
 
@@ -354,10 +361,23 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="h-9 w-9 rounded-full p-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              aria-label="Toggle theme"
+            >
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-4 w-4 text-amber-400" />
+              ) : (
+                <Moon className="h-4 w-4 text-slate-600" />
+              )}
+            </Button>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
-            <Button size="sm" className="rounded-full px-5" asChild>
+            <Button size="sm" className="rounded-full px-5 shadow-sm shadow-emerald-600/20" asChild>
               <Link href="/signup">Get started</Link>
             </Button>
           </div>
@@ -368,16 +388,14 @@ export default function LandingPage() {
       <section className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-2 lg:pt-20">
         <div className="dot-grid absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_60%_60%_at_30%_40%,black,transparent)]" />
         <div>
-        
-
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="mt-6 font-display text-4xl font-bold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]"
+            className="mt-6 font-display text-4xl font-bold leading-[1.06] tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-[3.4rem]"
           >
             All your health records.{" "}
-            <span className="relative inline-block text-emerald-600">
+            <span className="relative inline-block text-emerald-600 dark:text-emerald-400">
               One calm place.
               <svg
                 className="absolute -bottom-2 left-0 w-full"
@@ -416,7 +434,7 @@ export default function LandingPage() {
             className="mt-9 flex flex-col gap-3 sm:flex-row"
           >
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Button size="lg" className="h-12 w-full rounded-full px-8 text-base sm:w-auto" asChild>
+              <Button size="lg" className="h-12 w-full rounded-full px-8 text-base shadow-md shadow-emerald-600/25 sm:w-auto" asChild>
                 <Link href="/signup">
                   Create free account
                   <ArrowRight className="h-4 w-4" />
@@ -427,7 +445,7 @@ export default function LandingPage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="h-12 w-full rounded-full border-[var(--border)] bg-white/70 px-8 text-base backdrop-blur sm:w-auto"
+                className="h-12 w-full rounded-full border-[var(--border)] dark:border-white/15 bg-white/70 dark:bg-white/[0.05] text-[var(--foreground)] px-8 text-base backdrop-blur sm:w-auto hover:bg-white/90 dark:hover:bg-white/10"
                 asChild
               >
                 <a href="#how-it-works">See how it works</a>
@@ -442,15 +460,15 @@ export default function LandingPage() {
             className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-[var(--muted-foreground)]"
           >
             <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               Encrypted storage
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <ScanLine className="h-3.5 w-3.5 text-emerald-600" />
+              <ScanLine className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               AI answers show their sources
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <HeartPulse className="h-3.5 w-3.5 text-emerald-600" />
+              <HeartPulse className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               You control who sees your data
             </span>
           </motion.div>
@@ -460,7 +478,7 @@ export default function LandingPage() {
       </section>
 
       {/* Marquee */}
-      <section className="relative border-y border-[var(--border)]/60 bg-white/70 py-4 backdrop-blur">
+      <section className="relative border-y border-[var(--border)]/60 dark:border-white/10 bg-white/70 dark:bg-[#070d18]/80 py-4 backdrop-blur">
         <div className="flex overflow-hidden">
           <div className="animate-marquee flex shrink-0 items-center gap-8 pr-8">
             {[...marqueeItems, ...marqueeItems].map((item, i) => (
@@ -469,7 +487,7 @@ export default function LandingPage() {
                 className="flex items-center gap-8 whitespace-nowrap text-sm font-semibold text-[var(--muted-foreground)]"
               >
                 {item}
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 dark:bg-emerald-500" />
               </span>
             ))}
           </div>
@@ -479,12 +497,12 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex rounded-full bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-700">
+          <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-transparent dark:border-emerald-500/25 px-3.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             What you get
           </span>
-          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
             Everything your health produces,{" "}
-            <span className="text-emerald-600">in one app</span>
+            <span className="text-emerald-600 dark:text-emerald-400">in one app</span>
           </h2>
           <p className="mt-4 text-[var(--muted-foreground)]">
             No more digging through folders of PDFs. No more guessing what your
@@ -503,11 +521,11 @@ export default function LandingPage() {
               whileHover={{ y: -6 }}
               className="soft-card hover-lift group relative overflow-hidden p-6"
             >
-              <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <span className="relative mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-50 dark:bg-emerald-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <span className="relative mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 transition-colors group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/25">
                 <feature.icon className="h-5 w-5" />
               </span>
-              <h3 className="relative font-display text-base font-bold">{feature.title}</h3>
+              <h3 className="relative font-display text-base font-bold text-slate-900 dark:text-white">{feature.title}</h3>
               <p className="relative mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]">
                 {feature.description}
               </p>
@@ -517,13 +535,13 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="relative border-y border-[var(--border)]/60 bg-white/60 backdrop-blur">
+      <section id="how-it-works" className="relative border-y border-[var(--border)]/60 dark:border-white/10 bg-white/60 dark:bg-[#070d18]/70 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
-            <span className="inline-flex rounded-full bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-700">
+            <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-transparent dark:border-emerald-500/25 px-3.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
               How it works
             </span>
-            <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="mt-4 font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
               Three steps, then it runs itself
             </h2>
           </motion.div>
@@ -532,17 +550,17 @@ export default function LandingPage() {
             {...stagger}
             className="relative mt-14 grid gap-10 md:grid-cols-3 md:gap-8"
           >
-            <div className="absolute left-0 right-0 top-7 hidden border-t-2 border-dashed border-emerald-200 md:block" />
+            <div className="absolute left-0 right-0 top-7 hidden border-t-2 border-dashed border-emerald-200 dark:border-emerald-500/25 md:block" />
             {steps.map((item) => (
               <motion.div
                 key={item.step}
                 {...fadeUpChild}
                 className="relative text-center md:text-left"
               >
-                <span className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-200 bg-white font-display text-xl font-bold text-emerald-600 shadow-[var(--shadow-soft)] md:mx-0">
+                <span className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-white dark:bg-[#0d1726] font-display text-xl font-bold text-emerald-600 dark:text-emerald-400 shadow-[var(--shadow-soft)] md:mx-0">
                   {item.step}
                 </span>
-                <h3 className="mt-5 font-display text-lg font-bold">{item.title}</h3>
+                <h3 className="mt-5 font-display text-lg font-bold text-slate-900 dark:text-white">{item.title}</h3>
                 <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-[var(--muted-foreground)] md:mx-0">
                   {item.description}
                 </p>
@@ -556,7 +574,7 @@ export default function LandingPage() {
       <section id="safety" className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <motion.div
           {...fadeUp}
-          className="forest-surface relative overflow-hidden rounded-[2rem] px-6 py-14 sm:px-12"
+          className="forest-surface relative overflow-hidden rounded-[2rem] border border-white/10 dark:border-emerald-500/20 px-6 py-14 sm:px-12 shadow-xl"
         >
           <div className="dot-grid-light absolute inset-0 opacity-60" />
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/25 blur-3xl" />
@@ -611,11 +629,11 @@ export default function LandingPage() {
       <section className="relative mx-auto max-w-6xl px-4 pb-24 sm:px-6">
         <motion.div
           {...fadeUp}
-          className="relative overflow-hidden rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-6 py-16 text-center sm:px-12"
+          className="relative overflow-hidden rounded-[2rem] border border-emerald-200 dark:border-emerald-500/25 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-[#0b1c1e] dark:via-[#070d18] dark:to-[#091524] px-6 py-16 text-center sm:px-12 shadow-sm dark:shadow-2xl dark:shadow-emerald-950/20"
         >
-          <div className="pointer-events-none absolute -top-16 left-1/2 h-56 w-[36rem] -translate-x-1/2 rounded-full bg-emerald-300/30 blur-3xl" />
+          <div className="pointer-events-none absolute -top-16 left-1/2 h-56 w-[36rem] -translate-x-1/2 rounded-full bg-emerald-300/30 dark:bg-emerald-500/15 blur-3xl" />
           <div className="relative">
-            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
               Stop digging through folders of health papers.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[var(--muted-foreground)]">
@@ -623,7 +641,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                <Button size="lg" className="h-12 w-full rounded-full px-8 sm:w-auto" asChild>
+                <Button size="lg" className="h-12 w-full rounded-full px-8 shadow-md shadow-emerald-600/25 sm:w-auto" asChild>
                   <Link href="/signup">
                     Get started free
                     <ArrowRight className="h-4 w-4" />
@@ -633,7 +651,7 @@ export default function LandingPage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="h-12 w-full rounded-full border-[var(--border)] bg-white/70 px-8 sm:w-auto"
+                className="h-12 w-full rounded-full border-[var(--border)] dark:border-white/15 bg-white/70 dark:bg-white/[0.05] text-[var(--foreground)] px-8 sm:w-auto hover:bg-white/90 dark:hover:bg-white/10"
                 asChild
               >
                 <Link href="/login">I already have an account</Link>
@@ -644,12 +662,12 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-[var(--border)]/60 bg-white/70 py-10 backdrop-blur">
+      <footer className="relative border-t border-[var(--border)]/60 dark:border-white/10 bg-white/70 dark:bg-[#050b14]/90 py-10 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-xs text-[var(--muted-foreground)] sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-emerald-600" />
+            <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <span className="font-display font-bold text-[var(--foreground)]">
-              Chronic<span className="text-emerald-600">AI</span>
+              Chronic<span className="text-emerald-600 dark:text-emerald-400">AI</span>
             </span>
             <span>· All your health records, one calm place.</span>
           </div>
