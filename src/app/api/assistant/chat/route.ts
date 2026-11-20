@@ -147,6 +147,54 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // -------------------------------------------------------------
+    // RAG Pipeline: Vector semantic search on patient docs & guidelines
+    // -------------------------------------------------------------
+    let retrievedDocChunks: any[] = [];
+    let retrievedGuidelines: any[] = [];
+
+    try {
+      const embedUrl = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`;
+      const embedRes = await fetch(embedUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "models/text-embedding-004",
+          content: { parts: [{ text: query.slice(0, 1024) }] },
+          outputDimensionality: 768,
+        }),
+      });
+
+      if (embedRes.ok) {
+        const embedData = await embedRes.json();
+        const queryVector = embedData.embedding?.values;
+        if (queryVector && queryVector.length === 768) {
+          const [docRpc, kbRpc] = await Promise.all([
+            supabase.rpc("match_patient_documents", {
+              query_embedding: JSON.stringify(queryVector) as any,
+              match_threshold: 0.35,
+              match_count: 4,
+              filter_document_id: attachedDocId || null,
+            }),
+            supabase.rpc("match_medical_knowledge", {
+              query_embedding: JSON.stringify(queryVector) as any,
+              match_threshold: 0.35,
+              match_count: 3,
+            }),
+          ]);
+
+          if (docRpc.data && Array.isArray(docRpc.data)) {
+            retrievedDocChunks = docRpc.data;
+          }
+          if (kbRpc.data && Array.isArray(kbRpc.data)) {
+            retrievedGuidelines = kbRpc.data;
+          }
+        }
+      }
+    } catch (ragErr) {
+      console.warn("RAG retrieval skipped or failed:", ragErr);
+    }
+
     // Prepare patient dossier context for Gemini
     const patientDossier = {
       patient_name: profile?.full_name || "Patient",
@@ -171,6 +219,18 @@ export async function POST(req: NextRequest) {
         is_abnormal: m.is_abnormal,
         recorded_at: m.recorded_at,
         notes: m.notes,
+      })),
+      retrieved_semantic_evidence: retrievedDocChunks.map((c: any) => ({
+        document_id: c.document_id,
+        content: c.chunk_content,
+        similarity: c.similarity,
+        metadata: c.metadata,
+      })),
+      clinical_guidelines_evidence: retrievedGuidelines.map((g: any) => ({
+        source: g.source_title,
+        topic: g.topic,
+        guideline: g.chunk_content,
+        similarity: g.similarity,
       })),
       vault_documents: documents.map((d: any) => ({
         id: d.id,

@@ -558,6 +558,72 @@ export default function VaultPage() {
         link_label: "View Timeline",
       });
 
+      // 9. CENTRAL HUB & RAG: Vector Embeddings Generation (pgvector)
+      try {
+        const storedKey =
+          (typeof window !== "undefined" ? localStorage.getItem("chronicai_gemini_key") : null) ||
+          (profile?.preferences as any)?.gemini_api_key ||
+          "";
+
+        const chunks: string[] = [];
+        chunks.push(
+          `Document: ${savedDoc.file_name} | Type: ${savedDoc.category} | Date: ${savedDoc.document_date} | Facility: ${savedDoc.facility_name} | Doctor: ${savedDoc.doctor_name}\nSummary: ${savedDoc.summary}`
+        );
+
+        if (editLabs.length > 0) {
+          const labsText = editLabs
+            .map(
+              (l) =>
+                `- ${l.test_name}: ${l.value} ${l.unit} (Reference: ${l.reference_range})${l.is_abnormal ? " [ABNORMAL]" : ""}`
+            )
+            .join("\n");
+          chunks.push(`Lab Results for ${savedDoc.file_name} (${savedDoc.document_date}):\n${labsText}`);
+        }
+
+        if (editMeds.length > 0) {
+          const medsText = editMeds
+            .map(
+              (m) =>
+                `- ${m.name}${m.generic_name ? ` (${m.generic_name})` : ""}: ${m.dosage}, ${m.frequency}, Route: ${m.route || "oral"}. Instructions: ${m.instructions || "Take as prescribed"}`
+            )
+            .join("\n");
+          chunks.push(`Prescribed Medications for ${savedDoc.file_name} (${savedDoc.document_date}):\n${medsText}`);
+        }
+
+        if (editDiagnoses.length > 0) {
+          const diagsText = editDiagnoses
+            .map((d) => `- ${d.name}${d.icd10 ? ` [ICD-10: ${d.icd10}]` : ""}: ${d.status || "active"}`)
+            .join("\n");
+          chunks.push(`Diagnoses and Clinical Findings in ${savedDoc.file_name}:\n${diagsText}`);
+        }
+
+        if (chunks.length > 0) {
+          fetch("/api/rag/embed", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-gemini-api-key": storedKey,
+            },
+            body: JSON.stringify({
+              documentId: savedDoc.id,
+              userId: effectiveUserId,
+              chunks,
+              metadata: {
+                category: savedDoc.category,
+                facility: savedDoc.facility_name,
+                doctor: savedDoc.doctor_name,
+                date: savedDoc.document_date,
+              },
+              apiKey: storedKey || undefined,
+            }),
+          }).catch((err) => {
+            console.warn("Background vector embedding notification:", err);
+          });
+        }
+      } catch (vectorErr) {
+        console.warn("Could not prepare vector chunks for RAG indexing:", vectorErr);
+      }
+
       setDocuments((prev) => [savedDoc, ...prev]);
       setExtractedRecords((prev) => [savedExtracted, ...prev]);
       setSelectedUploadFile(null);

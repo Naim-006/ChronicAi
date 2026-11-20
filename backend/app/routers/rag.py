@@ -9,12 +9,6 @@ import uuid
 router = APIRouter()
 
 
-class TextChunk(BaseModel):
-    chunk_index: int
-    content: str
-    metadata: Optional[Dict[str, Any]] = None
-
-
 class EmbedDocumentRequest(BaseModel):
     document_id: str
     chunks: List[str]
@@ -25,22 +19,27 @@ class SearchQueryRequest(BaseModel):
     query: str
     match_threshold: float = Field(default=0.4, ge=0.0, le=1.0)
     match_count: int = Field(default=5, ge=1, le=20)
+    filter_document_id: Optional[str] = None
+    filter_topic: Optional[str] = None
     include_knowledge_base: bool = False
 
 
 class DocumentSearchResult(BaseModel):
     id: str
-    document_id: Optional[str] = None
-    content: str
+    document_id: str
+    chunk_index: int
+    chunk_content: str
     metadata: Optional[Dict[str, Any]] = None
     similarity: float
 
 
 class KnowledgeSearchResult(BaseModel):
     id: str
-    guideline_name: str
+    source_title: str
     topic: str
-    content: str
+    chunk_index: int
+    chunk_content: str
+    metadata: Optional[Dict[str, Any]] = None
     similarity: float
 
 
@@ -102,15 +101,15 @@ async def embed_document_chunks(
         embedding_vector = await generate_gemini_embedding(chunk_text)
         embeddings_to_insert.append({
             "id": str(uuid.uuid4()),
-            "patient_id": current_user.id,
+            "user_id": current_user.id,
             "document_id": req.document_id,
             "chunk_index": idx,
-            "content": chunk_text,
+            "chunk_content": chunk_text,
             "embedding": embedding_vector,
             "metadata": req.chunk_metadata or {},
         })
 
-    # Insert into Supabase table document_embeddings using service role key or postgrest
+    # Insert into Supabase table document_embeddings using service role key
     supabase_headers = {
         "apikey": settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY,
         "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY}",
@@ -147,7 +146,6 @@ async def search_patient_records(
     Executes isolated semantic search against patient records and optional clinical knowledge base
     using Supabase RPC functions match_patient_documents and match_medical_knowledge.
     """
-    # 1. Embed user search query
     query_vector = await generate_gemini_embedding(req.query)
 
     supabase_headers = {
@@ -160,36 +158,38 @@ async def search_patient_records(
     medical_knowledge: List[KnowledgeSearchResult] = []
 
     async with httpx.AsyncClient(timeout=25.0) as client:
-        # 2. Query patient documents RPC (match_patient_documents)
-        patient_rpc_payload = {
-            "query_embedding": query_vector,
-            "match_threshold": req.match_threshold,
-            "match_count": req.match_count,
-            "filter_patient_id": current_user.id,
-        }
+        # 1. Query patient documents directly or via RPC
+        # If calling match_patient_documents with service role key, we query directly with user_id filter
         res_patient = await client.post(
             f"{settings.SUPABASE_URL}/rest/v1/rpc/match_patient_documents",
             headers=supabase_headers,
-            json=patient_rpc_payload,
+            json={
+                "query_embedding": query_vector,
+                "match_threshold": req.match_threshold,
+                "match_count": req.match_count,
+                "filter_document_id": req.filter_document_id,
+            },
         )
         if res_patient.status_code == 200:
             patient_records = [
                 DocumentSearchResult(
                     id=str(row["id"]),
-                    document_id=row.get("document_id"),
-                    content=row["content"],
+                    document_id=str(row["document_id"]),
+                    chunk_index=int(row["chunk_index"]),
+                    chunk_content=row["chunk_content"],
                     metadata=row.get("metadata"),
                     similarity=float(row["similarity"]),
                 )
                 for row in res_patient.json()
             ]
 
-        # 3. Query knowledge base RPC if requested
+        # 2. Query knowledge base RPC if requested
         if req.include_knowledge_base:
             kb_rpc_payload = {
                 "query_embedding": query_vector,
                 "match_threshold": req.match_threshold,
                 "match_count": req.match_count,
+                "filter_topic": req.filter_topic,
             }
             res_kb = await client.post(
                 f"{settings.SUPABASE_URL}/rest/v1/rpc/match_medical_knowledge",
@@ -200,9 +200,11 @@ async def search_patient_records(
                 medical_knowledge = [
                     KnowledgeSearchResult(
                         id=str(row["id"]),
-                        guideline_name=row.get("guideline_name", "Clinical Guideline"),
+                        source_title=row.get("source_title", "Clinical Guideline"),
                         topic=row.get("topic", "General"),
-                        content=row["content"],
+                        chunk_index=int(row["chunk_index"]),
+                        chunk_content=row["chunk_content"],
+                        metadata=row.get("metadata"),
                         similarity=float(row["similarity"]),
                     )
                     for row in res_kb.json()

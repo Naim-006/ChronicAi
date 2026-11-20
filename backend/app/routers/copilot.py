@@ -37,11 +37,13 @@ class CopilotConsultResponse(BaseModel):
 
 
 class IngestGuidelineRequest(BaseModel):
-    guideline_name: str
+    source_title: str
     topic: str
-    content: str
-    evidence_level: Optional[str] = "Level A (RCT / Systematic Review)"
+    chunk_content: str
     source_url: Optional[str] = None
+    chunk_index: Optional[int] = 0
+    token_count: Optional[int] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 @router.post("/copilot/consult", response_model=CopilotConsultResponse, tags=["Clinical Copilot"])
@@ -51,7 +53,7 @@ async def consult_copilot(
 ):
     """
     RAG-grounded clinical AI copilot.
-    1. Embeds patient inquiry.
+    1. Embeds patient inquiry via text-embedding-004.
     2. Retrieves isolated patient EHR records via match_patient_documents RPC.
     3. Retrieves clinical guidelines via match_medical_knowledge RPC.
     4. Synthesizes medical guidance with Gemini 2.5 Flash.
@@ -83,18 +85,18 @@ async def consult_copilot(
                 "query_embedding": query_vector,
                 "match_threshold": 0.35,
                 "match_count": 4,
-                "filter_patient_id": current_user.id,
             },
         )
         if res_patient.status_code == 200:
             for row in res_patient.json():
-                patient_context_lines.append(f"- [Patient Record]: {row['content']}")
+                content = row.get("chunk_content", "")
+                patient_context_lines.append(f"- [Patient Record]: {content}")
                 grounded_sources.append(
                     CopilotSource(
                         source_type="patient_record",
                         title=row.get("metadata", {}).get("category", "Medical Record"),
-                        content_snippet=row["content"][:200] + "...",
-                        similarity=float(row["similarity"]),
+                        content_snippet=content[:200] + "...",
+                        similarity=float(row.get("similarity", 0)),
                     )
                 )
 
@@ -110,13 +112,14 @@ async def consult_copilot(
         )
         if res_kb.status_code == 200:
             for row in res_kb.json():
-                knowledge_context_lines.append(f"- [Guideline - {row['topic']}]: {row['content']}")
+                content = row.get("chunk_content", "")
+                knowledge_context_lines.append(f"- [Guideline - {row.get('topic')}]: {content}")
                 grounded_sources.append(
                     CopilotSource(
                         source_type="clinical_guideline",
-                        title=f"{row.get('guideline_name')} ({row.get('topic')})",
-                        content_snippet=row["content"][:200] + "...",
-                        similarity=float(row["similarity"]),
+                        title=f"{row.get('source_title')} ({row.get('topic')})",
+                        content_snippet=content[:200] + "...",
+                        similarity=float(row.get("similarity", 0)),
                     )
                 )
 
@@ -190,7 +193,7 @@ async def ingest_clinical_guideline(
     Ingests official clinical practice guidelines (e.g. ADA Diabetes, ACC/AHA Hypertension)
     into the vector database (medical_knowledge_embeddings).
     """
-    embedding_vector = await generate_gemini_embedding(f"{req.topic}: {req.content}")
+    embedding_vector = await generate_gemini_embedding(f"{req.topic}: {req.chunk_content}")
 
     supabase_headers = {
         "apikey": settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY,
@@ -200,12 +203,14 @@ async def ingest_clinical_guideline(
 
     row_data = {
         "id": str(uuid.uuid4()),
-        "guideline_name": req.guideline_name,
-        "topic": req.topic,
-        "content": req.content,
-        "embedding": embedding_vector,
-        "evidence_level": req.evidence_level,
+        "source_title": req.source_title,
         "source_url": req.source_url,
+        "topic": req.topic,
+        "chunk_index": req.chunk_index or 0,
+        "chunk_content": req.chunk_content,
+        "token_count": req.token_count,
+        "embedding": embedding_vector,
+        "metadata": req.metadata or {},
     }
 
     async with httpx.AsyncClient(timeout=20.0) as client:
@@ -217,4 +222,4 @@ async def ingest_clinical_guideline(
         if res.status_code not in (200, 201):
             raise HTTPException(status_code=502, detail=f"Database insert error: {res.text}")
 
-    return {"status": "success", "id": row_data["id"], "guideline": req.guideline_name}
+    return {"status": "success", "id": row_data["id"], "source_title": req.source_title}
