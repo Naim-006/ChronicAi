@@ -28,7 +28,7 @@ const navItems = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Medical Records", href: "/vault", icon: FolderArchive },
   { name: "Medical Timeline", href: "/timeline", icon: Clock },
-  { name: "Clinical AI", href: "/assistant", icon: Stethoscope },
+  { name: "Clinical Copilot", href: "/assistant", icon: Stethoscope },
   { name: "Medications", href: "/medications", icon: Pill },
   { name: "Appointments", href: "/appointments", icon: CalendarDays },
   { name: "Health Analytics", href: "/metrics", icon: LineChart },

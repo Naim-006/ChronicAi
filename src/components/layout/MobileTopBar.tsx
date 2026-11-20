@@ -174,7 +174,7 @@ export function MobileTopBar() {
     "/dashboard": t("nav.home", "Home"),
     "/vault": t("nav.records", "Medical Records"),
     "/timeline": t("nav.timeline", "Timeline"),
-    "/assistant": t("nav.copilot", "Clinical AI"),
+    "/assistant": t("nav.copilot", "Clinical Copilot"),
     "/appointments": t("nav.appointments", "Appointments"),
     "/medications": t("nav.meds", "Medications"),
     "/metrics": t("nav.analytics", "Health Analytics"),

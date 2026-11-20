@@ -38,7 +38,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
     items: [
       { name: "Home", href: "/dashboard", icon: Home },
       {
-        name: "Clinical AI",
+        name: "Clinical Copilot",
         href: "/assistant",
         icon: Stethoscope,
         badge: "+ New",
@@ -97,7 +97,7 @@ export function DesktopNavRail() {
   const getLocalizedName = (href: string, fallback: string) => {
     switch (href) {
       case "/dashboard": return t("nav.home", fallback);
-      case "/assistant": return t("nav.copilot", "Clinical AI");
+      case "/assistant": return t("nav.copilot", "Clinical Copilot");
       case "/vault": return t("nav.records", "Medical Records");
       case "/timeline": return t("nav.timeline", "Medical Timeline");
       case "/chronic-care": return t("nav.chronic_care", "Chronic Care");

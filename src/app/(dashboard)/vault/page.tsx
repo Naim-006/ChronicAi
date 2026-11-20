@@ -36,6 +36,8 @@ import { formatDate } from "@/lib/utils";
 import { MedicalDocument, ExtractedRecord, DocumentCategory, MetricType } from "@/types/medical";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { createClient } from "@/lib/supabase/client";
 import {
   getDocuments,
   getExtractedRecords,
@@ -84,6 +86,40 @@ interface ExtractedDiagItem {
   notes?: string;
 }
 
+// Smart Clinical Instruction Translator for Prescription Regimens
+function formatMedInstruction(instruction?: string, lang: string = "en"): string {
+  if (!instruction) return "";
+  if (lang === "bn") return instruction;
+
+  let translated = instruction
+    .replace(/০/g, "0")
+    .replace(/১/g, "1")
+    .replace(/২/g, "2")
+    .replace(/৩/g, "3")
+    .replace(/৪/g, "4")
+    .replace(/৫/g, "5")
+    .replace(/৬/g, "6")
+    .replace(/৭/g, "7")
+    .replace(/৮/g, "8")
+    .replace(/৯/g, "9");
+
+  translated = translated
+    .replace(/দিন/g, "Days")
+    .replace(/সপ্তাহ/g, "Weeks")
+    .replace(/মাস/g, "Months")
+    .replace(/বার/g, "times daily")
+    .replace(/সকাল/g, "Morning")
+    .replace(/দুপুর/g, "Afternoon")
+    .replace(/রাত/g, "Night")
+    .replace(/খাওয়ার আধা ঘণ্টা আগে খাবেন/g, "Take 30 mins before meals")
+    .replace(/খাওয়ার পর/g, "After meals")
+    .replace(/খাবার আগে/g, "Before meals")
+    .replace(/ভরা পেটে/g, "With meals")
+    .replace(/নিয়মিত/g, "Regularly");
+
+  return translated;
+}
+
 // Smart Medical Tags Helper: Replaces raw developer OCR tags with real clinical concepts patients need
 function getPatientFriendlyTags(doc: MedicalDocument): string[] {
   const rawTags = (doc.tags || []).filter((t) => {
@@ -96,7 +132,8 @@ function getPatientFriendlyTags(doc: MedicalDocument): string[] {
       !lower.includes("json") &&
       !lower.includes("extraction") &&
       !lower.includes("ingested") &&
-      !lower.includes("raw")
+      !lower.includes("raw") &&
+      lower !== "verified record"
     );
   });
 
@@ -127,6 +164,7 @@ function getPatientFriendlyTags(doc: MedicalDocument): string[] {
     textToScan.includes("tinea")
   ) {
     derivedTags.push("Dermatology");
+    derivedTags.push("Anti-Fungal");
   }
   if (
     textToScan.includes("diabetes") ||
@@ -136,6 +174,7 @@ function getPatientFriendlyTags(doc: MedicalDocument): string[] {
     textToScan.includes("insulin")
   ) {
     derivedTags.push("Endocrinology");
+    derivedTags.push("Glucose Metabolism");
   }
   if (
     textToScan.includes("pressure") ||
@@ -153,6 +192,7 @@ function getPatientFriendlyTags(doc: MedicalDocument): string[] {
     textToScan.includes("renal")
   ) {
     derivedTags.push("Nephrology");
+    derivedTags.push("Renal Function");
   }
   if (
     textToScan.includes("cbc") ||
@@ -162,6 +202,7 @@ function getPatientFriendlyTags(doc: MedicalDocument): string[] {
     textToScan.includes("anemia")
   ) {
     derivedTags.push("Hematology");
+    derivedTags.push("CBC Panel");
   }
   if (
     textToScan.includes("lipid") ||
@@ -190,11 +231,13 @@ function getPatientFriendlyTags(doc: MedicalDocument): string[] {
     derivedTags.push("Active Regimen");
   }
 
-  // Combine and deduplicate
-  const combined = Array.from(new Set([...rawTags, ...derivedTags]));
+  // Combine and deduplicate: place specialized medical tags first
+  const combined = Array.from(new Set([...derivedTags, ...rawTags]));
+  if (doc.status === "verified") {
+    combined.push("Verified Record");
+  }
   if (combined.length === 0) {
     combined.push(doc.category === "prescription" ? "Prescription" : "Medical Record");
-    if (doc.status === "verified") combined.push("Verified Record");
   }
 
   return combined.slice(0, 4);
@@ -202,6 +245,7 @@ function getPatientFriendlyTags(doc: MedicalDocument): string[] {
 
 export default function VaultPage() {
   const { profile, session, effectiveUserId, refreshProfile } = useAuth();
+  const { language } = useLanguage();
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
   const [extractedRecords, setExtractedRecords] = useState<ExtractedRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -308,14 +352,37 @@ export default function VaultPage() {
 
   // Medical Document Inspection Modal State
   const [inspectingDoc, setInspectingDoc] = useState<MedicalDocument | null>(null);
+  const [inspectingFetchedRecord, setInspectingFetchedRecord] = useState<ExtractedRecord | null>(null);
 
   const currentInspectingRecord = React.useMemo(() => {
     if (!inspectingDoc) return null;
-    return extractedRecords.find((r) => r.document_id === inspectingDoc.id) || null;
-  }, [inspectingDoc, extractedRecords]);
+    return (
+      extractedRecords.find((r) => r.document_id === inspectingDoc.id) ||
+      inspectingFetchedRecord ||
+      null
+    );
+  }, [inspectingDoc, extractedRecords, inspectingFetchedRecord]);
 
-  const handleOpenInspect = (doc: MedicalDocument) => {
+  const handleOpenInspect = async (doc: MedicalDocument) => {
     setInspectingDoc(doc);
+    const existing = extractedRecords.find((r) => r.document_id === doc.id);
+    if (!existing) {
+      try {
+        const client = createClient();
+        const { data } = await client
+          .from("extracted_records")
+          .select("*")
+          .eq("document_id", doc.id)
+          .maybeSingle();
+        if (data) {
+          setInspectingFetchedRecord(data as ExtractedRecord);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch extracted record for inspection:", err);
+      }
+    } else {
+      setInspectingFetchedRecord(null);
+    }
   };
 
   const [deletingDoc, setDeletingDoc] = useState<MedicalDocument | null>(null);
@@ -2404,24 +2471,42 @@ export default function VaultPage() {
                       Prescribed Medications & Regimens ({meds.length})
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {meds.map((med: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3"
-                        >
-                          <div className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                            {med.name}
-                          </div>
-                          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
-                            {med.dosage} · {med.frequency}
-                          </div>
-                          {med.instructions && (
-                            <div className="text-[10px] text-slate-500 mt-1 italic">
-                              {med.instructions}
+                      {meds.map((med: any, idx: number) => {
+                        const translatedInst = formatMedInstruction(med.instructions, language);
+                        return (
+                          <div
+                            key={idx}
+                            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3 flex flex-col justify-between"
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-1">
+                                <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                  {med.name}
+                                </span>
+                                {med.route && (
+                                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200/50 dark:border-teal-800">
+                                    {med.route}
+                                  </span>
+                                )}
+                              </div>
+                              {med.generic_name && (
+                                <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                  {med.generic_name}
+                                </div>
+                              )}
+                              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                                {med.dosage} · {med.frequency}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            {translatedInst && (
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 italic border-t border-slate-100 dark:border-slate-800/80 pt-1 flex items-center gap-1">
+                                <Clock className="h-2.5 w-2.5 text-emerald-600 shrink-0" />
+                                <span>{translatedInst}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
