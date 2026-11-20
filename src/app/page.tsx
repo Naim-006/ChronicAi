@@ -9,22 +9,29 @@ import {
   Bell,
   Bot,
   CheckCircle2,
+  Cpu,
   FileText,
   FolderLock,
   HeartPulse,
   History,
+  KeyRound,
+  Layers,
+  Lock,
   Pill,
   Quote,
   ScanLine,
   Share2,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Stethoscope,
   Sun,
   Moon,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/context/ThemeContext";
+import { cn } from "@/lib/utils";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -102,6 +109,63 @@ const steps = [
     title: "Ask the AI anything",
     description:
       "It answers only from your own records and shows you the verified source for every answer.",
+  },
+];
+
+const futureHighlights = [
+  {
+    icon: Cpu,
+    tag: "Native AI Model",
+    badge: "In Active R&D",
+    badgeColor: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+    title: "Dedicated Personal Health AI Advisor",
+    description:
+      "We are training native, proprietary AI models specialized in clinical reasoning. Rather than generic answers, you get a 24/7 personal health advisor that deeply understands your lifelong biology, detects subtle biomarker shifts, and warns you before emergencies.",
+  },
+  {
+    icon: ScanLine,
+    tag: "Drop & Auto-Manage",
+    badge: "Smart Vision OCR",
+    badgeColor: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
+    title: "Drop & Forget Medical Records",
+    description:
+      "Simply snap a photo of any handwritten prescription or drop a lab PDF — boom: our smart system instantly parses it, extracts numbers, programs daily medication reminders, tracks chronic risk, and schedules follow-up doctor appointments.",
+  },
+  {
+    icon: KeyRound,
+    tag: "Doctor Access",
+    badge: "One-Time Secret Code",
+    badgeColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+    title: "Doctor Sharing & Emergency Code",
+    description:
+      "Share your verified health dossier with physicians via tamper-proof PDF or private expiring links. In an emergency, doctors can simply enter your Patient ID and your one-time Secret Access Code to view your full history with zero app installation.",
+  },
+  {
+    icon: Smartphone,
+    tag: "Mobile Ecosystem",
+    badge: "iOS & Android",
+    badgeColor: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
+    title: "Native Cross-Platform Apps",
+    description:
+      "High-performance native mobile companion apps featuring biometric FaceID login, real-time background sensor sync with Apple Health and Google Health Connect, and push alerts that ensure you never miss medicine times.",
+  },
+  {
+    icon: Lock,
+    tag: "Server Encryption",
+    badge: "Zero-Knowledge",
+    badgeColor: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+    title: "Encrypted Cloud & Vault Security",
+    description:
+      "All medical documents, extracted metrics, and vector embeddings are fortified with military-grade server encryption at rest and in transit. Strict patient isolation ensures nobody can view unencrypted data without your direct authorization.",
+  },
+  {
+    icon: Sparkles,
+    tag: "Smart Longevity",
+    badge: "The Next Era",
+    badgeColor: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+    title: "A New Age of Smart Healthcare",
+    description:
+      "Moving beyond reactive sick-care into proactive longevity. Continuous predictive algorithms analyze decades of longitudinal records to help you take action years before symptoms appear.",
   },
 ];
 
@@ -362,6 +426,12 @@ export default function LandingPage() {
             <a href="#how-it-works" className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400">
               How it works
             </a>
+            <a href="#vision" className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1.5">
+              <span>Future Vision</span>
+              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 leading-none">
+                Next
+              </span>
+            </a>
             <a href="#safety" className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400">
               Safety
             </a>
@@ -587,6 +657,108 @@ export default function LandingPage() {
             ))}
           </motion.div>
         </div>
+      </section>
+
+      {/* Future Vision & Highlighter Section (Beyond MVP) */}
+      <section id="vision" className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+        {/* Ambient background glows */}
+        <div className="pointer-events-none absolute -left-20 top-1/4 h-80 w-80 rounded-full bg-emerald-400/10 dark:bg-emerald-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-1/4 h-80 w-80 rounded-full bg-teal-400/10 dark:bg-teal-500/10 blur-3xl" />
+
+        <motion.div {...fadeUp} className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-300/80 dark:border-emerald-500/30 px-3.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span>Current MVP v1.0 · The Vision Beyond</span>
+          </div>
+
+          <h2 className="mt-4 font-display text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
+            This MVP is just day one.{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-500 bg-clip-text text-transparent">
+              We are building something much bigger.
+            </span>
+          </h2>
+          <p className="mt-4 text-xs sm:text-base leading-relaxed text-slate-600 dark:text-slate-300 font-medium">
+            ChronicAI currently proves what is possible with unified medical vaults and grounded record retrieval. We are actively engineering a complete personal health intelligence ecosystem: native medically-trained AI models, automated OCR triage, one-time doctor emergency access codes, and native mobile apps.
+          </p>
+        </motion.div>
+
+        {/* Future Highlights Grid */}
+        <motion.div
+          {...stagger}
+          className="mt-12 sm:mt-16 grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+        >
+          {futureHighlights.map((card) => {
+            const Icon = card.icon;
+            return (
+              <motion.div
+                key={card.title}
+                {...fadeUpChild}
+                className="group relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/85 dark:bg-slate-900/60 p-5 sm:p-6 backdrop-blur-xl shadow-xs hover:shadow-lg hover:border-emerald-500/40 dark:hover:border-emerald-500/30 transition-all duration-300 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <span className="inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200/60 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 transition-transform group-hover:scale-105">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                        card.badgeColor
+                      )}
+                    >
+                      {card.badge}
+                    </span>
+                  </div>
+
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400/90 block mb-1">
+                    {card.tag}
+                  </span>
+                  <h3 className="font-display text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug">
+                    {card.title}
+                  </h3>
+                  <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
+                    {card.description}
+                  </p>
+                </div>
+
+                <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span>Part of our active roadmap</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* Vision Manifesto Callout Banner */}
+        <motion.div
+          {...fadeUp}
+          className="mt-8 sm:mt-10 rounded-2.5xl sm:rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 p-5 sm:p-7 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left"
+        >
+          <div>
+            <span className="inline-block text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">
+              Next-Aged Smart Healthcare Is Coming
+            </span>
+            <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+              Store your health records once — let autonomous intelligence safeguard your health, track medications, and alert you for life.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <Button
+              size="sm"
+              className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs px-5 h-9"
+              asChild
+            >
+              <Link href="/signup">
+                Experience MVP Now
+                <ArrowRight className="h-3 w-3 ml-1.5" />
+              </Link>
+            </Button>
+          </div>
+        </motion.div>
       </section>
 
       {/* Safety Section */}
