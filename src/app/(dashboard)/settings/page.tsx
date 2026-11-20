@@ -82,12 +82,15 @@ export default function SettingsPage() {
     if (profile?.preferences) {
       const prefs = profile.preferences as any;
       if (prefs.explanation_depth) setAiDepth(prefs.explanation_depth);
+      if (prefs.language && ["en", "bn", "es"].includes(prefs.language)) {
+        setLanguage(prefs.language);
+      }
       if (prefs.notifications_enabled !== undefined) {
         setNotifMeds(prefs.notifications_enabled);
         setNotifApts(prefs.notifications_enabled);
       }
     }
-  }, [profile]);
+  }, [profile, setLanguage]);
 
   const handleSave = async () => {
     setIsSaving(true);

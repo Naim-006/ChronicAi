@@ -23,9 +23,10 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getAdminClient();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayIso = today.toISOString();
+    const now = new Date();
+    // 24-hour cutoff window for today's logs to handle timezone differences
+    const cutoff24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    const todayIso = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
     if (action === "untake") {
       // Delete today's taken/adherence logs for this medication
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
         .delete()
         .eq("user_id", userId)
         .eq("medication_id", medicationId)
-        .gte("created_at", todayIso);
+        .or(`created_at.gte.${todayIso},recorded_time.gte.${todayIso},created_at.gte.${cutoff24h}`);
 
       if (error) {
         console.error("Error untaking medication log:", error);
@@ -51,49 +52,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Default action: "take" -> check if there is already a log today
-    const { data: existingLogs } = await supabase
+    // Default action: "take"
+    // Delete any existing/conflicting logs for this medication today to guarantee single authoritative state
+    await supabase
       .from("medication_logs")
-      .select("id")
+      .delete()
       .eq("user_id", userId)
       .eq("medication_id", medicationId)
-      .gte("created_at", todayIso);
+      .or(`created_at.gte.${todayIso},recorded_time.gte.${todayIso},created_at.gte.${cutoff24h}`);
 
-    if (existingLogs && existingLogs.length > 0) {
-      const logId = existingLogs[0].id;
-      const { data: updated, error: updateError } = await supabase
-        .from("medication_logs")
-        .update({
-          status: "taken",
-          recorded_time: new Date().toISOString(),
-          notes: notes || undefined,
-        })
-        .eq("id", logId)
-        .select()
-        .single();
-
-      if (updateError) {
-        return NextResponse.json(
-          { success: false, message: updateError.message },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        action: "take",
-        log: updated,
-      });
-    }
-
-    // Insert new taken log
+    // Insert fresh authoritative taken log
     const { data: inserted, error: insertError } = await supabase
       .from("medication_logs")
       .insert({
         user_id: userId,
         medication_id: medicationId,
-        scheduled_time: scheduledTime || new Date().toISOString(),
-        recorded_time: new Date().toISOString(),
+        scheduled_time: scheduledTime || now.toISOString(),
+        recorded_time: now.toISOString(),
         status: "taken",
         notes: notes || undefined,
       })

@@ -29,7 +29,12 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Medication, Appointment, MedicalDocument, HealthMetric } from "@/types/medical";
-import { getMedications, logMedicationAdherence } from "@/lib/supabase/services/medications";
+import {
+  getMedications,
+  getMedicationLogs,
+  logMedicationAdherence,
+  untakeMedicationAdherence,
+} from "@/lib/supabase/services/medications";
 import { getAppointments } from "@/lib/supabase/services/appointments";
 import { getDocuments } from "@/lib/supabase/services/documents";
 import { getHealthMetrics, logHealthMetric } from "@/lib/supabase/services/metrics";
@@ -113,6 +118,26 @@ export default function DashboardPage() {
   const [glucoseType, setGlucoseType] = useState<"fasting" | "postprandial">("fasting");
   const [logAlert, setLogAlert] = useState<string | null>(null);
 
+  const { todayUtc, todayLocal } = React.useMemo(() => {
+    const d = new Date();
+    const utc = d.toISOString().split("T")[0];
+    const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return { todayUtc: utc, todayLocal: local };
+  }, []);
+
+  // Instant mount hydration from cache before network responds
+  useEffect(() => {
+    if (typeof window !== "undefined" && effectiveUserId) {
+      try {
+        const cacheKey = `chronicai_med_taken_${effectiveUserId}_${todayLocal}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          setLoggedMeds(JSON.parse(cached));
+        }
+      } catch {}
+    }
+  }, [effectiveUserId, todayLocal]);
+
   const fetchDashboardData = React.useCallback(async () => {
     if (!effectiveUserId) {
       setMedications([]);
@@ -123,16 +148,52 @@ export default function DashboardPage() {
       return;
     }
     try {
-      const [meds, apts, docs, mets] = await Promise.all([
+      const [meds, apts, docs, mets, logs] = await Promise.all([
         getMedications(effectiveUserId),
         getAppointments(effectiveUserId),
         getDocuments(effectiveUserId),
         getHealthMetrics(effectiveUserId),
+        getMedicationLogs(effectiveUserId, 14),
       ]);
       setMedications(meds || []);
       setAppointments(apts || []);
       setDocuments(docs || []);
       setMetrics(mets || []);
+
+      // Filter and evaluate today's medication logs
+      const nowMs = Date.now();
+      const todayLogs = (logs || []).filter((l) => {
+        const timeMs = new Date(l.recorded_time || l.scheduled_time || l.created_at || "").getTime();
+        const isWithin24h = !isNaN(timeMs) && nowMs - timeMs < 24 * 60 * 60 * 1000 && timeMs <= nowMs + 60 * 60 * 1000;
+        const matchesDate =
+          l.scheduled_time?.startsWith(todayUtc) ||
+          l.scheduled_time?.startsWith(todayLocal) ||
+          l.recorded_time?.startsWith(todayUtc) ||
+          l.recorded_time?.startsWith(todayLocal) ||
+          l.created_at?.startsWith(todayUtc) ||
+          l.created_at?.startsWith(todayLocal);
+        return isWithin24h || matchesDate;
+      });
+
+      const initialMap: Record<string, boolean> = {};
+      (meds || []).forEach((m) => {
+        initialMap[m.id] = false;
+      });
+      const sortedTodayLogs = [...todayLogs].sort((a, b) => {
+        const timeA = new Date(a.recorded_time || a.created_at || 0).getTime();
+        const timeB = new Date(b.recorded_time || b.created_at || 0).getTime();
+        return timeA - timeB;
+      });
+      sortedTodayLogs.forEach((l) => {
+        initialMap[l.medication_id] = l.status === "taken";
+      });
+
+      try {
+        const cacheKey = `chronicai_med_taken_${effectiveUserId}_${todayLocal}`;
+        localStorage.setItem(cacheKey, JSON.stringify(initialMap));
+      } catch {}
+
+      setLoggedMeds(initialMap);
 
       const latestGlucose = (mets || []).find((m) => m.metric_type === "glucose");
       const latestBP = (mets || []).find((m) => m.metric_type === "blood_pressure");
@@ -149,7 +210,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveUserId]);
+  }, [effectiveUserId, todayUtc, todayLocal]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -307,20 +368,40 @@ export default function DashboardPage() {
 
   const toggleMed = async (medId: string) => {
     const nextState = !loggedMeds[medId];
-    setLoggedMeds((prev) => ({
-      ...prev,
-      [medId]: nextState,
-    }));
+    const newMap = { ...loggedMeds, [medId]: nextState };
+    setLoggedMeds(newMap);
+
     if (effectiveUserId) {
       try {
-        await logMedicationAdherence({
-          user_id: effectiveUserId,
-          medication_id: medId,
-          scheduled_time: new Date().toISOString(),
-          recorded_time: new Date().toISOString(),
-          status: nextState ? "taken" : "missed",
-        });
+        localStorage.setItem(
+          `chronicai_med_taken_${effectiveUserId}_${todayLocal}`,
+          JSON.stringify(newMap)
+        );
       } catch {}
+
+      try {
+        if (nextState) {
+          await logMedicationAdherence({
+            user_id: effectiveUserId,
+            medication_id: medId,
+            scheduled_time: new Date().toISOString(),
+            recorded_time: new Date().toISOString(),
+            status: "taken",
+          });
+        } else {
+          await untakeMedicationAdherence(medId, effectiveUserId);
+        }
+      } catch (err) {
+        console.error("Failed to toggle medication in dashboard:", err);
+        const rollbackMap = { ...loggedMeds, [medId]: !nextState };
+        setLoggedMeds(rollbackMap);
+        try {
+          localStorage.setItem(
+            `chronicai_med_taken_${effectiveUserId}_${todayLocal}`,
+            JSON.stringify(rollbackMap)
+          );
+        } catch {}
+      }
     }
   };
 

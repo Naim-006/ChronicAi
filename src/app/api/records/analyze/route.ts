@@ -83,19 +83,33 @@ export async function POST(req: NextRequest) {
     // Call Google Gemini Multimodal Vision API
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
-    const promptText = `You are a board-certified clinical medical AI and expert optical character recognition (OCR) engine for ChronicAI.
+    const promptText = `You are a world-class board-certified clinical medical AI and expert optical character recognition (OCR) engine for ChronicAI.
 Analyze this scanned medical record / document carefully and extract all clinical entities.
 File name: ${fileName}
 
-CRITICAL INSTRUCTIONS:
-1. Transcribe the visible text accurately.
-2. Identify the document type: "lab_report", "prescription", "discharge_summary", "imaging", "doctor_note", or "other".
-3. Extract the clinic/hospital/lab facility name, the treating physician's name, and the official document or specimen collection date (format: YYYY-MM-DD; if not visible, use today's date).
-4. Extract all lab test results / biomarkers: test name, numeric or qualitative value, unit (e.g. mg/dL, %, mL/min), reference range, and whether the value is abnormal (true/false).
-5. Extract any prescribed medications with DURATION & TIMING RANGES: drug name, generic name, dosage/strength, frequency (e.g. "1-0-1", "Once daily"), timing/schedule (e.g. "Morning, Night after meal"), route (e.g. oral, topical, inhaler), duration_days (number of days, e.g. 7 for "৭ দিন", 42 for "৬ সপ্তাহ", 14 for "14 days"; null if ongoing/chronic), duration_text (e.g. "for 14 days", "for 6 weeks"), start_date (YYYY-MM-DD, defaults to document date), and end_date (YYYY-MM-DD, calculated as start_date + duration_days if a duration is specified). If the prescription has stepped or phased therapy (e.g. take X for 10 days, then take Y for 3 weeks), extract both items with consecutive date ranges!
-6. Extract any explicit clinical diagnoses or conditions mentioned.
-7. Write a concise, professional 2-3 sentence clinical summary.
-8. Assess your overall confidence score (integer 0-100).
+CRITICAL INSTRUCTIONS & SMART MULTILINGUAL TRANSLATION (BANGLA/ENGLISH MIX TO CLEAN ENGLISH):
+1. SMART MULTILINGUAL TRANSLATION:
+   - Prescriptions, diagnostic reports, and medical consultation notes frequently contain a mixture of Bengali (বাংলা) and English.
+   - For example: medicine brand names in English combined with Bengali handwriting or print for dosage instructions, timings, duration, dietary advice, symptoms, or diagnoses (e.g. "১+০+১ খাবারের পর", "দিনে ২ বার", "জ্বর ও কাশি", "৭ দিন খাবেন", "খাবার ৩০ মিনিট আগে").
+   - You MUST act as an intelligent medical translator and convert ANY and ALL Bengali text, instructions, symptoms, diagnoses, timings, dosages, and notes into clean, professional, standardized clinical English!
+   - Examples of smart clinical translation:
+     * "১+০+১ খাবারের পর" -> frequency: "1-0-1 (Twice daily)", timing: "Morning and Night after meals"
+     * "১+১+১ খাবারের আগে" -> frequency: "1-1-1 (Three times daily)", timing: "Morning, Afternoon, and Night before meals"
+     * "দিনে ৩ বার খাবার ৩০ মিনিট আগে" -> frequency: "Three times daily", timing: "30 minutes before meals"
+     * "৭ দিন" / "৭ দিন চলবে" -> duration_text: "for 7 days", duration_days: 7
+     * "২ সপ্তাহ" -> duration_text: "for 2 weeks", duration_days: 14
+     * "১ মাস" -> duration_text: "for 1 month", duration_days: 30
+     * "খাবার পর লাগাবেন" (cream/ointment) -> instructions: "Apply topically after washing"
+     * Bengali complaints/diagnoses (e.g. "চুলকানি ও লালচে দাগ", "জ্বর ও গলা ব্যথা") -> translate to proper clinical English terms (e.g. "Pruritus and erythematous annular lesions / Tinea corporis", "Fever and pharyngitis").
+   - ALL structured JSON fields (summary, facility_name, doctor_name, medications, instructions, timings, diagnoses, and lab results) MUST BE 100% IN PROFESSIONAL MEDICAL ENGLISH.
+2. Transcribe visible text accurately (in extracted_text you may keep original transcription, but all structured JSON fields must be translated to English).
+3. Identify the document type: "lab_report", "prescription", "discharge_summary", "imaging", "doctor_note", or "other".
+4. Extract clinic/hospital/lab facility name, treating physician's name, and official document or collection date (format: YYYY-MM-DD; if not visible, use today's date).
+5. Extract all lab test results / biomarkers: test name, numeric or qualitative value, unit (e.g. mg/dL, %, mL/min), reference range, and whether the value is abnormal (true/false).
+6. Extract any prescribed medications with DURATION & TIMING RANGES: drug name, generic name, dosage/strength, frequency (e.g. "1-0-1", "Once daily"), timing/schedule (e.g. "Morning, Night after meal"), route (e.g. oral, topical, inhaler), duration_days (number of days, e.g. 7 for "৭ দিন", 42 for "৬ সপ্তাহ", 14 for "14 days"; null if ongoing/chronic), duration_text (e.g. "for 14 days", "for 6 weeks"), start_date (YYYY-MM-DD, defaults to document date), and end_date (YYYY-MM-DD, calculated as start_date + duration_days if a duration is specified). If the prescription has stepped or phased therapy (e.g. take X for 10 days, then take Y for 3 weeks), extract both items with consecutive date ranges!
+7. Extract any explicit clinical diagnoses or conditions mentioned.
+8. Write a concise, professional 2-3 sentence clinical summary strictly in English.
+9. Assess your overall confidence score (integer 0-100).
 
 Return ONLY valid JSON matching this schema:
 {

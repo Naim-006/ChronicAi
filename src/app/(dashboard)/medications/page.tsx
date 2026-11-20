@@ -90,7 +90,26 @@ export default function MedicationsPage() {
   const [formEndDate, setFormEndDate] = useState("");
   const [formStatus, setFormStatus] = useState<MedicationStatus>("active");
 
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const { todayUtc, todayLocal } = useMemo(() => {
+    const d = new Date();
+    const utc = d.toISOString().split("T")[0];
+    const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return { todayUtc: utc, todayLocal: local };
+  }, []);
+  const todayStr = todayUtc;
+
+  // Instant mount hydration from cache before network responds
+  useEffect(() => {
+    if (typeof window !== "undefined" && effectiveUserId) {
+      try {
+        const cacheKey = `chronicai_med_taken_${effectiveUserId}_${todayLocal}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          setLoggedMeds(JSON.parse(cached));
+        }
+      } catch {}
+    }
+  }, [effectiveUserId, todayLocal]);
 
   // Load medications and historical logs
   const loadData = useCallback(async () => {
@@ -108,22 +127,44 @@ export default function MedicationsPage() {
       setMedications(fetchedMeds || []);
       setMedLogs(fetchedLogs || []);
 
-      // Populate today's initial checklist state from database logs
-      const todayLogs = (fetchedLogs || []).filter(
-        (l) => l.scheduled_time?.startsWith(todayStr) || l.created_at?.startsWith(todayStr)
-      );
+      // Filter today's logs across local/UTC boundaries or recent 24 hours
+      const nowMs = Date.now();
+      const todayLogs = (fetchedLogs || []).filter((l) => {
+        const timeMs = new Date(l.recorded_time || l.scheduled_time || l.created_at || "").getTime();
+        const isWithin24h = !isNaN(timeMs) && nowMs - timeMs < 24 * 60 * 60 * 1000 && timeMs <= nowMs + 60 * 60 * 1000;
+        const matchesDate =
+          l.scheduled_time?.startsWith(todayUtc) ||
+          l.scheduled_time?.startsWith(todayLocal) ||
+          l.recorded_time?.startsWith(todayUtc) ||
+          l.recorded_time?.startsWith(todayLocal) ||
+          l.created_at?.startsWith(todayUtc) ||
+          l.created_at?.startsWith(todayLocal);
+        return isWithin24h || matchesDate;
+      });
+
       const initialMap: Record<string, boolean> = {};
       // Initialize all medications to false
       (fetchedMeds || []).forEach((m) => {
         initialMap[m.id] = false;
       });
-      // Sort chronologically ascending so newest log takes precedence
-      const sortedTodayLogs = [...todayLogs].sort(
-        (a, b) => new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime()
-      );
+
+      // Sort chronologically ascending by recorded_time or created_at so newest user action always wins
+      const sortedTodayLogs = [...todayLogs].sort((a, b) => {
+        const timeA = new Date(a.recorded_time || a.created_at || 0).getTime();
+        const timeB = new Date(b.recorded_time || b.created_at || 0).getTime();
+        return timeA - timeB;
+      });
+
       sortedTodayLogs.forEach((l) => {
         initialMap[l.medication_id] = l.status === "taken";
       });
+
+      // Synchronize with localStorage cache to avoid any flash or race condition
+      try {
+        const cacheKey = `chronicai_med_taken_${effectiveUserId}_${todayLocal}`;
+        localStorage.setItem(cacheKey, JSON.stringify(initialMap));
+      } catch {}
+
       setLoggedMeds(initialMap);
     } catch {
       setMedications([]);
@@ -131,7 +172,7 @@ export default function MedicationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveUserId, todayStr]);
+  }, [effectiveUserId, todayUtc, todayLocal]);
 
   useEffect(() => {
     loadData();
@@ -150,13 +191,21 @@ export default function MedicationsPage() {
   // Toggle dose taken/missed for today
   const toggleMed = async (medId: string) => {
     const nextState = !loggedMeds[medId];
-    // Immediate optimistic update
-    setLoggedMeds((prev) => ({
-      ...prev,
+    // Immediate optimistic update in state AND localStorage
+    const newMap = {
+      ...loggedMeds,
       [medId]: nextState,
-    }));
+    };
+    setLoggedMeds(newMap);
 
     if (effectiveUserId) {
+      try {
+        localStorage.setItem(
+          `chronicai_med_taken_${effectiveUserId}_${todayLocal}`,
+          JSON.stringify(newMap)
+        );
+      } catch {}
+
       try {
         if (nextState) {
           // Log dose as taken
@@ -176,10 +225,17 @@ export default function MedicationsPage() {
       } catch (err) {
         console.error("Failed to toggle medication adherence:", err);
         // Rollback optimistic update on error
-        setLoggedMeds((prev) => ({
-          ...prev,
+        const rollbackMap = {
+          ...loggedMeds,
           [medId]: !nextState,
-        }));
+        };
+        setLoggedMeds(rollbackMap);
+        try {
+          localStorage.setItem(
+            `chronicai_med_taken_${effectiveUserId}_${todayLocal}`,
+            JSON.stringify(rollbackMap)
+          );
+        } catch {}
       }
     }
   };
