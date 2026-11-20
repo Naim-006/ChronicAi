@@ -467,10 +467,7 @@ export default function LandingPage() {
       <section className="relative mx-auto grid max-w-6xl items-center gap-8 sm:gap-12 lg:gap-14 px-4 pb-14 pt-7 sm:px-6 sm:pb-20 sm:pt-14 lg:grid-cols-2 lg:pt-20">
         <div className="dot-grid absolute inset-0 -z-10 opacity-30 sm:opacity-40 [mask-image:radial-gradient(ellipse_60%_60%_at_30%_40%,black,transparent)]" />
         <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200/80 dark:border-emerald-500/30 px-3 py-1 text-[11px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300">
-            <Sparkles className="h-3 w-3 text-emerald-500" />
-            <span>Grounded Medical AI & Records Vault</span>
-          </div>
+          
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
