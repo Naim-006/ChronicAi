@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       documentId,
+      id,
       userId,
       file_name,
       category,
@@ -27,8 +28,9 @@ export async function POST(req: NextRequest) {
       status,
     } = body;
 
-    if (!documentId) {
-      return NextResponse.json({ success: false, error: "Missing documentId" }, { status: 400 });
+    const targetId = documentId || id;
+    if (!targetId) {
+      return NextResponse.json({ success: false, error: "Missing documentId or id" }, { status: 400 });
     }
 
     const supabase = getSupabaseClient();
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
     if (tags !== undefined) updatePayload.tags = tags;
     if (status !== undefined) updatePayload.status = status;
 
-    let query = supabase.from("medical_documents").update(updatePayload).eq("id", documentId);
+    let query = supabase.from("medical_documents").update(updatePayload).eq("id", targetId);
     if (userId) {
       query = query.eq("user_id", userId);
     }

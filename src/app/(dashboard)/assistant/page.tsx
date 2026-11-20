@@ -55,11 +55,11 @@ interface ChatSession {
   messages: AIMessage[];
 }
 
-const dynamicPromptSuggestions = [
-  { text: "Review instructions & schedule for my active medications", category: "Meds", icon: Pill },
-  { text: "What key questions should I ask my doctor at my next consultation?", category: "Visits", icon: Calendar },
-  { text: "Explain what my latest laboratory biomarker results mean", category: "Labs", icon: Activity },
-  { text: "What lifestyle or dietary adjustments align with my health guidelines?", category: "Lifestyle", icon: Sparkles },
+const promptSuggestions = [
+  { text: "Compare my HbA1c from May to November", category: "Labs", icon: Activity },
+  { text: "Are there any interactions with Metformin and Lisinopril?", category: "Meds", icon: Pill },
+  { text: "What key questions should I ask my doctor?", category: "Visits", icon: Calendar },
+  { text: "Explain what my eGFR of 68 mL/min means", category: "Kidney", icon: FileText },
 ];
 
 export default function AssistantPage() {
@@ -720,24 +720,6 @@ export default function AssistantPage() {
           </div>
         </div>
 
-        {/* Patient Clinical Dossier Context Strip */}
-        <div className="px-3.5 py-1.5 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200/70 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 shrink-0">
-          <div className="flex items-center gap-2 truncate min-w-0">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-            <span className="font-bold text-slate-900 dark:text-white truncate">
-              Grounded Dossier:
-            </span>
-            <span className="text-slate-500 truncate">
-              {profile?.chronic_conditions && profile.chronic_conditions.length > 0
-                ? profile.chronic_conditions.map((c: any) => typeof c === "string" ? c : c.name || "").filter(Boolean).join(", ")
-                : "Active Clinical Profile"} &middot; {userDocs.length} Verified Document{userDocs.length === 1 ? "" : "s"}
-            </span>
-          </div>
-          <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 shrink-0 hidden sm:inline">
-            ADA / ACC / KDIGO Aligned
-          </span>
-        </div>
-
         {/* Mobile History Drawer Sheet */}
         {showHistoryMobile && (
           <div className="fixed inset-0 z-50 flex items-end md:hidden bg-black/60 backdrop-blur-xs animate-in fade-in">
@@ -969,7 +951,7 @@ export default function AssistantPage() {
 
         {/* Suggested Follow-Up Prompt Chips */}
         <div className="px-3 py-1.5 border-t border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-[#070d18]/70 overflow-x-auto flex gap-1.5 hide-scrollbar shrink-0 max-w-full">
-          {dynamicPromptSuggestions.map((q, idx) => {
+          {promptSuggestions.map((q, idx) => {
             const Icon = q.icon;
             return (
               <button

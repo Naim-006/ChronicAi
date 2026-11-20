@@ -14,10 +14,11 @@ function getSupabaseClient() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { documentId, userId } = body;
+    const { documentId, id, userId } = body;
+    const targetId = documentId || id;
 
-    if (!documentId) {
-      return NextResponse.json({ success: false, error: "Missing documentId" }, { status: 400 });
+    if (!targetId) {
+      return NextResponse.json({ success: false, error: "Missing documentId or id" }, { status: 400 });
     }
 
     const supabase = getSupabaseClient();
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     const { data: docData } = await supabase
       .from("medical_documents")
       .select("id, file_path, user_id")
-      .eq("id", documentId)
+      .eq("id", targetId)
       .maybeSingle();
 
     if (userId && docData && docData.user_id && docData.user_id !== userId) {
@@ -36,13 +37,13 @@ export async function POST(req: NextRequest) {
     // 2. Cascade delete associated child records
     await Promise.allSettled([
       // Clean up extracted records
-      supabase.from("extracted_records").delete().eq("document_id", documentId),
+      supabase.from("extracted_records").delete().eq("document_id", targetId),
       // Clean up document embeddings
-      supabase.from("document_embeddings").delete().eq("document_id", documentId),
+      supabase.from("document_embeddings").delete().eq("document_id", targetId),
       // Clean up health metrics generated from this document
-      supabase.from("health_metrics").delete().eq("document_id", documentId),
+      supabase.from("health_metrics").delete().eq("document_id", targetId),
       // Clean up timeline events if referenced
-      supabase.from("timeline_events").delete().eq("document_id", documentId),
+      supabase.from("timeline_events").delete().eq("document_id", targetId),
       // Remove file from storage bucket if file_path exists
       docData?.file_path
         ? supabase.storage.from("medical-records").remove([docData.file_path])
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
     const { error: delError } = await supabase
       .from("medical_documents")
       .delete()
-      .eq("id", documentId);
+      .eq("id", targetId);
 
     if (delError) {
       console.error("Error deleting document record:", delError);
