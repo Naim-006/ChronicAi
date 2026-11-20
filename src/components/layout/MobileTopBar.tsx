@@ -218,9 +218,7 @@ export function MobileTopBar() {
             <h1 className="truncate text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight">
               {isDashboard ? "ChronicAI" : pageTitle}
             </h1>
-            <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
-              Lifelong Care Intelligence
-            </span>
+           
           </div>
         </div>
 
