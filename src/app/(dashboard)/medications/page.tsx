@@ -339,21 +339,17 @@ export default function MedicationsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
-            Medications & Prescriptions
-          </h1>
-          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
-            {medications.length} active prescriptions · {todayAdherence}% logged today
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
+          Medications & Prescriptions
+        </h1>
         <Button
           onClick={() => setShowAddModal(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm self-start sm:self-auto"
+          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer shrink-0"
         >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add Prescription
+          <Plus className="h-4 w-4 mr-1 sm:mr-1.5" />
+          <span className="hidden sm:inline">Add Prescription</span>
+          <span className="sm:hidden">Add Med</span>
         </Button>
       </div>
 
@@ -419,9 +415,6 @@ export default function MedicationsPage() {
               <h2 className="text-sm font-extrabold text-[var(--foreground)] tracking-tight">
                 7-Day Adherence Analytics
               </h2>
-              <span className="text-xs text-[var(--muted-foreground)] block">
-                Calculated in real-time from your active prescriptions and confirmed dose logs.
-              </span>
             </div>
           </div>
 
@@ -434,20 +427,20 @@ export default function MedicationsPage() {
         </div>
 
         {medications.length === 0 ? (
-          <div className="p-8 text-center space-y-3">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--secondary)] text-[var(--muted-foreground)]">
-              <Pill className="h-6 w-6" />
+          <div className="py-6 sm:py-8 px-4 text-center space-y-2">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--secondary)] text-[var(--muted-foreground)]">
+              <Pill className="h-5 w-5" />
             </div>
-            <h3 className="text-sm font-bold text-[var(--foreground)]">
+            <h3 className="text-sm font-bold text-[var(--foreground)] leading-normal pt-1">
               No active medications registered
             </h3>
-            <p className="text-xs text-[var(--muted-foreground)] max-w-sm mx-auto">
-              Add your medications or import them from a scanned medical report in your Vault to visualize real-time adherence charts.
+            <p className="text-xs text-[var(--muted-foreground)] max-w-xs mx-auto leading-normal">
+              Add your medications or import them from your medical records.
             </p>
             <Button
               size="sm"
               onClick={() => setShowAddModal(true)}
-              className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl"
+              className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
               Add First Medication
@@ -620,11 +613,8 @@ export default function MedicationsPage() {
             </div>
             <div>
               <h2 className="text-sm font-extrabold text-[var(--foreground)] leading-tight">
-                Drug-Drug Interaction Safety Engine
+                Drug Interaction Check
               </h2>
-              <span className="text-[11px] text-[var(--muted-foreground)] block">
-                Instant clinical safety screening against your active prescriptions and allergies.
-              </span>
             </div>
           </div>
           <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-3 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hidden sm:inline">
@@ -638,7 +628,7 @@ export default function MedicationsPage() {
             <Search className="absolute left-3.5 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
             <input
               type="text"
-              placeholder="Test any OTC drug, supplement, or new prescription (e.g. Ibuprofen, Sudafed)..."
+              placeholder="Check any drug or supplement (e.g. Ibuprofen)..."
               value={testDrugInput}
               onChange={(e) => setTestDrugInput(e.target.value)}
               onKeyDown={(e) => {
