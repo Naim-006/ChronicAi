@@ -28,6 +28,8 @@ import {
   Sliders,
   Mic,
   MicOff,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { AIMessage, AICitation, AIConversation, MedicalDocument } from "@/types/medical";
 import { formatDate, cn } from "@/lib/utils";
@@ -49,6 +51,22 @@ interface ChatSession {
   title: string;
   date: string;
   messages: AIMessage[];
+}
+
+function cleanMarkdownForSpeech(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^[*\-+]\s+/gm, "")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/>\s+/g, "")
+    .replace(/[*_#~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 const promptSuggestions = [
@@ -94,10 +112,19 @@ export default function AssistantPage() {
   const [attachedDoc, setAttachedDoc] = useState<MedicalDocument | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const { language } = useLanguage();
   const [voiceLang, setVoiceLang] = useState<"bn-BD" | "en-US">("bn-BD");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (language === "bn") {
@@ -299,6 +326,42 @@ How can I assist you with your health records, lab panels, or medication schedul
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2500);
+  };
+
+  const handleReadAloud = (msgId: string, content: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      alert("আপনার ব্রাউজারে স্পিচ সিন্থেসিস (SpeechSynthesis) অডিও সাপোর্ট পাওয়া যায়নি।");
+      return;
+    }
+
+    if (speakingId === msgId) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = cleanMarkdownForSpeech(content);
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    const hasBengali = /[\u0980-\u09FF]/.test(cleanText);
+    utterance.lang = hasBengali ? "bn-BD" : "en-US";
+    utterance.rate = 0.95;
+
+    const voices = window.speechSynthesis.getVoices();
+    const matchedVoice = voices.find(
+      (v) => (hasBengali ? v.lang.startsWith("bn") : v.lang.startsWith("en"))
+    );
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+    }
+
+    utterance.onstart = () => setSpeakingId(msgId);
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleSend = async (textToSend?: string) => {
@@ -746,11 +809,35 @@ How can I assist you with your health records, lab panels, or medication schedul
                       Grounded Medical Intelligence
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleReadAloud(msg.id, msg.content)}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-0.5 rounded-full transition-colors cursor-pointer text-[10px] font-medium",
+                          speakingId === msg.id
+                            ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold"
+                            : "hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5"
+                        )}
+                        title={speakingId === msg.id ? "Stop Reading (অডিও থামান)" : "Read Aloud (পড়ে শোনান)"}
+                      >
+                        {speakingId === msg.id ? (
+                          <>
+                            <VolumeX className="h-3 w-3 text-emerald-700 dark:text-emerald-400 animate-pulse" />
+                            <span>থামান</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="h-3 w-3" />
+                            <span>শুনুন</span>
+                          </>
+                        )}
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleCopy(msg.id, msg.content)}
-                        className="flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200 p-1 transition-colors"
+                        className="flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200 px-2 py-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer text-[10px]"
                         title="Copy Response"
                       >
                         {copiedId === msg.id ? (
