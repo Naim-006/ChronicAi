@@ -432,10 +432,10 @@ export default function DashboardPage() {
               <Activity className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-extrabold text-white leading-tight">
+              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
                 Health Overview
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Your health, meds, and visits in one glance
               </p>
             </div>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
 
           {/* Time Range Filter & Analytics CTA */}
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <div className="inline-flex p-1 rounded-full bg-[#0c1527]/90 border border-white/10 shadow-inner">
+            <div className="inline-flex p-1 rounded-full bg-slate-100 dark:bg-[#0c1527]/90 border border-slate-200/80 dark:border-white/10 shadow-inner">
               {(["7D", "30D", "3M", "1Y"] as const).map((r) => (
                 <button
                   key={r}
@@ -452,8 +452,8 @@ export default function DashboardPage() {
                   className={cn(
                     "px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer",
                     timeRange === r
-                      ? "bg-emerald-400 text-slate-950 shadow-[0_0_12px_rgba(52,211,153,0.5)] scale-100"
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                      ? "bg-emerald-500 text-white shadow-xs dark:bg-emerald-400 dark:text-slate-950 dark:shadow-[0_0_12px_rgba(52,211,153,0.5)] scale-100"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.05]"
                   )}
                 >
                   {r}
@@ -463,7 +463,7 @@ export default function DashboardPage() {
 
             <Link
               href="/metrics"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all shadow-[0_0_10px_rgba(16,185,129,0.15)] hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 shadow-xs dark:text-emerald-400 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:border-emerald-500/20 transition-all dark:shadow-[0_0_10px_rgba(16,185,129,0.15)] dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
               <span>Analytics</span>
@@ -480,10 +480,10 @@ export default function DashboardPage() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                   <Droplets className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-200">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                   Fasting Glucose
                 </span>
               </div>
@@ -491,12 +491,12 @@ export default function DashboardPage() {
 
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-white tracking-tight">
+                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {vitals.glucose !== null ? `${timeRangeData.glucose}` : "--"}
                 </span>
-                <span className="text-xs font-medium text-slate-400">mg/dL</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">mg/dL</span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-500/30">
                 {timeRangeData.glucoseStatus}
               </span>
             </div>
@@ -533,10 +533,10 @@ export default function DashboardPage() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-500/25 dark:border-cyan-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(6,182,212,0.2)]">
                   <Heart className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-200">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                   Blood Pressure
                 </span>
               </div>
@@ -544,12 +544,12 @@ export default function DashboardPage() {
 
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-white tracking-tight">
+                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {vitals.systolic !== null ? timeRangeData.bp : "--/--"}
                 </span>
-                <span className="text-xs font-medium text-slate-400">mmHg</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">mmHg</span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-500/30">
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200/80 dark:bg-cyan-950/60 dark:text-cyan-400 dark:border-cyan-500/30">
                 {timeRangeData.bpStatus}
               </span>
             </div>
@@ -586,10 +586,10 @@ export default function DashboardPage() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/25 dark:border-rose-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(244,63,94,0.2)]">
                   <Droplets className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-200">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                   Latest HbA1c
                 </span>
               </div>
@@ -597,11 +597,11 @@ export default function DashboardPage() {
 
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-white tracking-tight">
+                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {timeRangeData.hba1c}
                 </span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-950/60 text-rose-400 border border-rose-500/30">
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200/80 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-500/30">
                 {timeRangeData.hba1cSub}
               </span>
             </div>
@@ -624,10 +624,10 @@ export default function DashboardPage() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 shadow-[0_0_10px_rgba(20,184,166,0.2)]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/15 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400 border border-teal-500/25 dark:border-teal-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(20,184,166,0.2)]">
                   <Pill className="h-4.5 w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-200">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                   Medications
                 </span>
               </div>
@@ -635,12 +635,12 @@ export default function DashboardPage() {
 
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-white tracking-tight">
+                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {timeRangeData.medsActive}
                 </span>
-                <span className="text-xs font-medium text-slate-400">active</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">active</span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-950/60 text-teal-400 border border-teal-500/30 truncate max-w-full">
+              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80 dark:bg-teal-950/60 dark:text-teal-400 dark:border-teal-500/30 truncate max-w-full">
                 {timeRangeData.medsStatus}
               </span>
             </div>
@@ -653,8 +653,8 @@ export default function DashboardPage() {
                   className={cn(
                     "h-2.5 flex-1 rounded-full transition-all",
                     medications.length > 0 && i < takenCount
-                      ? "bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.5)]"
-                      : "bg-white/10"
+                      ? "bg-teal-500 dark:bg-teal-400 shadow-xs dark:shadow-[0_0_8px_rgba(45,212,191,0.5)]"
+                      : "bg-slate-200 dark:bg-white/10"
                   )}
                 />
               ))}
@@ -675,14 +675,14 @@ export default function DashboardPage() {
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-emerald-400" />
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-300">
+            <Zap className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">
               Quick Actions
             </h3>
           </div>
           <Link
             href="/vault"
-            className="text-xs font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition-colors"
+            className="text-xs font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors"
           >
             <span>See all</span>
             <ArrowRight className="h-3 w-3" />
@@ -696,14 +696,14 @@ export default function DashboardPage() {
             onClick={() => setShowVitalsModal(true)}
             className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group text-left cursor-pointer transition-all hover:border-emerald-500/40"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-transform group-hover:scale-105">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs dark:shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-transform group-hover:scale-105">
               <Activity className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-xs font-bold text-white truncate">
+              <span className="block text-xs font-bold text-slate-900 dark:text-white truncate">
                 Log Vitals
               </span>
-              <span className="text-[10px] text-slate-400 truncate block">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
                 BP, Glucose
               </span>
             </div>
@@ -714,14 +714,14 @@ export default function DashboardPage() {
             href="/vault"
             className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-cyan-500/40"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.25)] transition-transform group-hover:scale-105">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-500/25 dark:border-cyan-500/30 shadow-xs dark:shadow-[0_0_12px_rgba(6,182,212,0.25)] transition-transform group-hover:scale-105">
               <UploadCloud className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-xs font-bold text-white truncate">
+              <span className="block text-xs font-bold text-slate-900 dark:text-white truncate">
                 Add Record
               </span>
-              <span className="text-[10px] text-slate-400 truncate block">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
                 PDF, Lab scan
               </span>
             </div>
@@ -732,14 +732,14 @@ export default function DashboardPage() {
             href="/appointments"
             className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-amber-500/40"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.25)] transition-transform group-hover:scale-105">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/30 shadow-xs dark:shadow-[0_0_12px_rgba(245,158,11,0.25)] transition-transform group-hover:scale-105">
               <Calendar className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-xs font-bold text-white truncate">
+              <span className="block text-xs font-bold text-slate-900 dark:text-white truncate">
                 Visits
               </span>
-              <span className="text-[10px] text-slate-400 truncate block">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
                 Schedule, prep
               </span>
             </div>
@@ -750,14 +750,14 @@ export default function DashboardPage() {
             href="/assistant"
             className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-purple-500/40"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.25)] transition-transform group-hover:scale-105">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-500/25 dark:border-purple-500/30 shadow-xs dark:shadow-[0_0_12px_rgba(168,85,247,0.25)] transition-transform group-hover:scale-105">
               <Stethoscope className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-xs font-bold text-white truncate">
+              <span className="block text-xs font-bold text-slate-900 dark:text-white truncate">
                 Copilot
               </span>
-              <span className="text-[10px] text-slate-400 truncate block">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
                 Clinical guidance
               </span>
             </div>
@@ -768,8 +768,8 @@ export default function DashboardPage() {
       {/* SECTION 3: Today's Activity & Upcoming Care */}
       <section className="grid gap-4 lg:grid-cols-2">
         {/* Left: Today's Activity (Realtime Waveform & Condition Card) */}
-        <div className="glass-card relative overflow-hidden p-5 sm:p-6 bg-gradient-to-br from-emerald-950/40 via-[#0d182b]/80 to-[#09101f] border-emerald-500/20 shadow-xl">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-emerald-500/15 blur-3xl" />
+        <div className="glass-card relative overflow-hidden p-5 sm:p-6 bg-gradient-to-br from-emerald-50/70 via-white/80 to-slate-50/80 dark:from-emerald-950/40 dark:via-[#0d182b]/80 dark:to-[#09101f] border border-emerald-200/80 dark:border-emerald-500/20 shadow-xl">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-10 left-10 h-36 w-36 rounded-full bg-teal-500/10 blur-3xl" />
 
           <div className="relative flex items-center justify-between gap-4">
@@ -778,10 +778,10 @@ export default function DashboardPage() {
                 <Heart className="h-6 w-6 stroke-[2.4]" />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-extrabold text-white leading-tight">
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight">
                   Health Condition
                 </h3>
-                <span className="text-xs font-semibold text-emerald-400">
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                   {profile?.chronic_conditions && profile.chronic_conditions.length > 0
                     ? profile.chronic_conditions.join(" · ")
                     : "Profile Active"}
@@ -793,8 +793,8 @@ export default function DashboardPage() {
             <div className="relative flex shrink-0 items-center justify-center">
               <ProgressRing percent={100} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xs font-black text-white">100%</span>
-                <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-400">
+                <span className="text-xs font-black text-slate-900 dark:text-white">100%</span>
+                <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   Optimal
                 </span>
               </div>
@@ -807,52 +807,52 @@ export default function DashboardPage() {
               <path
                 d="M 0 35 Q 40 15, 80 30 T 160 25 T 240 38 T 320 20 T 400 28"
                 fill="none"
-                stroke="#34d399"
+                stroke="#10b981"
                 strokeWidth="2.2"
-                className="filter drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                className="filter drop-shadow-[0_0_8px_rgba(16,185,129,0.7)]"
               />
-              <circle cx="240" cy="38" r="3.5" fill="#34d399" />
-              <circle cx="320" cy="20" r="3.5" fill="#34d399" />
-              <circle cx="400" cy="28" r="4" fill="#34d399" className="animate-ping opacity-75" />
+              <circle cx="240" cy="38" r="3.5" fill="#10b981" />
+              <circle cx="320" cy="20" r="3.5" fill="#10b981" />
+              <circle cx="400" cy="28" r="4" fill="#10b981" className="animate-ping opacity-75" />
             </svg>
 
             <div className="flex items-center justify-between mt-2 text-[11px] font-semibold">
-              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+              <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
                 Continuous Realtime Care Monitoring
               </span>
             </div>
 
-            <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-white/10 p-0.5">
-              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 w-full shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+            <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-white/10 p-0.5">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 w-full shadow-xs dark:shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
             </div>
           </div>
 
           {/* Bottom Vitals Micro Pills */}
-          <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-white/[0.08] pt-4">
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+          <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-slate-200/60 dark:border-white/[0.08] pt-4">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06] shadow-2xs">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                 <Droplets className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="block text-[10px] text-slate-400 font-semibold truncate">
+                <span className="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
                   Fasting Glucose
                 </span>
-                <span className="text-xs font-bold text-white truncate block">
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">
                   {vitals.glucose !== null ? `${vitals.glucose} mg/dL` : "Not logged"}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06] shadow-2xs">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400">
                 <Heart className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="block text-[10px] text-slate-400 font-semibold truncate">
+                <span className="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
                   Blood Pressure
                 </span>
-                <span className="text-xs font-bold text-white truncate block">
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">
                   {vitals.systolic !== null ? `${vitals.systolic}/${vitals.diastolic || 78}` : "Not logged"}
                 </span>
               </div>
@@ -865,14 +865,14 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-emerald-400" />
-                <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-300">
+                <Bell className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300">
                   Upcoming & Reminders
                 </h3>
               </div>
               <Link
                 href="/appointments"
-                className="text-xs font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition-colors"
+                className="text-xs font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors"
               >
                 <span>See all</span>
                 <ArrowRight className="h-3 w-3" />
@@ -880,7 +880,7 @@ export default function DashboardPage() {
             </div>
 
             {nextAppointment ? (
-              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-white/70 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 font-black text-sm">
                     {nextAppointment.doctor_name
@@ -893,15 +893,15 @@ export default function DashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-bold text-white truncate">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
                         {nextAppointment.doctor_name}
                       </p>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     </div>
-                    <p className="text-xs text-slate-400 truncate">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                       {nextAppointment.specialty} · {nextAppointment.clinic_or_hospital}
                     </p>
-                    <p className="mt-1 text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                    <p className="mt-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       <span>
                         {formatDate(nextAppointment.appointment_date)} at {formatTime(nextAppointment.appointment_time)}
@@ -912,7 +912,7 @@ export default function DashboardPage() {
 
                 <Link
                   href="/appointments"
-                  className="px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10 shrink-0"
+                  className="px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-300 dark:text-emerald-400 dark:border-emerald-500/30 dark:hover:bg-emerald-500/10 shrink-0 transition-colors"
                 >
                   Prep
                 </Link>
@@ -920,25 +920,25 @@ export default function DashboardPage() {
             ) : (
               <div className="py-6 flex flex-col items-center text-center">
                 <div className="relative mb-3 flex items-center justify-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-teal-500/20 border border-white/10 shadow-lg text-indigo-400">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-teal-500/20 border border-slate-200 dark:border-white/10 shadow-sm text-indigo-600 dark:text-indigo-400">
                     <Calendar className="h-7 w-7" />
                   </div>
-                  <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black shadow-md">
+                  <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white dark:text-slate-950 text-[10px] font-black shadow-md">
                     <Clock className="h-3.5 w-3.5" />
                   </span>
                 </div>
 
-                <p className="text-xs font-medium text-slate-400 max-w-xs">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 max-w-xs">
                   No upcoming consultations scheduled.
                 </p>
               </div>
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/[0.08]">
+          <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/[0.08]">
             <Link
               href="/appointments"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/15 hover:border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-300 dark:text-emerald-400 dark:border-emerald-500/30 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/60 shadow-xs dark:shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all cursor-pointer"
             >
               <span>Book Consultation</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -949,20 +949,20 @@ export default function DashboardPage() {
 
       {/* Verification Banner if needed */}
       {pendingReviewDocs.length > 0 && (
-        <div className="glass-card p-4 border-amber-500/30 bg-amber-950/30 flex items-start gap-3 shadow-lg">
-          <div className="mt-0.5 shrink-0 rounded-xl bg-amber-500/20 p-2 text-amber-400">
+        <div className="glass-card p-4 border-amber-300 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/30 flex items-start gap-3 shadow-sm">
+          <div className="mt-0.5 shrink-0 rounded-xl bg-amber-100 dark:bg-amber-500/20 p-2 text-amber-600 dark:text-amber-400">
             <AlertCircle className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-xs font-bold text-amber-200">
+            <span className="block text-xs font-bold text-amber-900 dark:text-amber-200">
               Verification needed · {pendingReviewDocs[0].file_name}
             </span>
-            <p className="mt-0.5 text-xs text-amber-300/80">
+            <p className="mt-0.5 text-xs text-amber-800/80 dark:text-amber-300/80">
               New clinical notes parsed. Confirm findings to add them to your timeline.
             </p>
             <Link
               href="/vault"
-              className="mt-2.5 inline-flex items-center gap-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-200 transition-colors"
+              className="mt-2.5 inline-flex items-center gap-1 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 border border-amber-300 dark:border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200 transition-colors"
             >
               Review data
               <ChevronRight className="h-3 w-3" />
@@ -972,13 +972,13 @@ export default function DashboardPage() {
       )}
 
       {/* SECTION 4: Bottom Footer with Theme Switcher & Status */}
-      <footer className="mt-8 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs text-slate-400">
+      <footer className="mt-8 pt-4 border-t border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          <span className="font-semibold text-slate-300">
+          <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <span className="font-semibold text-slate-700 dark:text-slate-300">
             Stay healthy. Live better.
           </span>
-          <span className="text-emerald-400">💚</span>
+          <span className="text-emerald-500 dark:text-emerald-400">💚</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -986,20 +986,20 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={toggleTheme}
-            className="flex items-center gap-1.5 p-2 rounded-full border border-white/10 bg-[#0c1527]/80 hover:bg-white/10 text-slate-300 hover:text-white transition-all cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 p-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#0c1527]/80 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shadow-xs"
             title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
             aria-label="Toggle Dark and Light Mode"
           >
             {resolvedTheme === "dark" ? (
               <Moon className="h-4 w-4 text-emerald-400" />
             ) : (
-              <Sun className="h-4 w-4 text-amber-400" />
+              <Sun className="h-4 w-4 text-amber-500" />
             )}
           </button>
 
           <Link
             href="/assistant"
-            className="flex items-center gap-1.5 text-slate-400 hover:text-emerald-400 transition-colors"
+            className="flex items-center gap-1.5 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors"
           >
             <HelpCircle className="h-3.5 w-3.5" />
             <span>Need help?</span>
@@ -1011,18 +1011,18 @@ export default function DashboardPage() {
 
       {/* Quick Vitals Logger Modal */}
       {showVitalsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl glass-card bg-[#0b1324] text-white p-5 sm:p-6 shadow-2xl border border-white/10 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl glass-card bg-white dark:bg-[#0b1324] text-slate-900 dark:text-white p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-white/10 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/25 dark:border-emerald-500/30">
                   <Activity className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white leading-tight">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
                     Log Daily Biometrics
                   </h3>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
                     Encrypted personal health entry
                   </span>
                 </div>
@@ -1030,7 +1030,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowVitalsModal(false)}
-                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1038,9 +1038,9 @@ export default function DashboardPage() {
 
             <form onSubmit={handleSaveVitals} className="space-y-4 text-xs">
               {/* Glucose Section */}
-              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2.5">
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white">Blood Glucose</span>
+                  <span className="font-bold text-slate-900 dark:text-white">Blood Glucose</span>
                   <div className="flex items-center gap-1 text-[10px] font-bold">
                     <button
                       type="button"
@@ -1048,8 +1048,8 @@ export default function DashboardPage() {
                       className={cn(
                         "px-2.5 py-1 rounded-lg transition-colors cursor-pointer",
                         glucoseType === "fasting"
-                          ? "bg-emerald-500 text-slate-950 font-black shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                          : "bg-white/[0.06] text-slate-400 hover:text-white"
+                          ? "bg-emerald-500 text-white dark:text-slate-950 font-black shadow-xs dark:shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                          : "bg-slate-200/70 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                       )}
                     >
                       Fasting
@@ -1060,8 +1060,8 @@ export default function DashboardPage() {
                       className={cn(
                         "px-2.5 py-1 rounded-lg transition-colors cursor-pointer",
                         glucoseType === "postprandial"
-                          ? "bg-emerald-500 text-slate-950 font-black shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                          : "bg-white/[0.06] text-slate-400 hover:text-white"
+                          ? "bg-emerald-500 text-white dark:text-slate-950 font-black shadow-xs dark:shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                          : "bg-slate-200/70 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                       )}
                     >
                       Post-Meal
@@ -1077,21 +1077,21 @@ export default function DashboardPage() {
                     max="450"
                     value={glucoseInput}
                     onChange={(e) => setGlucoseInput(e.target.value)}
-                    className="flex-1 h-11 rounded-xl border border-white/10 bg-[#070d18] px-3.5 text-sm font-bold text-white focus:border-emerald-400 focus:outline-none"
+                    className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#070d18] px-3.5 text-sm font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
                   />
-                  <span className="text-xs font-bold text-slate-400">mg/dL</span>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">mg/dL</span>
                 </div>
-                <span className="text-[10px] text-slate-400 block">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
                   Target: 70–130 mg/dL (HbA1c &lt; 7.0%)
                 </span>
               </div>
 
               {/* Blood Pressure Section */}
-              <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-2.5">
-                <span className="font-bold text-white block">Blood Pressure & Pulse</span>
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 space-y-2.5">
+                <span className="font-bold text-slate-900 dark:text-white block">Blood Pressure & Pulse</span>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 block mb-1">Systolic</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Systolic</label>
                     <input
                       type="number"
                       required
@@ -1099,11 +1099,11 @@ export default function DashboardPage() {
                       max="240"
                       value={sysInput}
                       onChange={(e) => setSysInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-white/10 bg-[#070d18] px-3 text-xs font-bold text-white focus:border-emerald-400 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#070d18] px-3 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 block mb-1">Diastolic</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Diastolic</label>
                     <input
                       type="number"
                       required
@@ -1111,11 +1111,11 @@ export default function DashboardPage() {
                       max="140"
                       value={diaInput}
                       onChange={(e) => setDiaInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-white/10 bg-[#070d18] px-3 text-xs font-bold text-white focus:border-emerald-400 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#070d18] px-3 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 block mb-1">Pulse (bpm)</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Pulse (bpm)</label>
                     <input
                       type="number"
                       required
@@ -1123,23 +1123,23 @@ export default function DashboardPage() {
                       max="200"
                       value={hrInput}
                       onChange={(e) => setHrInput(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-white/10 bg-[#070d18] px-3 text-xs font-bold text-white focus:border-emerald-400 focus:outline-none"
+                      className="w-full h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#070d18] px-3 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-200/80 dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setShowVitalsModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-white/10 text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 shadow-md shadow-emerald-500/25 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-500/25 transition-all cursor-pointer"
                 >
                   Save Entry
                 </button>
