@@ -386,10 +386,16 @@ export default function MetricsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
-          Health Analytics
-        </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+         
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--foreground)]">
+            Health Analytics & Longitudinal Trends
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
+             {normalizedList.length} biomarkers extracted from your records.
+          </p>
+        </div>
 
         <div className="flex items-center gap-2">
           <Button

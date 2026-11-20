@@ -304,11 +304,16 @@ export default function TimelinePage() {
                     {ev.facility_or_doctor || "Self-Reported"}
                   </span>
 
-                  {ev.document_id && (
-                    <span className="flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400">
+                  {ev.document_id ? (
+                    <Link
+                      href="/vault"
+                      className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    >
                       <FileText className="h-3.5 w-3.5" />
-                      Source linked
-                    </span>
+                      <span>View in Vault →</span>
+                    </Link>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-medium">Self-Logged Event</span>
                   )}
                 </div>
               </article>

@@ -37,6 +37,7 @@ import { createMedication } from "@/lib/supabase/services/medications";
 import { updateHealthProfile } from "@/lib/supabase/services/profile";
 import { createTimelineEvent } from "@/lib/supabase/services/timeline";
 import { createClinicalNotification } from "@/lib/supabase/services/notifications";
+import { createDoctor, getDoctors } from "@/lib/supabase/services/appointments";
 import { uploadMedicalDocument, getMedicalDocumentSignedUrl } from "@/lib/supabase/storage";
 import { useRealtimeTables } from "@/hooks/useRealtime";
 
@@ -492,22 +493,37 @@ export default function VaultPage() {
         }
       }
 
-      // 5. CENTRAL HUB: Ingest any extracted medications
+      // 5. CENTRAL HUB: Ingest any extracted medications with duration & date ranges
       let ingestedMedsCount = 0;
       for (const med of editMeds) {
         if (med.name?.trim()) {
+          const medStartDate = (med as any).start_date || editDate || new Date().toISOString().split("T")[0];
+          let medEndDate = (med as any).end_date;
+          if (!medEndDate && (med as any).duration_days) {
+            const startD = new Date(medStartDate);
+            startD.setDate(startD.getDate() + Number((med as any).duration_days));
+            medEndDate = startD.toISOString().split("T")[0];
+          }
+
+          // Dynamic status based on date range
+          const today = new Date().toISOString().split("T")[0];
+          const isCompleted = medEndDate && medEndDate < today;
+          const medStatus = isCompleted ? "completed" : "active";
+
           await createMedication({
             user_id: effectiveUserId,
             document_id: savedDoc.id,
             name: med.name.trim(),
             generic_name: med.generic_name,
+            strength: (med as any).strength || med.dosage || "Standard",
             dosage: med.dosage || "As directed",
-            frequency: med.frequency || "Daily",
+            frequency: (med as any).frequency || "Daily",
             route: med.route || "oral",
-            instructions: med.instructions || "Take as prescribed by doctor",
+            instructions: med.instructions || ((med as any).duration_text ? `Take ${(med as any).duration_text}` : "Take as prescribed by doctor"),
             prescribing_doctor: editDoctor || undefined,
-            start_date: editDate || new Date().toISOString().split("T")[0],
-            status: "active",
+            start_date: medStartDate,
+            end_date: medEndDate || undefined,
+            status: medStatus,
           });
           ingestedMedsCount++;
         }
@@ -540,6 +556,29 @@ export default function VaultPage() {
             chronic_conditions: [...currentConds, ...newConditionsToAdd],
           });
           await refreshProfile();
+        }
+      }
+
+      // 6.1 CENTRAL HUB: Auto-ingest treating physician into Healthcare Providers directory
+      if (editDoctor?.trim()) {
+        try {
+          const currentDocs = await getDoctors(effectiveUserId);
+          const docExists = currentDocs.some(
+            (d) =>
+              d.name.toLowerCase().includes(editDoctor.trim().toLowerCase()) ||
+              editDoctor.trim().toLowerCase().includes(d.name.toLowerCase())
+          );
+          if (!docExists) {
+            await createDoctor({
+              user_id: effectiveUserId,
+              name: editDoctor.trim(),
+              specialty: editCategory === "prescription" ? "Prescribing Physician" : "Clinical Consultant",
+              clinic_name: editFacility?.trim() || undefined,
+              notes: `Attending physician from verified ${editCategory.replace("_", " ")}.`,
+            });
+          }
+        } catch (docErr) {
+          console.warn("Auto-doctor ingestion notice:", docErr);
         }
       }
 
@@ -694,35 +733,15 @@ export default function VaultPage() {
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
               <Shield className="h-3 w-3" />
-              AES-256 Encrypted
+               Secured
             </span>
           </div>
+          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-1">
+            Upload your record ai will detect and analyse for you !
+          </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          {/* Live Scanner Button */}
-          <button
-            type="button"
-            onClick={handleOpenScanner}
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 shadow-sm transition-all hover:bg-emerald-100 dark:hover:bg-emerald-500/20 active:scale-95"
-          >
-            <Camera className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <span className="hidden xs:inline">Live Camera</span> Scanner
-          </button>
-
-          {/* Standard Upload Button */}
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:brightness-105 active:scale-95">
-            <UploadCloud className="h-4 w-4" />
-            Upload File
-            <input
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg,.dicom,.csv"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-          </label>
-        </div>
+       
       </div>
 
       {/* Notification Toast */}
@@ -813,11 +832,11 @@ export default function VaultPage() {
             <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
 
-          <h3 className="mt-2 text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
-            Upload Records or Lab Reports
+          <h3 className="mt-3 text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
+            Drag & Drop Medical Records, Lab Panels, or Prescriptions
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            PDF, PNG, JPG, or DICOM files up to 25MB
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+            PDF, PNG, JPG, or DICOM files up to 25MB. AI automatically scans, parses biomarkers, and presents them for manual verification.
           </p>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">

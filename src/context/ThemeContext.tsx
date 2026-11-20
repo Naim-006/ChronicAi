@@ -19,13 +19,13 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
+  const [theme, setThemeState] = useState<Theme>("light");
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    // Read saved theme from localStorage, defaulting to dark for rich glassmorphism UI
+    // Read saved theme from localStorage, defaulting to light mode
     const saved = localStorage.getItem("chronicai_theme") as Theme | null;
-    const initialTheme: Theme = saved && ["light", "dark", "system"].includes(saved) ? saved : "dark";
+    const initialTheme: Theme = saved && ["light", "dark", "system"].includes(saved) ? saved : "light";
     setThemeState(initialTheme);
   }, []);
 

@@ -6,12 +6,28 @@ export async function getHealthProfile(userId: string): Promise<HealthProfile | 
     return null;
   }
 
+  // Try direct browser client first
   const supabase = createClient();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("health_profiles")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
+
+  // If client query returned no data (e.g. session token attaching delay or RLS handshake), fetch via server API
+  if ((error || !data) && typeof window !== "undefined") {
+    try {
+      const res = await fetch(`/api/profile/get?userId=${encodeURIComponent(userId)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.profile) {
+          return json.profile;
+        }
+      }
+    } catch (apiErr) {
+      console.warn("Failed to fetch profile via API fallback:", apiErr);
+    }
+  }
 
   if (error || !data) {
     return {
@@ -62,6 +78,25 @@ export async function updateHealthProfile(
   userId: string,
   updates: Partial<HealthProfile>
 ): Promise<HealthProfile> {
+  // If in browser context, use the server API endpoint for guaranteed database persistence
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/profile/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, updates }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.profile) {
+          return json.profile;
+        }
+      }
+    } catch (apiErr) {
+      console.warn("Server profile update API error, falling back to direct client update:", apiErr);
+    }
+  }
+
   const supabase = createClient();
   const payload: any = {
     user_id: userId,
@@ -98,26 +133,26 @@ export async function updateHealthProfile(
     }
   }
 
+  // Try update first (row almost always exists)
   let { data, error } = await supabase
     .from("health_profiles")
-    .upsert(payload, { onConflict: "user_id" })
+    .update(payload)
+    .eq("user_id", userId)
     .select()
-    .single();
+    .maybeSingle();
 
-  // If avatar_url column does not exist on health_profiles table, fallback to saving in preferences jsonb
-  if (error && updates.avatar_url && error.message?.includes("avatar_url")) {
-    delete payload.avatar_url;
-    payload.preferences = {
-      ...(payload.preferences || {}),
-      avatar_url: updates.avatar_url,
-    };
-    const retry = await supabase
+  // If no row existed, insert
+  if (!error && !data) {
+    const insertRes = await supabase
       .from("health_profiles")
-      .upsert(payload, { onConflict: "user_id" })
+      .insert({
+        ...payload,
+        full_name: payload.full_name || "Patient",
+      })
       .select()
       .single();
-    data = retry.data;
-    error = retry.error;
+    data = insertRes.data;
+    error = insertRes.error;
   }
 
   const rawPrefs = (data?.preferences as any) || (payload.preferences as any) || {};

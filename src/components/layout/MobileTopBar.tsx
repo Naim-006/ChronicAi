@@ -255,7 +255,7 @@ export function MobileTopBar() {
                   })()}
                   , {displayName.split(" ")[0]}
                 </span>
-                <span>👋</span>
+               
               </>
             ) : (
               pageTitle

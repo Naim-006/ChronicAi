@@ -21,29 +21,35 @@ export default function DashboardLayout({
       <MobileNavProvider>
         <div className="mint-wash relative flex min-h-screen w-full max-w-full overflow-x-hidden text-[var(--foreground)] antialiased">
           {/* Ambient aurora glowing meshes */}
-          <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+          <div className="pointer-events-none fixed inset-0 overflow-hidden z-0 print:hidden">
             <div className="absolute -left-32 top-0 h-[28rem] w-[28rem] rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 blur-[120px]" />
             <div className="absolute -right-24 top-20 h-[30rem] w-[30rem] rounded-full bg-purple-500/10 dark:bg-purple-600/12 blur-[140px]" />
             <div className="absolute left-1/3 bottom-0 h-96 w-96 rounded-full bg-cyan-500/10 dark:bg-cyan-500/12 blur-[120px]" />
           </div>
 
           <div className="relative z-10 flex w-full">
-            <DesktopNavRail />
+            <div className="print:hidden">
+              <DesktopNavRail />
+            </div>
 
-            <div className="flex min-w-0 flex-1 max-w-full overflow-x-hidden flex-col">
-              <MobileTopBar />
+            <div className="flex min-w-0 flex-1 max-w-full overflow-x-hidden flex-col print:p-0 print:m-0">
+              <div className="print:hidden">
+                <MobileTopBar />
+              </div>
 
               <main
-                className={`mx-auto w-full max-w-6xl flex-1 px-3 sm:px-6 lg:px-8 page-transition ${
+                className={`mx-auto w-full max-w-6xl flex-1 page-transition print:p-0 print:m-0 print:max-w-none ${
                   isAssistant
-                    ? "py-2 sm:py-4 pb-32 sm:pb-28 lg:pb-8"
-                    : "py-3 sm:py-6 pb-36 sm:pb-32 lg:pb-12"
+                    ? "px-2 sm:px-6 lg:px-8 py-1.5 sm:py-3 pb-[74px] sm:pb-24 lg:pb-6"
+                    : "px-3 sm:px-6 lg:px-8 py-3 sm:py-6 pb-36 sm:pb-32 lg:pb-12"
                 }`}
               >
                 {children}
               </main>
 
-              <MobileTabBar />
+              <div className="print:hidden">
+                <MobileTabBar />
+              </div>
             </div>
           </div>
         </div>

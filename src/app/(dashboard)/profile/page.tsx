@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Phone,
@@ -43,6 +43,8 @@ export default function ProfilePage() {
   // Vitals State
   const [isEditingVitals, setIsEditingVitals] = useState(false);
   const [isSavingVitals, setIsSavingVitals] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [heightCm, setHeightCm] = useState<number | "">("");
   const [weightKg, setWeightKg] = useState<number | "">("");
   const [bloodGroup, setBloodGroup] = useState<BloodGroup | "Unknown">("Unknown");
@@ -65,6 +67,8 @@ export default function ProfilePage() {
   // Synchronize initial state from profile
   useEffect(() => {
     if (profile) {
+      setFullName(profile.full_name || "");
+      setDateOfBirth(profile.date_of_birth || "");
       setHeightCm(profile.height_cm ?? "");
       setWeightKg(profile.weight_kg ?? "");
       setBloodGroup(profile.blood_group || "Unknown");
@@ -74,6 +78,34 @@ export default function ProfilePage() {
       setContactPhone(profile.emergency_contact?.phone || "");
     }
   }, [profile]);
+
+  // Compute live Age from DOB
+  const computedAge = useMemo(() => {
+    if (!dateOfBirth) return null;
+    const dob = new Date(dateOfBirth);
+    if (isNaN(dob.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : null;
+  }, [dateOfBirth]);
+
+  // Height and Weight imperial approximations
+  const heightInFeet = useMemo(() => {
+    if (typeof heightCm !== "number" || heightCm <= 0) return "";
+    const totalInches = heightCm / 2.54;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return `${feet}' ${inches}"`;
+  }, [heightCm]);
+
+  const weightInLbs = useMemo(() => {
+    if (typeof weightKg !== "number" || weightKg <= 0) return "";
+    return `${(weightKg * 2.20462).toFixed(1)} lbs`;
+  }, [weightKg]);
 
   // Compute live BMI
   const computedBmi =
@@ -139,6 +171,8 @@ export default function ProfilePage() {
     setIsSavingVitals(true);
     try {
       await updateHealthProfile(effectiveUserId, {
+        full_name: fullName.trim() || undefined,
+        date_of_birth: dateOfBirth || undefined,
         height_cm: heightCm === "" ? undefined : Number(heightCm),
         weight_kg: weightKg === "" ? undefined : Number(weightKg),
         blood_group: bloodGroup as BloodGroup,
@@ -146,10 +180,10 @@ export default function ProfilePage() {
       });
       await refreshProfile();
       setIsEditingVitals(false);
-      setSavedMessage("Physical metrics and blood type saved.");
+      setSavedMessage("Demographic details, metrics, and blood type saved successfully.");
       setTimeout(() => setSavedMessage(null), 3500);
     } catch {
-      setErrorMessage("Could not save vitals. Please check connection.");
+      setErrorMessage("Could not save profile details. Please check connection.");
       setTimeout(() => setErrorMessage(null), 4000);
     } finally {
       setIsSavingVitals(false);
@@ -315,8 +349,16 @@ export default function ProfilePage() {
             <h2 className="text-lg sm:text-xl font-extrabold text-[var(--foreground)] truncate">
               {displayName}
             </h2>
-            <div className="mt-0.5 text-xs text-[var(--muted-foreground)] flex items-center gap-2">
+            <div className="mt-0.5 text-xs text-[var(--muted-foreground)] flex items-center gap-2 flex-wrap">
               <span>{user?.email}</span>
+              {computedAge !== null && (
+                <>
+                  <span>•</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                    {computedAge} years old
+                  </span>
+                </>
+              )}
               {profile?.sex && (
                 <>
                   <span>•</span>
@@ -329,6 +371,12 @@ export default function ProfilePage() {
                 <Droplet className="h-3 w-3 text-rose-500" />
                 Blood: {profile?.blood_group || "Unknown"}
               </span>
+              {dateOfBirth && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--secondary)] border border-[var(--border)] px-2.5 py-0.5 text-[11px] font-bold text-[var(--foreground)]">
+                  <Activity className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                  DOB: {dateOfBirth} {computedAge !== null ? `(${computedAge} yrs)` : ""}
+                </span>
+              )}
               {computedBmi && (
                 <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${getBmiBadge(Number(computedBmi)).color}`}>
                   <Activity className="h-3 w-3" />
@@ -348,13 +396,13 @@ export default function ProfilePage() {
         </Link>
       </section>
 
-      {/* Biometric Vitals & Physical Measurements */}
+      {/* Demographics, Physical Measurements & Vitals */}
       <section className="soft-card p-5 space-y-4">
         <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
           <div className="flex items-center gap-2">
             <Scale className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <h3 className="text-sm font-extrabold text-[var(--foreground)]">
-              Physical Measurements &amp; Vitals
+              Demographics &amp; Physical Vitals
             </h3>
           </div>
           <button
@@ -362,6 +410,8 @@ export default function ProfilePage() {
             onClick={() => {
               if (isEditingVitals) {
                 // Cancel
+                setFullName(profile?.full_name || "");
+                setDateOfBirth(profile?.date_of_birth || "");
                 setHeightCm(profile?.height_cm ?? "");
                 setWeightKg(profile?.weight_kg ?? "");
                 setBloodGroup(profile?.blood_group || "Unknown");
@@ -373,44 +423,60 @@ export default function ProfilePage() {
             }}
             className="flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
           >
-            {isEditingVitals ? "Cancel" : <><Edit2 className="h-3.5 w-3.5" /> Edit Vitals</>}
+            {isEditingVitals ? "Cancel" : <><Edit2 className="h-3.5 w-3.5" /> Edit Vitals &amp; Bio</>}
           </button>
         </div>
 
         {isEditingVitals ? (
           <div className="space-y-4 pt-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider mb-1">
-                  Height (cm)
+                  Full Legal Name
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={heightCm}
-                    onChange={(e) => setHeightCm(e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="e.g. 175"
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
-                  />
-                  <span className="absolute right-3 top-2 text-[11px] text-[var(--muted-foreground)]">cm</span>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Date of Birth
+                  </label>
+                  {computedAge !== null && (
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
+                      {computedAge} yrs old
+                    </span>
+                  )}
                 </div>
+                <input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
+                />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider mb-1">
-                  Weight (kg)
+                  Biological Sex
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={weightKg}
-                    onChange={(e) => setWeightKg(e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="e.g. 72.5"
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
-                  />
-                  <span className="absolute right-3 top-2 text-[11px] text-[var(--muted-foreground)]">kg</span>
-                </div>
+                <select
+                  value={sex}
+                  onChange={(e) => setSex(e.target.value as Sex)}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
+                >
+                  <option value="">Unspecified</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
               </div>
 
               <div>
@@ -435,56 +501,129 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider mb-1">
-                  Biological Sex
-                </label>
-                <select
-                  value={sex}
-                  onChange={(e) => setSex(e.target.value as Sex)}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
-                >
-                  <option value="">Unspecified</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Height (cm)
+                  </label>
+                  {heightInFeet && (
+                    <span className="text-[10px] text-[var(--muted-foreground)] font-semibold">
+                      ≈ {heightInFeet}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={heightCm}
+                    onChange={(e) => setHeightCm(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder="e.g. 175"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
+                  />
+                  <span className="absolute right-3 top-2 text-[11px] text-[var(--muted-foreground)]">cm</span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-bold text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Weight (kg)
+                  </label>
+                  {weightInLbs && (
+                    <span className="text-[10px] text-[var(--muted-foreground)] font-semibold">
+                      ≈ {weightInLbs}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder="e.g. 72.5"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-semibold text-[var(--foreground)] focus:border-emerald-600 focus:outline-none"
+                  />
+                  <span className="absolute right-3 top-2 text-[11px] text-[var(--muted-foreground)]">kg</span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-[var(--border)]">
               <div className="text-xs text-[var(--muted-foreground)]">
                 {computedBmi ? (
-                  <span>Calculated BMI: <strong className="text-[var(--foreground)]">{computedBmi} kg/m²</strong></span>
+                  <span>
+                    Calculated BMI: <strong className="text-[var(--foreground)]">{computedBmi} kg/m²</strong> ({getBmiBadge(Number(computedBmi)).label})
+                  </span>
                 ) : (
-                  <span>Enter both height and weight to calculate BMI.</span>
+                  <span>Enter height and weight to calculate BMI.</span>
                 )}
               </div>
               <button
                 type="button"
                 onClick={handleSaveVitals}
                 disabled={isSavingVitals}
-                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm"
               >
                 {isSavingVitals ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                Save Vitals
+                Save Demographics &amp; Vitals
               </button>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="rounded-2xl border border-[var(--border)]/70 bg-[var(--background)] p-3">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Height</span>
-              <span className="mt-1 block text-base font-extrabold text-[var(--foreground)]">
-                {profile?.height_cm ? `${profile.height_cm} cm` : "—"}
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Full Name</span>
+              <span className="mt-1 block text-sm font-extrabold text-[var(--foreground)] truncate">
+                {profile?.full_name || displayName}
               </span>
             </div>
 
             <div className="rounded-2xl border border-[var(--border)]/70 bg-[var(--background)] p-3">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Weight</span>
-              <span className="mt-1 block text-base font-extrabold text-[var(--foreground)]">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Age &amp; DOB</span>
+              <span className="mt-1 block text-sm font-extrabold text-[var(--foreground)]">
+                {computedAge !== null ? `${computedAge} yrs` : "—"}
+              </span>
+              <span className="text-[10px] text-[var(--muted-foreground)] block truncate">
+                {profile?.date_of_birth || "DOB not set"}
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)]/70 bg-[var(--background)] p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Sex</span>
+              <span className="mt-1 block text-sm font-extrabold text-[var(--foreground)] capitalize">
+                {profile?.sex || "Unspecified"}
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)]/70 bg-[var(--background)] p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Blood Group</span>
+              <span className="mt-1 block text-sm font-extrabold text-rose-600 dark:text-rose-400">
+                {profile?.blood_group || "Unknown"}
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)]/70 bg-[var(--background)] p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Height</span>
+              <span className="mt-1 block text-sm font-extrabold text-[var(--foreground)]">
+                {profile?.height_cm ? `${profile.height_cm} cm` : "—"}
+              </span>
+              {heightInFeet && (
+                <span className="text-[10px] text-[var(--muted-foreground)] block">
+                  {heightInFeet}
+                </span>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)]/70 bg-[var(--background)] p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Weight &amp; BMI</span>
+              <span className="mt-1 block text-sm font-extrabold text-[var(--foreground)]">
                 {profile?.weight_kg ? `${profile.weight_kg} kg` : "—"}
               </span>
+              {computedBmi && (
+                <span className={`text-[10px] font-bold block ${getBmiBadge(Number(computedBmi)).color.split(" ")[0]}`}>
+                  BMI: {computedBmi}
+                </span>
+              )}
             </div>
 
             <div className="rounded-2xl border border-[var(--border)]/70 bg-[var(--background)] p-3">

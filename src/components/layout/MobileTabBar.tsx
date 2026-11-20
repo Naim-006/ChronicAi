@@ -193,7 +193,6 @@ export function MobileTabBar() {
       name: t("nav.short_records", "Records"),
       href: "/vault",
       icon: Folder,
-      badge: "1",
       aliases: ["/timeline", "/summaries"],
     },
     {
@@ -471,13 +470,6 @@ export function MobileTabBar() {
                           : "stroke-[1.8] text-slate-400 dark:text-slate-400 group-hover:scale-105"
                       )}
                     />
-
-                    {/* Notification badge on Records */}
-                    {tab.badge && (
-                      <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-extrabold text-slate-950 shadow-sm ring-1 ring-[#0b1325]">
-                        {tab.badge}
-                      </span>
-                    )}
                   </div>
 
                   {/* Tab Label */}
