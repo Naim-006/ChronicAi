@@ -12,7 +12,6 @@ import {
   Activity,
   Pill,
   Calendar,
-  HeartPulse,
   Bell,
   User,
   Settings,

@@ -783,7 +783,7 @@ export const mockNotifications: ClinicalNotification[] = [
     severity: "success",
     source_trigger: "Longitudinal Glycemic Analysis",
     link_href: "/chronic-care",
-    link_label: "View Chronic Care",
+    link_label: "View Clinical Evaluation",
     is_read: true,
     created_at: "2026-11-15T16:20:00Z",
   },

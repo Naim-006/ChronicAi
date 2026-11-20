@@ -11,7 +11,6 @@ import {
   Calendar,
   Pill,
   Clock,
-  HeartPulse,
   User,
   ShieldCheck,
   Settings,
@@ -88,7 +87,6 @@ export function DesktopNavRail() {
       case "/metrics": return t("nav.analytics", fallback);
       case "/medications": return t("nav.meds", fallback);
       case "/appointments": return t("nav.appointments", fallback);
-      case "/chronic-care": return t("nav.chronic_care", fallback);
       case "/notifications": return t("nav.notifications", "Notifications");
       case "/profile": return t("nav.profile", fallback);
       case "/settings": return t("nav.settings", fallback);
