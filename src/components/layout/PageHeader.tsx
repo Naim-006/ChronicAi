@@ -25,7 +25,7 @@ export function PageHeader({
     >
       <div className="min-w-0">
         {eyebrow && (
-          <span className="mb-1 block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
+          <span className="mb-0.5 block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
             {eyebrow}
           </span>
         )}
@@ -33,7 +33,7 @@ export function PageHeader({
           {title}
         </h1>
         {description && (
-          <p className="mt-1 max-w-xl text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p className="mt-0.5 max-w-xl text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-normal hidden sm:block">
             {description}
           </p>
         )}

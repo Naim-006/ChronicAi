@@ -129,9 +129,7 @@ export default function AppointmentsPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Visits"
         title="Appointments"
-        description={`${upcomingCount} confirmed consultations ahead`}
         actions={
           <Button onClick={() => setShowAddModal(true)} size="sm">
             <Plus className="h-3.5 w-3.5" />

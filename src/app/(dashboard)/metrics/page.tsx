@@ -386,19 +386,10 @@ export default function MetricsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 mb-1.5">
-            <Activity className="h-3.5 w-3.5" />
-            <span>Clinical Records Grounded</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--foreground)]">
-            Health Analytics & Longitudinal Trends
-          </h1>
-          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
-            Tracking {normalizedList.length} biomarkers extracted directly from your clinical laboratory vault records.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
+          Health Analytics
+        </h1>
 
         <div className="flex items-center gap-2">
           <Button

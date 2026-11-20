@@ -694,12 +694,9 @@ export default function VaultPage() {
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
               <Shield className="h-3 w-3" />
-              AES-256 GCM Encrypted
+              AES-256 Encrypted
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-1">
-            Universal health vault with OCR biomarker extraction and manual clinical verification
-          </p>
         </div>
 
         {/* Action Buttons */}
@@ -816,11 +813,11 @@ export default function VaultPage() {
             <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
 
-          <h3 className="mt-3 text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
-            Drag & Drop Medical Records, Lab Panels, or Prescriptions
+          <h3 className="mt-2 text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
+            Upload Records or Lab Reports
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm">
-            PDF, PNG, JPG, or DICOM files up to 25MB. AI automatically scans, parses biomarkers, and presents them for manual verification.
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            PDF, PNG, JPG, or DICOM files up to 25MB
           </p>
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">

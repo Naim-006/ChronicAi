@@ -483,11 +483,8 @@ export default function ChronicCarePage() {
             </div>
             <div>
               <h2 className="text-sm font-extrabold text-[var(--foreground)] tracking-tight">
-                Clinical Targets & Biomarker Goals
+                Clinical Targets & Goals
               </h2>
-              <span className="text-xs text-[var(--muted-foreground)] block">
-                Evidence-based management goals aligned with your active chronic conditions and lab records.
-              </span>
             </div>
           </div>
           <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 self-start sm:self-auto bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200/60 dark:border-emerald-800">
@@ -579,13 +576,13 @@ export default function ChronicCarePage() {
         </div>
 
         {conditions.length === 0 ? (
-          <div className="soft-card p-10 text-center space-y-3">
-            <Activity className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
+          <div className="soft-card p-6 sm:p-8 text-center space-y-2">
+            <Activity className="mx-auto h-7 w-7 text-[var(--muted-foreground)]/40" />
             <h3 className="text-sm font-bold text-[var(--foreground)]">
               No chronic conditions registered
             </h3>
-            <p className="text-xs text-[var(--muted-foreground)] max-w-sm mx-auto">
-              Add diagnoses such as Dermatomycosis, Thrombocytopenia, Type 2 Diabetes, or Hypertension to generate tailored clinical protocols and drug safety checks.
+            <p className="text-xs text-[var(--muted-foreground)] max-w-xs mx-auto">
+              Add conditions to generate personalized clinical care protocols.
             </p>
             <Button
               size="sm"

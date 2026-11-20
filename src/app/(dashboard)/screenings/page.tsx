@@ -262,22 +262,17 @@ export default function ScreeningsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
-            Clinical Health Screenings
-          </h1>
-          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
-            Evidence-based risk stratification algorithms: ASCVD, ADA Diabetes, KDIGO Renal, and Metabolic Health.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
+          Health Screenings
+        </h1>
 
         <Link
           href="/assistant"
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--secondary)] px-3.5 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors self-start sm:self-auto"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--secondary)] px-3.5 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors shrink-0"
         >
           <Stethoscope className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Ask Copilot About Risks</span>
+          <span>Ask Copilot</span>
         </Link>
       </div>
 
@@ -301,16 +296,12 @@ export default function ScreeningsPage() {
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 p-5 sm:p-6 text-white shadow-lg border border-emerald-500/20">
         <div className="pointer-events-none absolute -right-8 -top-10 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-bold text-emerald-100 border border-white/20">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Preventive Surveillance Engine</span>
-            </div>
+          <div className="space-y-1 max-w-xl">
             <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
               Personalized Risk Stratification
             </h2>
-            <p className="text-xs text-emerald-100/90 leading-relaxed">
-              Early detection prevents progression. Run validated clinical calculators cross-referenced with your laboratory blood panels and diagnosed chronic conditions.
+            <p className="text-xs text-emerald-100/90">
+              Validated clinical calculators aligned with your records and lab panels.
             </p>
           </div>
 

@@ -121,12 +121,7 @@ export default function TimelinePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-extrabold text-[var(--foreground)]">Timeline</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
-            {events.length} health events in order, newest first
-          </p>
-        </div>
+        <h1 className="text-xl font-extrabold text-[var(--foreground)]">Timeline</h1>
         <Button onClick={() => setShowAddModal(true)} size="sm">
           <Plus className="h-3.5 w-3.5" />
           Add event

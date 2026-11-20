@@ -254,9 +254,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6 max-w-4xl pb-12">
       <PageHeader
-        eyebrow="Clinical Identity"
         title="Health Profile & Vitals"
-        description="Patient biometric profile, emergency card, drug contraindications, and clinical care links."
       />
 
       {/* Notifications */}
