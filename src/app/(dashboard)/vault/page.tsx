@@ -28,10 +28,15 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { MedicalDocument, ExtractedRecord, DocumentCategory } from "@/types/medical";
+import { MedicalDocument, ExtractedRecord, DocumentCategory, MetricType } from "@/types/medical";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { getDocuments, createDocumentRecord, createExtractedRecord as dbCreateExtracted } from "@/lib/supabase/services/documents";
+import { logHealthMetric } from "@/lib/supabase/services/metrics";
+import { createMedication } from "@/lib/supabase/services/medications";
+import { updateHealthProfile } from "@/lib/supabase/services/profile";
+import { createTimelineEvent } from "@/lib/supabase/services/timeline";
+import { createClinicalNotification } from "@/lib/supabase/services/notifications";
 import { uploadMedicalDocument, getMedicalDocumentSignedUrl } from "@/lib/supabase/storage";
 import { useRealtimeTables } from "@/hooks/useRealtime";
 
@@ -50,8 +55,24 @@ interface ExtractedLabItem {
   is_abnormal: boolean;
 }
 
+interface ExtractedMedItem {
+  name: string;
+  generic_name?: string;
+  dosage: string;
+  frequency: string;
+  route?: string;
+  instructions?: string;
+}
+
+interface ExtractedDiagItem {
+  name: string;
+  icd10?: string;
+  status?: "active" | "managed" | "resolved";
+  notes?: string;
+}
+
 export default function VaultPage() {
-  const { effectiveUserId } = useAuth();
+  const { profile, session, effectiveUserId, refreshProfile } = useAuth();
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
   const [extractedRecords, setExtractedRecords] = useState<ExtractedRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +118,8 @@ export default function VaultPage() {
   const [scannerStep, setScannerStep] = useState<"viewfinder" | "processing" | "review">("viewfinder");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [ocrProgressText, setOcrProgressText] = useState("");
+  const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -107,6 +130,8 @@ export default function VaultPage() {
   const [editDate, setEditDate] = useState("");
   const [editCategory, setEditCategory] = useState<DocumentCategory>("lab_report");
   const [editLabs, setEditLabs] = useState<ExtractedLabItem[]>([]);
+  const [editMeds, setEditMeds] = useState<ExtractedMedItem[]>([]);
+  const [editDiagnoses, setEditDiagnoses] = useState<ExtractedDiagItem[]>([]);
   const [editSummary, setEditSummary] = useState("");
   const [ocrConfidence, setOcrConfidence] = useState(96);
 
@@ -178,73 +203,126 @@ export default function VaultPage() {
     setIsScannerOpen(false);
     setScannerStep("viewfinder");
     setCapturedImage(null);
+    setApiKeyModalOpen(false);
   };
 
-  // Run OCR Extraction Process
-  const handleCaptureAndRunOCR = (imageSource?: string) => {
+  // Run Real Multimodal OCR Extraction with Gemini API
+  const handleCaptureAndRunOCR = async (imageSource?: string, overrideKey?: string) => {
     stopCameraStream();
-    const snap = imageSource || capturedImage || "";
+    let snap = imageSource || capturedImage || "";
+
+    // If camera active and no snap, capture current frame from video canvas
+    if (!snap && videoRef.current) {
+      try {
+        const video = videoRef.current;
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          snap = canvas.toDataURL("image/jpeg", 0.88);
+        }
+      } catch {}
+    }
+
     setCapturedImage(snap);
     setScannerStep("processing");
+    setOcrProgressText("Analyzing image & preparing clinical OCR pipeline...");
 
-    // OCR extraction simulation pipeline
-    setOcrProgressText("Detecting document borders and perspective...");
-    setTimeout(() => {
-      setOcrProgressText("Running AI Optical Character Recognition (OCR)...");
-    }, 900);
+    const storedKey =
+      overrideKey ||
+      (typeof window !== "undefined" ? localStorage.getItem("chronicai_gemini_key") : null) ||
+      (profile?.preferences as any)?.gemini_api_key ||
+      "";
 
-    setTimeout(() => {
-      setOcrProgressText("Extracting biomarkers, clinical entities, and reference ranges...");
-    }, 1800);
+    // Extract base64
+    let base64Data = "";
+    let mimeType = selectedUploadFile?.type || "image/jpeg";
 
-    setTimeout(() => {
+    if (snap.startsWith("data:")) {
+      const parts = snap.split(",");
+      const match = snap.match(/data:(.*?);base64/);
+      if (match) mimeType = match[1];
+      base64Data = parts[1] || "";
+    } else if (selectedUploadFile) {
+      try {
+        base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const res = reader.result as string;
+            const b64 = res.split(",")[1];
+            resolve(b64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedUploadFile);
+        });
+      } catch {}
+    }
+
+    try {
+      setOcrProgressText("Transmitting to Google Gemini Multimodal Scanner...");
+
+      const res = await fetch("/api/records/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-gemini-api-key": storedKey,
+        },
+        body: JSON.stringify({
+          fileBase64: base64Data,
+          mimeType: mimeType,
+          fileName: editFileName || selectedUploadFile?.name || "Scanned_Medical_Record.jpg",
+          apiKey: storedKey || undefined,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        if (result.error === "NO_API_KEY") {
+          setOcrProgressText("Google Gemini API Key Needed");
+          setApiKeyModalOpen(true);
+          return;
+        }
+        throw new Error(result.message || "Failed to analyze document.");
+      }
+
+      setOcrProgressText("Parsing biomarkers, medications & diagnoses...");
+      const d = result.data;
+
+      setEditFileName(
+        selectedUploadFile?.name ||
+          `${(d.category || "medical_record").toUpperCase()}_${new Date().toISOString().split("T")[0]}`
+      );
+      setEditCategory(d.category || "lab_report");
+      setEditFacility(d.facility_name || "Diagnostic Laboratory");
+      setEditDoctor(d.doctor_name || "Staff Physician");
+      setEditDate(d.document_date || new Date().toISOString().split("T")[0]);
+      setOcrConfidence(d.confidence_score || 95);
+      setEditSummary(d.summary || "Verified medical record extracted with Gemini AI.");
+      setEditLabs(d.lab_results || []);
+      setEditMeds(d.medications || []);
+      setEditDiagnoses(d.diagnoses || []);
+      setScannerStep("review");
+    } catch (err: any) {
+      console.warn("AI OCR fallback to manual verification:", err);
+      // Graceful fallback: allows patient to enter details manually
       const today = new Date().toISOString().split("T")[0];
-      setEditFileName(`Quest_Diagnostics_Panel_${new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }).replace(" ", "_")}.pdf`);
-      setEditFacility("Quest Diagnostics Clinical Laboratory");
-      setEditDoctor("Dr. Catherine Wei, MD");
+      setEditFileName(selectedUploadFile?.name || `Clinical_Record_${today}`);
+      setEditFacility("");
+      setEditDoctor("");
       setEditDate(today);
       setEditCategory("lab_report");
-      setOcrConfidence(97);
-      setEditSummary("Automated OCR extracted full renal panel with estimated GFR and serum electrolytes. All biomarkers parsed with 97% confidence.");
-      setEditLabs([
-        {
-          test_name: "Serum Creatinine",
-          value: "1.02",
-          unit: "mg/dL",
-          reference_range: "0.50 - 1.10",
-          is_abnormal: false,
-        },
-        {
-          test_name: "Estimated GFR (CKD-EPI)",
-          value: "74",
-          unit: "mL/min/1.73m²",
-          reference_range: "> 60",
-          is_abnormal: false,
-        },
-        {
-          test_name: "Fasting Blood Glucose",
-          value: "108",
-          unit: "mg/dL",
-          reference_range: "70 - 99",
-          is_abnormal: true,
-        },
-        {
-          test_name: "Hemoglobin A1c",
-          value: "6.7",
-          unit: "%",
-          reference_range: "< 5.7",
-          is_abnormal: true,
-        },
-        {
-          test_name: "Serum Potassium",
-          value: "4.3",
-          unit: "mmol/L",
-          reference_range: "3.5 - 5.0",
-          is_abnormal: false,
-        },
-      ]);
+      setOcrConfidence(80);
+      setEditSummary("Uploaded medical document ready for review and ingestion.");
+      setEditLabs([]);
+      setEditMeds([]);
+      setEditDiagnoses([]);
       setScannerStep("review");
-    }, 2800);
+      setNotification(err.message || "Document ready for manual review and entry.");
+      setTimeout(() => setNotification(null), 5000);
+    }
   };
 
   // Mobile Camera File Input fallback
@@ -292,7 +370,7 @@ export default function VaultPage() {
     handleCaptureAndRunOCR(url);
   };
 
-  // Final Manual Verification Confirmation
+  // Central Hub Ingestion: Ingests Record into Documents, Metrics, Medications, Conditions & Timeline
   const handleSaveVerifiedRecord = async () => {
     if (!effectiveUserId) return;
     setIsSavingRecord(true);
@@ -302,7 +380,7 @@ export default function VaultPage() {
       let fileSize = selectedUploadFile?.size || 1024 * 145;
       let fileType = selectedUploadFile?.type || "application/pdf";
 
-      // If a real file was uploaded, store it directly in Supabase Storage
+      // 1. Upload to Supabase Storage if file exists
       if (selectedUploadFile) {
         const uploadRes = await uploadMedicalDocument(selectedUploadFile, effectiveUserId);
         if (uploadRes.path) {
@@ -310,7 +388,7 @@ export default function VaultPage() {
         }
       }
 
-      // Save to Supabase database (with authentic storage reference)
+      // 2. Save to medical_documents
       const savedDoc = await createDocumentRecord({
         user_id: effectiveUserId,
         file_name: fileName,
@@ -320,12 +398,13 @@ export default function VaultPage() {
         category: editCategory,
         document_date: editDate || new Date().toISOString().split("T")[0],
         facility_name: editFacility || "Verified Clinical Center",
-        doctor_name: editDoctor || "Dr. Staff Physician, MD",
+        doctor_name: editDoctor || "Treating Clinician",
         status: "verified",
         summary: editSummary,
-        tags: ["Verified Record", "OCR Extracted", "AI Analyzed"],
+        tags: ["Verified Record", "Gemini OCR Extracted", "Clinical Ingestion"],
       });
 
+      // 3. Save extracted record
       const savedExtracted = await dbCreateExtracted({
         document_id: savedDoc.id,
         user_id: effectiveUserId,
@@ -336,41 +415,227 @@ export default function VaultPage() {
           date: savedDoc.document_date,
           facility: savedDoc.facility_name,
           doctor: savedDoc.doctor_name,
-          diagnoses: [editSummary.slice(0, 48)],
+          diagnoses: editDiagnoses.map((d) => d.name),
           lab_results: editLabs.map((l) => ({
             test_name: l.test_name,
-            value: Number(l.value) || 0,
+            value: parseFloat(String(l.value)) || 0,
             unit: l.unit,
             reference_range: l.reference_range,
             is_abnormal: l.is_abnormal,
           })),
-          instructions: ["You confirmed this record. It is now part of your health timeline."],
+          medications: editMeds,
+          instructions: ["Verified and ingested into central health record."],
         },
         confirmed_data: {
           document_type: editCategory,
           date: savedDoc.document_date,
           facility: savedDoc.facility_name,
           doctor: savedDoc.doctor_name,
-          diagnoses: [editSummary.slice(0, 48)],
+          diagnoses: editDiagnoses.map((d) => d.name),
           lab_results: editLabs.map((l) => ({
             test_name: l.test_name,
-            value: Number(l.value) || 0,
+            value: parseFloat(String(l.value)) || 0,
             unit: l.unit,
             reference_range: l.reference_range,
             is_abnormal: l.is_abnormal,
           })),
+          medications: editMeds,
         },
       });
+
+      // 4. CENTRAL HUB: Ingest each extracted biomarker into health_metrics
+      let ingestedMetricsCount = 0;
+      for (const lab of editLabs) {
+        const numVal = parseFloat(String(lab.value));
+        if (!isNaN(numVal)) {
+          const lower = lab.test_name.toLowerCase();
+          let metricType: MetricType = "other";
+          if (lower.includes("glucose") || lower.includes("sugar")) metricType = "glucose";
+          else if (lower.includes("a1c") || lower.includes("hba1c")) metricType = "hba1c";
+          else if (lower.includes("pressure") || lower.includes("bp") || lower.includes("systolic")) metricType = "blood_pressure";
+          else if (lower.includes("heart rate") || lower.includes("pulse")) metricType = "heart_rate";
+          else if (lower.includes("weight")) metricType = "weight";
+          else if (lower.includes("spo2") || lower.includes("oxygen")) metricType = "spo2";
+
+          await logHealthMetric({
+            user_id: effectiveUserId,
+            document_id: savedDoc.id,
+            metric_type: metricType,
+            value_primary: numVal,
+            unit: lab.unit || "",
+            is_abnormal: lab.is_abnormal,
+            notes: `${lab.test_name} (Ref: ${lab.reference_range || "normal"})`,
+            recorded_at: editDate || new Date().toISOString(),
+          });
+          ingestedMetricsCount++;
+        }
+      }
+
+      // 5. CENTRAL HUB: Ingest any extracted medications
+      let ingestedMedsCount = 0;
+      for (const med of editMeds) {
+        if (med.name?.trim()) {
+          await createMedication({
+            user_id: effectiveUserId,
+            document_id: savedDoc.id,
+            name: med.name.trim(),
+            generic_name: med.generic_name,
+            dosage: med.dosage || "As directed",
+            frequency: med.frequency || "Daily",
+            route: med.route || "oral",
+            instructions: med.instructions || "Take as prescribed by doctor",
+            prescribing_doctor: editDoctor || undefined,
+            start_date: editDate || new Date().toISOString().split("T")[0],
+            status: "active",
+          });
+          ingestedMedsCount++;
+        }
+      }
+
+      // 6. CENTRAL HUB: Ingest any newly diagnosed chronic conditions
+      if (editDiagnoses.length > 0 && profile) {
+        const currentConds: any[] = profile.chronic_conditions || [];
+        const existingNames = new Set(
+          currentConds.map((c) => (typeof c === "string" ? c.toLowerCase() : c.name?.toLowerCase()))
+        );
+
+        const newConditionsToAdd: any[] = [];
+        for (const diag of editDiagnoses) {
+          if (diag.name?.trim() && !existingNames.has(diag.name.trim().toLowerCase())) {
+            newConditionsToAdd.push({
+              id: `cond-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+              name: diag.name.trim(),
+              icd10: diag.icd10 || undefined,
+              status: diag.status || "active",
+              diagnosed_date: editDate || new Date().toISOString().split("T")[0],
+              notes: diag.notes || `Diagnosed in ${savedDoc.facility_name || "clinical report"}`,
+            });
+            existingNames.add(diag.name.trim().toLowerCase());
+          }
+        }
+
+        if (newConditionsToAdd.length > 0) {
+          await updateHealthProfile(effectiveUserId, {
+            chronic_conditions: [...currentConds, ...newConditionsToAdd],
+          });
+          await refreshProfile();
+        }
+      }
+
+      // 7. CENTRAL HUB: Create Clinical Timeline Event
+      await createTimelineEvent({
+        user_id: effectiveUserId,
+        document_id: savedDoc.id,
+        event_type:
+          editCategory === "lab_report"
+            ? "lab_test"
+            : editCategory === "prescription"
+            ? "medication_start"
+            : editCategory === "imaging"
+            ? "imaging"
+            : "note",
+        title: `${editCategory === "lab_report" ? "Lab Panel" : editCategory === "prescription" ? "Prescription" : "Record"}: ${editFacility || fileName}`,
+        description: editSummary,
+        event_date: editDate || new Date().toISOString().split("T")[0],
+        facility_or_doctor: editFacility || editDoctor,
+        is_verified: true,
+        metadata: {
+          biomarkersIngested: ingestedMetricsCount,
+          medicationsIngested: ingestedMedsCount,
+          confidence: ocrConfidence,
+        },
+      });
+
+      // 8. CENTRAL HUB: Create Clinical Notification
+      await createClinicalNotification({
+        user_id: effectiveUserId,
+        type: "verification_required",
+        title: "Record Ingested & Verified",
+        message: `"${savedDoc.file_name}" verified! Successfully ingested ${ingestedMetricsCount} biomarkers and ${ingestedMedsCount} medications into your health record.`,
+        severity: "success",
+        source_trigger: "Vault OCR Ingestion",
+        link_href: "/timeline",
+        link_label: "View Timeline",
+      });
+
+      // 9. CENTRAL HUB & RAG: Vector Embeddings Generation (pgvector)
+      try {
+        const storedKey =
+          (typeof window !== "undefined" ? localStorage.getItem("chronicai_gemini_key") : null) ||
+          (profile?.preferences as any)?.gemini_api_key ||
+          "";
+
+        const chunks: string[] = [];
+        chunks.push(
+          `Document: ${savedDoc.file_name} | Type: ${savedDoc.category} | Date: ${savedDoc.document_date} | Facility: ${savedDoc.facility_name} | Doctor: ${savedDoc.doctor_name}\nSummary: ${savedDoc.summary}`
+        );
+
+        if (editLabs.length > 0) {
+          const labsText = editLabs
+            .map(
+              (l) =>
+                `- ${l.test_name}: ${l.value} ${l.unit} (Reference: ${l.reference_range})${l.is_abnormal ? " [ABNORMAL]" : ""}`
+            )
+            .join("\n");
+          chunks.push(`Lab Results for ${savedDoc.file_name} (${savedDoc.document_date}):\n${labsText}`);
+        }
+
+        if (editMeds.length > 0) {
+          const medsText = editMeds
+            .map(
+              (m) =>
+                `- ${m.name}${m.generic_name ? ` (${m.generic_name})` : ""}: ${m.dosage}, ${m.frequency}, Route: ${m.route || "oral"}. Instructions: ${m.instructions || "Take as prescribed"}`
+            )
+            .join("\n");
+          chunks.push(`Prescribed Medications for ${savedDoc.file_name} (${savedDoc.document_date}):\n${medsText}`);
+        }
+
+        if (editDiagnoses.length > 0) {
+          const diagsText = editDiagnoses
+            .map((d) => `- ${d.name}${d.icd10 ? ` [ICD-10: ${d.icd10}]` : ""}: ${d.status || "active"}`)
+            .join("\n");
+          chunks.push(`Diagnoses and Clinical Findings in ${savedDoc.file_name}:\n${diagsText}`);
+        }
+
+        if (chunks.length > 0) {
+          fetch("/api/rag/embed", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-gemini-api-key": storedKey,
+              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+            },
+            body: JSON.stringify({
+              documentId: savedDoc.id,
+              userId: effectiveUserId,
+              chunks,
+              metadata: {
+                category: savedDoc.category,
+                facility: savedDoc.facility_name,
+                doctor: savedDoc.doctor_name,
+                date: savedDoc.document_date,
+              },
+              apiKey: storedKey || undefined,
+            }),
+          }).catch((err) => {
+            console.warn("Background vector embedding notification:", err);
+          });
+        }
+      } catch (vectorErr) {
+        console.warn("Could not prepare vector chunks for RAG indexing:", vectorErr);
+      }
 
       setDocuments((prev) => [savedDoc, ...prev]);
       setExtractedRecords((prev) => [savedExtracted, ...prev]);
       setSelectedUploadFile(null);
       handleCloseScanner();
-      setNotification(`Successfully uploaded and verified "${savedDoc.file_name}" in your secure storage!`);
-      setTimeout(() => setNotification(null), 5000);
-    } catch (err) {
+      setNotification(
+        `"${savedDoc.file_name}" verified! Ingested ${ingestedMetricsCount} biomarkers and synced to your health dashboard.`
+      );
+      setTimeout(() => setNotification(null), 6000);
+    } catch (err: any) {
       console.error("Failed to upload/verify record:", err);
-      setNotification("Error uploading file to storage. Please try again.");
+      setNotification(`Error processing record: ${err?.message || "Please try again."}`);
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsSavingRecord(false);
@@ -1032,35 +1297,88 @@ export default function VaultPage() {
             {/* OCR Processing Step */}
             {scannerStep === "processing" && (
               <div className="p-8 text-center space-y-4">
-                <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-600">
-                  <RefreshCw className="h-8 w-8 animate-spin" />
-                  <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-amber-500 animate-bounce" />
-                </div>
-                <div>
-                  <h4 className="text-base font-extrabold text-slate-900">
-                    Extracting Medical Intelligence
-                  </h4>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {ocrProgressText}
-                  </p>
-                </div>
-                <div className="mx-auto max-w-xs h-1.5 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full bg-emerald-500 animate-pulse w-3/4 rounded-full" />
-                </div>
+                {apiKeyModalOpen ? (
+                  <div className="max-w-md mx-auto space-y-4 p-5 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 text-left">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-emerald-600" />
+                      <h4 className="text-sm font-extrabold text-[var(--foreground)]">
+                        Google Gemini API Key Needed
+                      </h4>
+                    </div>
+                    <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
+                      To automatically read this scanned document, extract biomarkers, and identify prescribed medications, enter your Google Gemini API key.
+                    </p>
+                    <div>
+                      <input
+                        type="password"
+                        value={tempApiKey}
+                        onChange={(e) => setTempApiKey(e.target.value)}
+                        placeholder="Paste your Gemini API key (AIzaSy...)"
+                        className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs font-mono text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setApiKeyModalOpen(false);
+                          setScannerStep("review");
+                        }}
+                        className="text-xs font-bold text-[var(--muted-foreground)] hover:underline"
+                      >
+                        Skip AI &amp; Enter Manually
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!tempApiKey.trim()}
+                        onClick={() => {
+                          if (tempApiKey.trim()) {
+                            if (typeof window !== "undefined") {
+                              localStorage.setItem("chronicai_gemini_key", tempApiKey.trim());
+                            }
+                            setApiKeyModalOpen(false);
+                            handleCaptureAndRunOCR(capturedImage || undefined, tempApiKey.trim());
+                          }
+                        }}
+                        className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                      >
+                        Analyze with Gemini
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
+                      <RefreshCw className="h-8 w-8 animate-spin" />
+                      <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-amber-500 animate-bounce" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-extrabold text-[var(--foreground)]">
+                        Extracting Medical Intelligence
+                      </h4>
+                      <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                        {ocrProgressText}
+                      </p>
+                    </div>
+                    <div className="mx-auto max-w-xs h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className="h-full bg-emerald-500 animate-pulse w-3/4 rounded-full" />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* Manual Verification & Review Step */}
             {scannerStep === "review" && (
               <div className="max-h-[75vh] overflow-y-auto p-5 space-y-4">
-                <div className="flex items-center justify-between rounded-2xl bg-emerald-50 p-3 border border-emerald-200 text-xs">
+                <div className="flex items-center justify-between rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 p-3 border border-emerald-200 dark:border-emerald-800 text-xs">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span className="font-bold text-emerald-900">
+                    <span className="font-bold text-emerald-900 dark:text-emerald-300">
                       OCR Completed · {ocrConfidence}% confidence score
                     </span>
                   </div>
-                  <span className="text-[11px] text-emerald-700 font-semibold">
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
                     Please verify details before saving
                   </span>
                 </div>
@@ -1068,7 +1386,7 @@ export default function VaultPage() {
                 {/* Form fields for Record Name, Facility, Doctor, Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                       File / Record Name
                     </label>
                     <Input
@@ -1076,49 +1394,51 @@ export default function VaultPage() {
                       value={editFileName}
                       onChange={(e) => setEditFileName(e.target.value)}
                       className="h-9 text-xs"
-                      placeholder="e.g. Quest_Metabolic_Panel_Nov2026.pdf"
+                      placeholder="e.g. Complete_Metabolic_Panel.pdf"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Record Category
                     </label>
                     <select
                       value={editCategory}
                       onChange={(e) => setEditCategory(e.target.value as DocumentCategory)}
-                      className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800"
+                      className="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-medium text-slate-800 dark:text-slate-200"
                     >
                       <option value="lab_report">Lab Report</option>
                       <option value="prescription">Prescription</option>
+                      <option value="discharge_summary">Discharge Summary</option>
                       <option value="imaging">Imaging & Scan</option>
                       <option value="doctor_note">Doctor Note</option>
+                      <option value="other">Other Medical Record</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Clinical Facility
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Clinical Facility / Lab
                     </label>
                     <Input
                       type="text"
                       value={editFacility}
                       onChange={(e) => setEditFacility(e.target.value)}
                       className="h-9 text-xs"
-                      placeholder="e.g. Quest Diagnostics"
+                      placeholder="e.g. Memorial Hospital Clinical Lab"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Physician / Specialist
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Physician / Clinician
                     </label>
                     <Input
                       type="text"
                       value={editDoctor}
                       onChange={(e) => setEditDoctor(e.target.value)}
                       className="h-9 text-xs"
-                      placeholder="e.g. Dr. Catherine Wei, MD"
+                      placeholder="e.g. Dr. Jane Smith, MD"
                     />
                   </div>
                 </div>
@@ -1241,6 +1561,32 @@ export default function VaultPage() {
                     </table>
                   </div>
                 </div>
+
+                {/* Extracted Medications */}
+                {editMeds.length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-2">
+                      Extracted Prescriptions &amp; Medications ({editMeds.length})
+                    </span>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 text-xs overflow-hidden">
+                      {editMeds.map((med, i) => (
+                        <div key={i} className="p-2.5 flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-slate-900 dark:text-white block">
+                              {med.name} {med.dosage}
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                              {med.frequency} · {med.instructions || "As directed"}
+                            </span>
+                          </div>
+                          <span className="rounded-md bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200/50">
+                            Auto-syncs to Active Meds
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Summary field */}
                 <div>

@@ -24,6 +24,7 @@ export type Database = {
           chronic_conditions: Json | null;
           preferences: Json | null;
           avatar_url: string | null;
+          last_active_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -41,6 +42,7 @@ export type Database = {
           chronic_conditions?: Json | null;
           preferences?: Json | null;
           avatar_url?: string | null;
+          last_active_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -58,6 +60,7 @@ export type Database = {
           chronic_conditions?: Json | null;
           preferences?: Json | null;
           avatar_url?: string | null;
+          last_active_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -78,6 +81,11 @@ export type Database = {
           status: "uploaded" | "processing" | "extracted" | "needs_review" | "verified" | "failed";
           summary: string | null;
           tags: string[] | null;
+          storage_bucket: string | null;
+          page_count: number | null;
+          ocr_status: "pending" | "processing" | "completed" | "failed" | null;
+          raw_ocr_text: string | null;
+          metadata: Json | null;
           created_at: string;
         };
         Insert: {
@@ -87,13 +95,18 @@ export type Database = {
           file_path: string;
           file_type?: string;
           file_size?: number;
-          category?: "prescription" | "lab_report" | "imaging" | "discharge_summary" | "doctor_note" | "other";
+          category: "prescription" | "lab_report" | "imaging" | "discharge_summary" | "doctor_note" | "other";
           document_date?: string | null;
           facility_name?: string | null;
           doctor_name?: string | null;
           status?: "uploaded" | "processing" | "extracted" | "needs_review" | "verified" | "failed";
           summary?: string | null;
           tags?: string[] | null;
+          storage_bucket?: string | null;
+          page_count?: number | null;
+          ocr_status?: "pending" | "processing" | "completed" | "failed" | null;
+          raw_ocr_text?: string | null;
+          metadata?: Json | null;
           created_at?: string;
         };
         Update: {
@@ -110,6 +123,11 @@ export type Database = {
           status?: "uploaded" | "processing" | "extracted" | "needs_review" | "verified" | "failed";
           summary?: string | null;
           tags?: string[] | null;
+          storage_bucket?: string | null;
+          page_count?: number | null;
+          ocr_status?: "pending" | "processing" | "completed" | "failed" | null;
+          raw_ocr_text?: string | null;
+          metadata?: Json | null;
           created_at?: string;
         };
         Relationships: [];
@@ -123,6 +141,8 @@ export type Database = {
           confirmed_data: Json | null;
           confidence_score: number;
           status: "pending" | "confirmed" | "rejected" | "modified";
+          processing_time_ms: number | null;
+          model_version: string | null;
           reviewed_at: string | null;
           created_at: string;
         };
@@ -134,6 +154,8 @@ export type Database = {
           confirmed_data?: Json | null;
           confidence_score?: number;
           status?: "pending" | "confirmed" | "rejected" | "modified";
+          processing_time_ms?: number | null;
+          model_version?: string | null;
           reviewed_at?: string | null;
           created_at?: string;
         };
@@ -145,6 +167,8 @@ export type Database = {
           confirmed_data?: Json | null;
           confidence_score?: number;
           status?: "pending" | "confirmed" | "rejected" | "modified";
+          processing_time_ms?: number | null;
+          model_version?: string | null;
           reviewed_at?: string | null;
           created_at?: string;
         };
@@ -287,7 +311,20 @@ export type Database = {
           id: string;
           user_id: string;
           document_id: string | null;
-          metric_type: "blood_pressure" | "heart_rate" | "glucose" | "hba1c" | "weight" | "temperature" | "spo2" | "other";
+          metric_type:
+            | "blood_pressure"
+            | "heart_rate"
+            | "glucose"
+            | "hba1c"
+            | "weight"
+            | "temperature"
+            | "spo2"
+            | "lipid_panel"
+            | "renal_panel"
+            | "hepatic_panel"
+            | "electrolyte"
+            | "cbc"
+            | "other";
           value_primary: number;
           value_secondary: number | null;
           unit: string;
@@ -303,7 +340,20 @@ export type Database = {
           id?: string;
           user_id: string;
           document_id?: string | null;
-          metric_type: "blood_pressure" | "heart_rate" | "glucose" | "hba1c" | "weight" | "temperature" | "spo2" | "other";
+          metric_type:
+            | "blood_pressure"
+            | "heart_rate"
+            | "glucose"
+            | "hba1c"
+            | "weight"
+            | "temperature"
+            | "spo2"
+            | "lipid_panel"
+            | "renal_panel"
+            | "hepatic_panel"
+            | "electrolyte"
+            | "cbc"
+            | "other";
           value_primary: number;
           value_secondary?: number | null;
           unit: string;
@@ -319,7 +369,20 @@ export type Database = {
           id?: string;
           user_id?: string;
           document_id?: string | null;
-          metric_type?: "blood_pressure" | "heart_rate" | "glucose" | "hba1c" | "weight" | "temperature" | "spo2" | "other";
+          metric_type?:
+            | "blood_pressure"
+            | "heart_rate"
+            | "glucose"
+            | "hba1c"
+            | "weight"
+            | "temperature"
+            | "spo2"
+            | "lipid_panel"
+            | "renal_panel"
+            | "hepatic_panel"
+            | "electrolyte"
+            | "cbc"
+            | "other";
           value_primary?: number;
           value_secondary?: number | null;
           unit?: string;
@@ -525,16 +588,163 @@ export type Database = {
         };
         Relationships: [];
       };
+      audit_logs: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          action: string;
+          resource_type: string;
+          resource_id: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          details: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          action: string;
+          resource_type: string;
+          resource_id?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          details?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          action?: string;
+          resource_type?: string;
+          resource_id?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          details?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      document_embeddings: {
+        Row: {
+          id: string;
+          document_id: string;
+          user_id: string;
+          chunk_index: number;
+          chunk_content: string;
+          token_count: number | null;
+          embedding: string; // vector(768)
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          document_id: string;
+          user_id: string;
+          chunk_index: number;
+          chunk_content: string;
+          token_count?: number | null;
+          embedding: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          document_id?: string;
+          user_id?: string;
+          chunk_index?: number;
+          chunk_content?: string;
+          token_count?: number | null;
+          embedding?: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      medical_knowledge_embeddings: {
+        Row: {
+          id: string;
+          source_title: string;
+          source_url: string | null;
+          topic: string;
+          chunk_index: number;
+          chunk_content: string;
+          token_count: number | null;
+          embedding: string; // vector(768)
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          source_title: string;
+          source_url?: string | null;
+          topic: string;
+          chunk_index: number;
+          chunk_content: string;
+          token_count?: number | null;
+          embedding: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          source_title?: string;
+          source_url?: string | null;
+          topic?: string;
+          chunk_index?: number;
+          chunk_content?: string;
+          token_count?: number | null;
+          embedding?: string;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      seed_demo_patient_data: {
+      match_patient_documents: {
         Args: {
-          target_user_id: string;
+          query_embedding: string;
+          match_threshold?: number;
+          match_count?: number;
+          filter_document_id?: string;
         };
-        Returns: undefined;
+        Returns: {
+          id: string;
+          document_id: string;
+          chunk_index: number;
+          chunk_content: string;
+          metadata: Json;
+          similarity: number;
+        }[];
+      };
+      match_medical_knowledge: {
+        Args: {
+          query_embedding: string;
+          match_threshold?: number;
+          match_count?: number;
+          filter_topic?: string;
+        };
+        Returns: {
+          id: string;
+          source_title: string;
+          topic: string;
+          chunk_index: number;
+          chunk_content: string;
+          metadata: Json;
+          similarity: number;
+        }[];
+      };
+      log_audit_event: {
+        Args: {
+          p_action: string;
+          p_resource_type: string;
+          p_resource_id?: string;
+          p_details?: Json;
+        };
+        Returns: string;
       };
     };
     Enums: {

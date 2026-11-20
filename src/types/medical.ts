@@ -189,6 +189,11 @@ export type MetricType =
   | "weight"
   | "temperature"
   | "spo2"
+  | "lipid_panel"
+  | "renal_panel"
+  | "hepatic_panel"
+  | "electrolyte"
+  | "cbc"
   | "other";
 
 export interface HealthMetric {
@@ -205,6 +210,43 @@ export interface HealthMetric {
   is_abnormal?: boolean;
   recorded_at: string;
   notes?: string;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  user_id?: string;
+  action: string;
+  resource_type: string;
+  resource_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  details?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface DocumentEmbedding {
+  id: string;
+  document_id: string;
+  user_id: string;
+  chunk_index: number;
+  chunk_content: string;
+  token_count?: number;
+  embedding: number[];
+  metadata?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface MedicalKnowledgeEmbedding {
+  id: string;
+  source_title: string;
+  source_url?: string;
+  topic: string;
+  chunk_index: number;
+  chunk_content: string;
+  token_count?: number;
+  embedding: number[];
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 

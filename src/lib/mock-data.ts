@@ -782,7 +782,7 @@ export const mockNotifications: ClinicalNotification[] = [
     message: "Your HbA1c improved from 7.1% down to 6.8%, reaching your clinician-defined goal (<7.0%) and reducing estimated 10-year vascular risks.",
     severity: "success",
     source_trigger: "Longitudinal Glycemic Analysis",
-    link_href: "/evaluation",
+    link_href: "/chronic-care",
     link_label: "View Clinical Evaluation",
     is_read: true,
     created_at: "2026-11-15T16:20:00Z",

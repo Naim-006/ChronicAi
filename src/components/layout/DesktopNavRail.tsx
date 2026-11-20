@@ -57,6 +57,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
     title: "HEALTH",
     items: [
       { name: "Chronic Care", href: "/chronic-care", icon: ShieldCheck },
+      { name: "Screenings", href: "/screenings", icon: HeartPulse },
       { name: "Health Analytics", href: "/metrics", icon: Activity },
       { name: "Medications", href: "/medications", icon: Pill },
       { name: "Appointments", href: "/appointments", icon: Calendar },
@@ -96,16 +97,17 @@ export function DesktopNavRail() {
   const getLocalizedName = (href: string, fallback: string) => {
     switch (href) {
       case "/dashboard": return t("nav.home", fallback);
-      case "/assistant": return "Clinical Copilot";
-      case "/vault": return "Medical Records";
-      case "/timeline": return "Medical Timeline";
-      case "/chronic-care": return "Chronic Care";
-      case "/metrics": return "Health Analytics";
-      case "/medications": return "Medications";
-      case "/appointments": return "Appointments";
-      case "/notifications": return "Notifications";
-      case "/profile": return "Health Profile";
-      case "/settings": return "Settings";
+      case "/assistant": return t("nav.copilot", "Clinical Copilot");
+      case "/vault": return t("nav.records", "Medical Records");
+      case "/timeline": return t("nav.timeline", "Medical Timeline");
+      case "/chronic-care": return t("nav.chronic_care", "Chronic Care");
+      case "/screenings": return t("nav.screenings", "Screenings");
+      case "/metrics": return t("nav.analytics", "Health Analytics");
+      case "/medications": return t("nav.meds", "Medications");
+      case "/appointments": return t("nav.appointments", "Appointments");
+      case "/notifications": return t("nav.notifications", "Notifications");
+      case "/profile": return t("nav.profile", "Health Profile");
+      case "/settings": return t("nav.settings", "Settings");
       default: return fallback;
     }
   };

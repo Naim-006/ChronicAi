@@ -79,8 +79,13 @@ const navGroups: NavGroup[] = [
     title: "Clinical Care",
     items: [
       {
-        name: "Health Evaluation",
-        href: "/evaluation",
+        name: "Chronic Care Hub",
+        href: "/chronic-care",
+        icon: ShieldCheck,
+      },
+      {
+        name: "Health Screenings",
+        href: "/screenings",
         icon: HeartPulse,
       },
       {
@@ -97,11 +102,6 @@ const navGroups: NavGroup[] = [
         name: "Appointments",
         href: "/appointments",
         icon: Calendar,
-      },
-      {
-        name: "Chronic Care Hub",
-        href: "/chronic-care",
-        icon: ShieldCheck,
       },
     ],
   },
@@ -147,7 +147,8 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
       case "/assistant": return t("nav.copilot", fallback);
       case "/vault": return t("nav.records", fallback);
       case "/timeline": return t("nav.timeline", fallback);
-      case "/evaluation": return t("nav.chronic_care", fallback);
+      case "/chronic-care": return t("nav.chronic_care", fallback);
+      case "/screenings": return t("nav.screenings", "Health Screenings");
       case "/metrics": return t("nav.analytics", fallback);
       case "/medications": return t("nav.meds", fallback);
       case "/appointments": return t("nav.appointments", fallback);

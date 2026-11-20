@@ -368,15 +368,7 @@ export default function LandingPage() {
       <section className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-2 lg:pt-20">
         <div className="dot-grid absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_60%_60%_at_30%_40%,black,transparent)]" />
         <div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm backdrop-blur"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Your personal health assistant
-          </motion.div>
+        
 
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
