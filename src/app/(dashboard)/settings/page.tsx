@@ -160,10 +160,10 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            {t("settings.title", "Settings & AI Configuration")}
+            {t("settings.title", "Settings & Preferences")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Configure Gemini AI, live document scanner, language &amp; clinical preferences.
+            Manage your account, display language, notifications, and health preferences.
           </p>
         </div>
 
