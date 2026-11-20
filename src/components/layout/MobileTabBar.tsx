@@ -50,6 +50,52 @@ export function MobileTabBar() {
     return () => observer.disconnect();
   }, []);
 
+  // Scroll-aware Auto-Hide: Hide smoothly on scroll down, reveal on scroll up
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    setIsVisible(true);
+    lastScrollYRef.current = typeof window !== "undefined" ? window.scrollY : 0;
+
+    // Keep always docked on assistant page for constant input availability
+    if (pathname === "/assistant") {
+      setIsVisible(true);
+      return;
+    }
+
+    let ticking = false;
+    const threshold = 18;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+          const diff = currentScrollY - lastScrollYRef.current;
+
+          if (currentScrollY < 40) {
+            setIsVisible(true);
+          } else if (Math.abs(diff) > threshold) {
+            if (diff > 0) {
+              // Scrolling down -> hide smoothly
+              setIsVisible(false);
+            } else {
+              // Scrolling up -> reveal smoothly
+              setIsVisible(true);
+            }
+            lastScrollYRef.current = currentScrollY;
+          }
+
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [pathname]);
+
   const tabs = [
     {
       name: t("nav.home", "Home"),
@@ -177,14 +223,21 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav className="fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-200">
+    <nav
+      className={cn(
+        "fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-300 ease-in-out",
+        isVisible
+          ? "translate-y-0 opacity-100"
+          : "translate-y-28 opacity-0 pointer-events-none"
+      )}
+    >
       <div
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={cn(
-          "pointer-events-auto relative w-full h-[94px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
+          "pointer-events-auto relative w-full h-[68px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
           waveState.active && "animate-liquid-wave"
         )}
       >
