@@ -41,11 +41,10 @@ const navSections = [
   {
     title: "Health",
     items: [
-      { name: "Evaluation", href: "/evaluation", icon: HeartPulse },
+      { name: "Chronic Care", href: "/chronic-care", icon: ShieldCheck },
       { name: "Analytics", href: "/metrics", icon: Activity },
       { name: "Medications", href: "/medications", icon: Pill },
       { name: "Appointments", href: "/appointments", icon: Calendar },
-      { name: "Chronic Care", href: "/chronic-care", icon: ShieldCheck },
     ],
   },
   {
@@ -85,7 +84,7 @@ export function DesktopNavRail() {
       case "/assistant": return t("nav.copilot", fallback);
       case "/vault": return t("nav.records", fallback);
       case "/timeline": return t("nav.timeline", fallback);
-      case "/evaluation": return t("nav.chronic_care", fallback);
+      case "/chronic-care": return t("nav.chronic_care", fallback);
       case "/metrics": return t("nav.analytics", fallback);
       case "/medications": return t("nav.meds", fallback);
       case "/appointments": return t("nav.appointments", fallback);

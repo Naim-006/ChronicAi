@@ -63,7 +63,7 @@ export default function ChronicCarePage() {
         title="Personalized Care Protocol"
         description={
           profile?.chronic_conditions && profile.chronic_conditions.length > 0
-            ? `${profile.chronic_conditions.join(" · ")} · Managed care plan`
+            ? `${profile.chronic_conditions.map((c: any) => (typeof c === "string" ? c : c?.name || "Active Condition")).join(" · ")} · Managed care plan`
             : "Personalized Chronic Condition Management Protocol"
         }
         actions={

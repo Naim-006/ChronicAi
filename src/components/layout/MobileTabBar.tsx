@@ -79,7 +79,6 @@ export function MobileTabBar() {
       name: t("nav.short_chronic", "Chronic Care"),
       href: "/chronic-care",
       icon: ShieldCheck,
-      aliases: ["/evaluation"],
     },
   ];
 
