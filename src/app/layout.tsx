@@ -28,8 +28,12 @@ export const metadata: Metadata = {
   title: "ChronicAI — Lifelong Health Intelligence",
   description: "Your medical life in one calm, intelligent place.",
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
 };
 
