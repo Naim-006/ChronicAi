@@ -266,29 +266,30 @@ export function MobileTabBar() {
     }
   };
 
-  // Exact geometric parameters derived from reference design:
-  // - Stadium pill shape with curved ends (height 62px from y=28 to y=90)
-  // - Smooth curved hump over center Copilot button (spread = 72px, apex at y=6)
-  const H = 94;
-  const topBaseline = 28;
+  // Exact geometric parameters:
+  // - Top baseline with soft rounded top corners, flat bottom resting flush at screen bottom
+  // - Smooth curved hump over center Copilot button (spread = 72px, apex at domePeakY = 6)
+  const H = 90;
+  const topBaseline = 26;
   const bottom = 90;
-  const capRadius = 31; // (90 - 28) / 2
+  const cornerRadius = 22;
   const cx = width / 2;
   const spread = 72; // width where curve begins curving up
   const cpSpread = 44; // baseline control point
   const cpPeak = 24; // apex control point
   const domePeakY = 6; // apex of dome
 
-  // Continuous C1-smooth SVG path with horizontal tangents at baseline and apex
+  // Continuous SVG path: flat bottom flush to screen bottom, curved dome over Copilot
   const svgPath = `
-    M ${capRadius}, ${topBaseline}
+    M 0, ${topBaseline + cornerRadius}
+    Q 0, ${topBaseline} ${cornerRadius}, ${topBaseline}
     L ${cx - spread}, ${topBaseline}
     C ${cx - cpSpread}, ${topBaseline} ${cx - cpPeak}, ${domePeakY} ${cx}, ${domePeakY}
     C ${cx + cpPeak}, ${domePeakY} ${cx + cpSpread}, ${topBaseline} ${cx + spread}, ${topBaseline}
-    L ${width - capRadius}, ${topBaseline}
-    A ${capRadius} ${capRadius} 0 0 1 ${width - capRadius}, ${bottom}
-    L ${capRadius}, ${bottom}
-    A ${capRadius} ${capRadius} 0 0 1 ${capRadius}, ${topBaseline}
+    L ${width - cornerRadius}, ${topBaseline}
+    Q ${width}, ${topBaseline} ${width}, ${topBaseline + cornerRadius}
+    L ${width}, ${bottom}
+    L 0, ${bottom}
     Z
   `.replace(/\s+/g, " ").trim();
 
@@ -296,7 +297,7 @@ export function MobileTabBar() {
     <nav
       ref={navRef}
       className={cn(
-        "fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-300 ease-in-out will-change-transform",
+        "fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-xl pointer-events-none lg:hidden transition-all duration-300 ease-in-out will-change-transform",
         isVisible
           ? "translate-y-0 opacity-100"
           : "translate-y-28 opacity-0 pointer-events-none"
@@ -308,19 +309,21 @@ export function MobileTabBar() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={cn(
-          "pointer-events-auto relative w-full h-[94px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
+          "pointer-events-auto relative w-full h-[90px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
           waveState.active && "animate-liquid-wave"
         )}
       >
-        {/* Frosted Translucent Glass Layer with soft blur */}
+        {/* Frosted Translucent Glass Layer with 5px blur */}
         <div
           className={cn(
-            "absolute inset-0 pointer-events-none backdrop-blur-xl",
-            isDark ? "bg-[#0b1325]/92 shadow-[0_-8px_30px_rgba(0,0,0,0.4)]" : "bg-white/95"
+            "absolute inset-0 pointer-events-none backdrop-blur-[5px]",
+            isDark ? "bg-[#0b1325]/45" : "bg-white/40"
           )}
           style={{
             clipPath: `path('${svgPath}')`,
             WebkitClipPath: `path('${svgPath}')`,
+            backdropFilter: "blur(5px)",
+            WebkitBackdropFilter: "blur(5px)",
           }}
         />
 
@@ -353,7 +356,7 @@ export function MobileTabBar() {
 
         {/* Crisp Border and Smooth Dome Silhouette */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_10px_28px_rgba(0,0,0,0.3)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
           width="100%"
           height={H}
           viewBox={`0 0 ${width} ${H}`}
@@ -362,8 +365,8 @@ export function MobileTabBar() {
         >
           <path
             d={svgPath}
-            fill={isDark ? "rgba(9, 16, 30, 0.88)" : "rgba(255, 255, 255, 0.95)"}
-            stroke={isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(203, 213, 225, 0.8)"}
+            fill={isDark ? "rgba(11, 19, 37, 0.50)" : "rgba(255, 255, 255, 0.35)"}
+            stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.65)"}
             strokeWidth="1.2"
             strokeOpacity="1"
             strokeLinejoin="round"
@@ -418,7 +421,9 @@ export function MobileTabBar() {
                     <span
                       className={cn(
                         "text-[10px] sm:text-[11px] leading-none tracking-tight whitespace-nowrap mt-1",
-                        isActive ? "font-bold text-emerald-400" : "font-medium text-slate-400 dark:text-slate-400"
+                        isActive
+                          ? "font-bold text-emerald-600 dark:text-emerald-400"
+                          : "font-medium text-slate-700 dark:text-slate-400"
                       )}
                     >
                       {tab.name}
@@ -435,7 +440,7 @@ export function MobileTabBar() {
             return (
               <div
                 key={tab.name}
-                className="flex flex-col items-center justify-start h-full pt-[39px]"
+                className="flex flex-col items-center justify-start h-full pt-[37px]"
               >
                 <Link
                   href={tab.href!}
@@ -447,8 +452,8 @@ export function MobileTabBar() {
                       className={cn(
                         "h-[21px] w-[21px] sm:h-[23px] sm:w-[23px] transition-transform",
                         isActive
-                          ? "stroke-[2.2] text-emerald-400 scale-105"
-                          : "stroke-[1.8] text-slate-400 dark:text-slate-400 group-hover:scale-105"
+                          ? "stroke-[2.2] text-emerald-600 dark:text-emerald-400 scale-105"
+                          : "stroke-[1.8] text-slate-700 dark:text-slate-400 group-hover:scale-105"
                       )}
                     />
                   </div>
@@ -457,7 +462,9 @@ export function MobileTabBar() {
                   <span
                     className={cn(
                       "text-[10px] sm:text-[11px] leading-none tracking-tight text-center truncate max-w-full px-0.5 mt-1",
-                      isActive ? "font-bold text-emerald-400" : "font-medium text-slate-400 dark:text-slate-400"
+                      isActive
+                        ? "font-bold text-emerald-600 dark:text-emerald-400"
+                        : "font-semibold text-slate-700 dark:text-slate-400"
                     )}
                   >
                     {tab.name}
@@ -467,7 +474,9 @@ export function MobileTabBar() {
                   <span
                     className={cn(
                       "h-[3px] w-3 rounded-full mt-1 transition-all duration-200",
-                      isActive ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] scale-100" : "bg-transparent scale-0"
+                      isActive
+                        ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] scale-100"
+                        : "bg-transparent scale-0"
                     )}
                   />
                 </Link>

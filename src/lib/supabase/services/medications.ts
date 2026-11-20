@@ -97,6 +97,38 @@ export async function logMedicationAdherence(
   const newId = `log-${Date.now()}`;
   const now = new Date().toISOString();
 
+  // If in browser, use privileged server endpoint to avoid RLS/permission issues
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/medications/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "take",
+          userId: log.user_id,
+          medicationId: log.medication_id,
+          scheduledTime: log.scheduled_time,
+          notes: log.notes,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success && json.log) {
+        return {
+          id: json.log.id,
+          medication_id: json.log.medication_id,
+          user_id: json.log.user_id,
+          scheduled_time: json.log.scheduled_time,
+          recorded_time: json.log.recorded_time || undefined,
+          status: json.log.status,
+          notes: json.log.notes || undefined,
+          created_at: json.log.created_at,
+        };
+      }
+    } catch (apiErr) {
+      console.warn("Server adherence log failed, falling back to direct client:", apiErr);
+    }
+  }
+
   if (!isSupabaseConfigured()) {
     return { ...log, id: newId, created_at: now };
   }
@@ -129,6 +161,54 @@ export async function logMedicationAdherence(
     notes: data.notes || undefined,
     created_at: data.created_at,
   };
+}
+
+export async function untakeMedicationAdherence(
+  medicationId: string,
+  userId: string
+): Promise<boolean> {
+  // If in browser, call privileged server endpoint to delete today's adherence log
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/medications/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "untake",
+          userId,
+          medicationId,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return true;
+      }
+    } catch (apiErr) {
+      console.warn("Server untake failed, falling back to direct client:", apiErr);
+    }
+  }
+
+  if (!isSupabaseConfigured()) {
+    return true;
+  }
+
+  const supabase = createClient();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const { error } = await supabase
+    .from("medication_logs")
+    .delete()
+    .eq("user_id", userId)
+    .eq("medication_id", medicationId)
+    .gte("created_at", today.toISOString());
+
+  if (error) {
+    console.error("Failed to delete medication log:", error);
+    return false;
+  }
+
+  return true;
 }
 
 export async function getMedicationLogs(

@@ -35,6 +35,7 @@ import {
   updateMedication,
   deleteMedication,
   logMedicationAdherence,
+  untakeMedicationAdherence,
   getMedicationLogs,
 } from "@/lib/supabase/services/medications";
 import { useRealtimeTables } from "@/hooks/useRealtime";
@@ -112,12 +113,18 @@ export default function MedicationsPage() {
         (l) => l.scheduled_time?.startsWith(todayStr) || l.created_at?.startsWith(todayStr)
       );
       const initialMap: Record<string, boolean> = {};
-      todayLogs.forEach((l) => {
-        if (l.status === "taken") {
-          initialMap[l.medication_id] = true;
-        }
+      // Initialize all medications to false
+      (fetchedMeds || []).forEach((m) => {
+        initialMap[m.id] = false;
       });
-      setLoggedMeds((prev) => ({ ...initialMap, ...prev }));
+      // Sort chronologically ascending so newest log takes precedence
+      const sortedTodayLogs = [...todayLogs].sort(
+        (a, b) => new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime()
+      );
+      sortedTodayLogs.forEach((l) => {
+        initialMap[l.medication_id] = l.status === "taken";
+      });
+      setLoggedMeds(initialMap);
     } catch {
       setMedications([]);
       setMedLogs([]);
@@ -143,6 +150,7 @@ export default function MedicationsPage() {
   // Toggle dose taken/missed for today
   const toggleMed = async (medId: string) => {
     const nextState = !loggedMeds[medId];
+    // Immediate optimistic update
     setLoggedMeds((prev) => ({
       ...prev,
       [medId]: nextState,
@@ -150,17 +158,28 @@ export default function MedicationsPage() {
 
     if (effectiveUserId) {
       try {
-        await logMedicationAdherence({
-          user_id: effectiveUserId,
-          medication_id: medId,
-          scheduled_time: new Date().toISOString(),
-          recorded_time: new Date().toISOString(),
-          status: nextState ? "taken" : "missed",
-        });
+        if (nextState) {
+          // Log dose as taken
+          await logMedicationAdherence({
+            user_id: effectiveUserId,
+            medication_id: medId,
+            scheduled_time: new Date().toISOString(),
+            recorded_time: new Date().toISOString(),
+            status: "taken",
+          });
+        } else {
+          // Untake: delete today's adherence log from DB
+          await untakeMedicationAdherence(medId, effectiveUserId);
+        }
         const updatedLogs = await getMedicationLogs(effectiveUserId, 14);
         setMedLogs(updatedLogs || []);
       } catch (err) {
-        console.error("Failed to log medication adherence:", err);
+        console.error("Failed to toggle medication adherence:", err);
+        // Rollback optimistic update on error
+        setLoggedMeds((prev) => ({
+          ...prev,
+          [medId]: !nextState,
+        }));
       }
     }
   };
@@ -726,9 +745,9 @@ export default function MedicationsPage() {
               <tr className="border-b border-[var(--border)] text-[10px] font-extrabold uppercase text-[var(--muted-foreground)]">
                 <th className="py-2.5 pl-3">Medication & Doctor</th>
                 <th className="py-2.5 px-3">Strength & Timing</th>
+                <th className="py-2.5 px-3">Today Log</th>
                 <th className="py-2.5 px-3">Date Range / Duration</th>
                 <th className="py-2.5 px-3">Course Status</th>
-                <th className="py-2.5 px-3">Today Log</th>
                 <th className="py-2.5 pr-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -782,6 +801,23 @@ export default function MedicationsPage() {
                         </div>
                       </td>
 
+                      {/* 3rd Column: Today Log */}
+                      <td className="py-3 px-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleMed(med.id)}
+                          title={isTaken ? "Click to mark as untaken (undo)" : "Click to log dose taken today"}
+                          className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                            isTaken
+                              ? "bg-emerald-600 text-white shadow-xs hover:bg-emerald-700 active:scale-95"
+                              : "border border-[var(--border)] bg-[var(--background)] hover:border-emerald-500 text-[var(--foreground)] active:scale-95"
+                          }`}
+                        >
+                          <Check className={`h-3.5 w-3.5 ${isTaken ? "opacity-100" : "opacity-35"}`} />
+                          <span>{isTaken ? "Taken" : "Log"}</span>
+                        </button>
+                      </td>
+
                       {/* Date Range / Duration */}
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-1 text-[11px] font-bold text-[var(--foreground)]">
@@ -802,22 +838,6 @@ export default function MedicationsPage() {
                         >
                           {rangeInfo.label}
                         </span>
-                      </td>
-
-                      {/* Today Log */}
-                      <td className="py-3 px-3">
-                        <button
-                          type="button"
-                          onClick={() => toggleMed(med.id)}
-                          className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                            isTaken
-                              ? "bg-emerald-500 text-white shadow-xs"
-                              : "border border-[var(--border)] bg-[var(--background)] hover:border-emerald-500 text-[var(--foreground)]"
-                          }`}
-                        >
-                          <Check className={`h-3.5 w-3.5 ${isTaken ? "opacity-100" : "opacity-30"}`} />
-                          <span>{isTaken ? "Taken" : "Log"}</span>
-                        </button>
                       </td>
 
                       {/* Actions */}
