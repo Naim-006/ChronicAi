@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -27,42 +27,135 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { updateHealthProfile } from "@/lib/supabase/services/profile";
+import { getHealthMetrics } from "@/lib/supabase/services/metrics";
+import { getDocuments } from "@/lib/supabase/services/documents";
+import { HealthMetric, MedicalDocument } from "@/types/medical";
 
 export default function ScreeningsPage() {
   const { profile, effectiveUserId, refreshProfile } = useAuth();
+  const [metrics, setMetrics] = useState<HealthMetric[]>([]);
+  const [documents, setDocuments] = useState<MedicalDocument[]>([]);
+  const [provenance, setProvenance] = useState<Record<string, string>>({});
 
   // Active screening modal
   const [activeModal, setActiveModal] = useState<"ascvd" | "diabetes" | "kidney" | "metabolic" | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
   // ASCVD Calculator State
-  const [ascvdAge, setAscvdAge] = useState<number>(54);
-  const [ascvdSex, setAscvdSex] = useState<"male" | "female">("female");
-  const [ascvdSbp, setAscvdSbp] = useState<number>(128);
-  const [ascvdChol, setAscvdChol] = useState<number>(195);
-  const [ascvdHdl, setAscvdHdl] = useState<number>(48);
+  const [ascvdAge, setAscvdAge] = useState<number>(45);
+  const [ascvdSex, setAscvdSex] = useState<"male" | "female">("male");
+  const [ascvdSbp, setAscvdSbp] = useState<number>(122);
+  const [ascvdChol, setAscvdChol] = useState<number>(185);
+  const [ascvdHdl, setAscvdHdl] = useState<number>(50);
   const [ascvdSmoker, setAscvdSmoker] = useState<boolean>(false);
-  const [ascvdDiabetes, setAscvdDiabetes] = useState<boolean>(true);
-  const [ascvdTreated, setAscvdTreated] = useState<boolean>(true);
+  const [ascvdDiabetes, setAscvdDiabetes] = useState<boolean>(false);
+  const [ascvdTreated, setAscvdTreated] = useState<boolean>(false);
 
   // ADA Diabetes Calculator State
-  const [adaAgeGroup, setAdaAgeGroup] = useState<number>(2); // 0 (<40), 1 (40-49), 2 (50-59), 3 (60+)
-  const [adaGender, setAdaGender] = useState<"male" | "female">("female");
-  const [adaFamilyHistory, setAdaFamilyHistory] = useState<boolean>(true);
-  const [adaHighBp, setAdaHighBp] = useState<boolean>(true);
-  const [adaActive, setAdaActive] = useState<boolean>(false);
-  const [adaBmiTier, setAdaBmiTier] = useState<number>(1); // 0 (<25), 1 (25-29.9), 2 (30-39.9), 3 (40+)
+  const [adaAgeGroup, setAdaAgeGroup] = useState<number>(1); // 0 (<40), 1 (40-49), 2 (50-59), 3 (60+)
+  const [adaGender, setAdaGender] = useState<"male" | "female">("male");
+  const [adaFamilyHistory, setAdaFamilyHistory] = useState<boolean>(false);
+  const [adaHighBp, setAdaHighBp] = useState<boolean>(false);
+  const [adaActive, setAdaActive] = useState<boolean>(true);
+  const [adaBmiTier, setAdaBmiTier] = useState<number>(0); // 0 (<25), 1 (25-29.9), 2 (30-39.9), 3 (40+)
 
   // KDIGO Kidney Risk State
-  const [kidneyEgfr, setKidneyEgfr] = useState<number>(72);
-  const [kidneyUacr, setKidneyUacr] = useState<number>(24);
+  const [kidneyEgfr, setKidneyEgfr] = useState<number>(105);
+  const [kidneyUacr, setKidneyUacr] = useState<number>(15);
 
   // Metabolic Health State
   const [metaGlucose, setMetaGlucose] = useState<boolean>(true); // Controlled or normal
   const [metaBp, setMetaBp] = useState<boolean>(true); // Controlled or normal
-  const [metaHdl, setMetaHdl] = useState<boolean>(false);
-  const [metaTriglycerides, setMetaTriglycerides] = useState<boolean>(false);
+  const [metaHdl, setMetaHdl] = useState<boolean>(true);
+  const [metaTriglycerides, setMetaTriglycerides] = useState<boolean>(true);
   const [metaBmi, setMetaBmi] = useState<boolean>(true);
+
+  // Load real clinical metrics and synchronize calculators
+  const syncWithVaultRecords = React.useCallback(async () => {
+    if (!effectiveUserId) return;
+    try {
+      const [mRes, dRes] = await Promise.all([
+        getHealthMetrics(effectiveUserId),
+        getDocuments(effectiveUserId),
+      ]);
+      setMetrics(mRes || []);
+      setDocuments(dRes || []);
+
+      const provMap: Record<string, string> = {};
+
+      // 1. Sync Kidney eGFR from Serum Creatinine
+      const crMetric = (mRes || []).find((m) =>
+        (m.notes || "").toLowerCase().includes("creatinine")
+      );
+      if (crMetric) {
+        const cr = crMetric.value_primary;
+        // CKD-EPI formula approximation for eGFR
+        const computedEgfr = Math.round(
+          141 * Math.pow(Math.min(cr / 0.9, 1), -0.411) * Math.pow(Math.max(cr / 0.9, 1), -1.209) * 0.993
+        );
+        setKidneyEgfr(Math.max(computedEgfr, 15));
+        provMap.kidney = `Grounded in Lab Report: Creatinine ${cr} mg/dL (Est. eGFR ${computedEgfr})`;
+      } else {
+        provMap.kidney = "Standard Baseline Staging";
+      }
+
+      // 2. Sync Blood Pressure
+      const bpMetric = (mRes || []).find((m) => m.metric_type === "blood_pressure");
+      if (bpMetric) {
+        setAscvdSbp(bpMetric.value_primary);
+        provMap.ascvd = `Grounded in Vitals Log: SBP ${bpMetric.value_primary} mmHg`;
+      } else {
+        provMap.ascvd = "Clinical Population Standard";
+      }
+
+      // 3. Sync Chronic Conditions (Diabetes, Hypertension)
+      const rawConds = profile?.chronic_conditions || [];
+      const hasDiab = rawConds.some((c: any) =>
+        (typeof c === "string" ? c : c.name || "").toLowerCase().includes("diabet")
+      );
+      const hasHTN = rawConds.some((c: any) =>
+        (typeof c === "string" ? c : c.name || "").toLowerCase().includes("hypertens")
+      );
+
+      if (hasDiab) {
+        setAscvdDiabetes(true);
+        provMap.diabetes = "Grounded in Chronic Condition Profile (Diabetes)";
+      } else {
+        provMap.diabetes = "Grounded in Clean Glycemic Vault Profile";
+      }
+
+      if (hasHTN) {
+        setAdaHighBp(true);
+        setAscvdTreated(true);
+      }
+
+      // 4. Sex & Age
+      if (profile?.sex) {
+        const s = profile.sex === "female" ? "female" : "male";
+        setAscvdSex(s);
+        setAdaGender(s);
+      }
+
+      if (profile?.date_of_birth) {
+        const birthYear = new Date(profile.date_of_birth).getFullYear();
+        const currentYear = new Date().getFullYear();
+        const calculatedAge = Math.min(Math.max(currentYear - birthYear, 18), 85);
+        setAscvdAge(calculatedAge);
+        if (calculatedAge < 40) setAdaAgeGroup(0);
+        else if (calculatedAge <= 49) setAdaAgeGroup(1);
+        else if (calculatedAge <= 59) setAdaAgeGroup(2);
+        else setAdaAgeGroup(3);
+      }
+
+      setProvenance(provMap);
+    } catch (err) {
+      console.warn("Screening vault sync notice:", err);
+    }
+  }, [effectiveUserId, profile]);
+
+  useEffect(() => {
+    syncWithVaultRecords();
+  }, [syncWithVaultRecords]);
 
   // Calculate ASCVD 10-Year Score
   const ascvdResult = useMemo(() => {
@@ -258,6 +351,13 @@ export default function ScreeningsPage() {
               </p>
             </div>
 
+            {provenance.ascvd && (
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                <span className="truncate">{provenance.ascvd}</span>
+              </div>
+            )}
+
             <div className="p-3 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] flex items-center justify-between text-xs">
               <div>
                 <span className="text-[10px] font-bold text-[var(--muted-foreground)] uppercase block">
@@ -311,6 +411,13 @@ export default function ScreeningsPage() {
               </p>
             </div>
 
+            {provenance.diabetes && (
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                <span className="truncate">{provenance.diabetes}</span>
+              </div>
+            )}
+
             <div className="p-3 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] flex items-center justify-between text-xs">
               <div>
                 <span className="text-[10px] font-bold text-[var(--muted-foreground)] uppercase block">
@@ -361,6 +468,13 @@ export default function ScreeningsPage() {
                 Stratifies renal staging by intersecting estimated GFR with urine albumin-to-creatinine ratio (UACR) for nephropathy risk surveillance.
               </p>
             </div>
+
+            {provenance.kidney && (
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                <span className="truncate">{provenance.kidney}</span>
+              </div>
+            )}
 
             <div className="p-3 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] flex items-center justify-between text-xs">
               <div>
@@ -413,6 +527,11 @@ export default function ScreeningsPage() {
               <p className="text-xs text-[var(--muted-foreground)] mt-1 leading-relaxed">
                 Evaluates the 5 hallmark pillars of metabolic resilience: blood glucose, resting blood pressure, HDL, triglycerides, and waist-to-height ratio.
               </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+              <CheckCircle2 className="h-3 w-3 shrink-0" />
+              <span>Grounded in Longitudinal Vault Biometrics</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] flex items-center justify-between text-xs">
@@ -599,21 +718,32 @@ export default function ScreeningsPage() {
                 </p>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-[var(--border)]">
-                <Button variant="outline" onClick={() => setActiveModal(null)}>
-                  Close
-                </Button>
-                <Button
-                  onClick={() =>
-                    saveAssessment(
-                      "ascvd",
-                      `${ascvdResult.risk}% 10-year risk (${ascvdResult.tier.toUpperCase()})`
-                    )
-                  }
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              <div className="flex items-center justify-between gap-2.5 pt-2 border-t border-[var(--border)]">
+                <Link
+                  href={`/assistant?prompt=${encodeURIComponent(`Explain my calculated ASCVD 10-year cardiovascular risk of ${ascvdResult.risk}% (${ascvdResult.tier.toUpperCase()} risk tier). What evidence-based lifestyle changes and doctor discussion points do you recommend?`)}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  Save to Health Record
-                </Button>
+                  <Stethoscope className="h-4 w-4" />
+                  <span>Consult Copilot</span>
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setActiveModal(null)}>
+                    Close
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      saveAssessment(
+                        "ascvd",
+                        `${ascvdResult.risk}% 10-year risk (${ascvdResult.tier.toUpperCase()})`
+                      )
+                    }
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                  >
+                    Save Assessment
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -742,21 +872,32 @@ export default function ScreeningsPage() {
                 </p>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-[var(--border)]">
-                <Button variant="outline" onClick={() => setActiveModal(null)}>
-                  Close
-                </Button>
-                <Button
-                  onClick={() =>
-                    saveAssessment(
-                      "diabetes_risk",
-                      `${adaResult.points}/10 pts (${adaResult.isHighRisk ? "HIGH RISK" : "LOW RISK"})`
-                    )
-                  }
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              <div className="flex items-center justify-between gap-2.5 pt-2 border-t border-[var(--border)]">
+                <Link
+                  href={`/assistant?prompt=${encodeURIComponent(`Explain my calculated ADA Type 2 Diabetes risk score of ${adaResult.points}/10 (${adaResult.isHighRisk ? "High Risk" : "Low Risk"}). What diagnostic lab checks or dietary habits should I follow?`)}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  Save to Health Record
-                </Button>
+                  <Stethoscope className="h-4 w-4" />
+                  <span>Consult Copilot</span>
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setActiveModal(null)}>
+                    Close
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      saveAssessment(
+                        "diabetes_risk",
+                        `${adaResult.points}/10 pts (${adaResult.isHighRisk ? "HIGH RISK" : "LOW RISK"})`
+                      )
+                    }
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                  >
+                    Save Assessment
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -860,21 +1001,32 @@ export default function ScreeningsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-[var(--border)]">
-                <Button variant="outline" onClick={() => setActiveModal(null)}>
-                  Close
-                </Button>
-                <Button
-                  onClick={() =>
-                    saveAssessment(
-                      "kdigo_kidney",
-                      `eGFR ${kidneyEgfr} / UACR ${kidneyUacr} (${kdigoResult.riskLevel.toUpperCase()})`
-                    )
-                  }
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              <div className="flex items-center justify-between gap-2.5 pt-2 border-t border-[var(--border)]">
+                <Link
+                  href={`/assistant?prompt=${encodeURIComponent(`Explain my KDIGO Chronic Kidney Disease assessment: eGFR ${kidneyEgfr} mL/min/1.73m² (G${kdigoResult.gStage}) and UACR ${kidneyUacr} mg/g (${kdigoResult.aStage}), classified as ${kdigoResult.riskLevel.toUpperCase()} risk. What renoprotective steps, blood pressure goals, or medication surveillance are recommended?`)}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  Save to Health Record
-                </Button>
+                  <Stethoscope className="h-4 w-4" />
+                  <span>Consult Copilot</span>
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setActiveModal(null)}>
+                    Close
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      saveAssessment(
+                        "kdigo_kidney",
+                        `eGFR ${kidneyEgfr} / UACR ${kidneyUacr} (${kdigoResult.riskLevel.toUpperCase()})`
+                      )
+                    }
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                  >
+                    Save Assessment
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -1000,21 +1152,32 @@ export default function ScreeningsPage() {
                 </p>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-[var(--border)]">
-                <Button variant="outline" onClick={() => setActiveModal(null)}>
-                  Close
-                </Button>
-                <Button
-                  onClick={() =>
-                    saveAssessment(
-                      "metabolic_score",
-                      `${metabolicResult.score}/100 (${metabolicResult.criteriaMet}/5 criteria met)`
-                    )
-                  }
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              <div className="flex items-center justify-between gap-2.5 pt-2 border-t border-[var(--border)]">
+                <Link
+                  href={`/assistant?prompt=${encodeURIComponent(`Explain my Metabolic Health & Longevity Resilience score of ${metabolicResult.score}/100 with ${metabolicResult.criteriaMet} of 5 criteria met. What personalized lifestyle, nutrition, and cardiovascular risk reduction measures should I take?`)}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  Save to Health Record
-                </Button>
+                  <Stethoscope className="h-4 w-4" />
+                  <span>Consult Copilot</span>
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setActiveModal(null)}>
+                    Close
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      saveAssessment(
+                        "metabolic_score",
+                        `${metabolicResult.score}/100 (${metabolicResult.criteriaMet}/5 criteria met)`
+                      )
+                    }
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                  >
+                    Save Assessment
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

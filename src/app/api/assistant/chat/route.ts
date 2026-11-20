@@ -55,34 +55,58 @@ export async function POST(req: NextRequest) {
     // Fetch user's real clinical database records with privileged client
     const supabase = getSupabaseClient();
 
-    const [profileRes, docsRes, metricsRes, medsRes] = await Promise.all([
+    const [profileRes, docsRes, metricsRes, medsRes, extRes] = await Promise.all([
       supabase.from("health_profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase
         .from("medical_documents")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .limit(10),
+        .limit(12),
       supabase
         .from("health_metrics")
         .select("*")
         .eq("user_id", userId)
         .order("recorded_at", { ascending: false })
-        .limit(25),
+        .limit(35),
       supabase
         .from("medications")
         .select("*")
         .eq("user_id", userId)
         .eq("status", "active"),
+      supabase
+        .from("extracted_records")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(12),
     ]);
 
     const profile = profileRes.data || null;
     const documents = docsRes.data || [];
     const metrics = metricsRes.data || [];
     const medications = medsRes.data || [];
+    const allExtracted = extRes.data || [];
 
-    // Resolve Target Document (explicitly attached or intelligently inferred from query)
+    // Resolve Target Document (explicitly attached, reference in messages, or inferred from query)
     let targetDocId = attachedDocId;
+
+    if (!targetDocId) {
+      // Check if current query or recent message contains [Attached Reference: ...]
+      const combinedHistoryText = `${query} ${(messages || []).map((m: any) => m.content || "").join(" ")}`;
+      const refMatch = combinedHistoryText.match(/\[Attached Reference:\s*([^\]]+)\]/i);
+      if (refMatch && refMatch[1]) {
+        const refName = refMatch[1].trim().toLowerCase();
+        const matched = documents.find(
+          (d: any) =>
+            d.file_name?.toLowerCase().includes(refName) ||
+            refName.includes(d.file_name?.toLowerCase()) ||
+            d.id === refMatch[1].trim()
+        );
+        if (matched) targetDocId = matched.id;
+      }
+    }
+
     if (!targetDocId && documents.length > 0) {
       const qLower = query.toLowerCase();
       if (
@@ -94,6 +118,7 @@ export async function POST(req: NextRequest) {
         qLower.includes("test") ||
         qLower.includes("panel") ||
         qLower.includes("blood") ||
+        qLower.includes("prescription") ||
         qLower.includes("doctor")
       ) {
         targetDocId = documents[0].id;
@@ -106,9 +131,10 @@ export async function POST(req: NextRequest) {
     let attachedDocMetrics: any[] = [];
 
     if (targetDocId) {
-      const [docRes, extRes, chunkRes, docMetricsRes] = await Promise.all([
+      const targetExt = allExtracted.find((e: any) => e.document_id === targetDocId);
+      const [docRes, extDetailRes, chunkRes, docMetricsRes] = await Promise.all([
         supabase.from("medical_documents").select("*").eq("id", targetDocId).maybeSingle(),
-        supabase.from("extracted_records").select("*").eq("document_id", targetDocId).maybeSingle(),
+        targetExt ? Promise.resolve({ data: targetExt }) : supabase.from("extracted_records").select("*").eq("document_id", targetDocId).maybeSingle(),
         supabase
           .from("document_embeddings")
           .select("chunk_index, chunk_content, metadata")
@@ -118,7 +144,7 @@ export async function POST(req: NextRequest) {
       ]);
 
       attachedDocDetails = docRes.data || null;
-      attachedExtractedData = extRes.data?.confirmed_data || extRes.data?.raw_extracted || null;
+      attachedExtractedData = extDetailRes.data?.confirmed_data || extDetailRes.data?.raw_extracted || null;
       attachedChunks = chunkRes.data || [];
       attachedDocMetrics = docMetricsRes.data || [];
     }
@@ -289,15 +315,22 @@ export async function POST(req: NextRequest) {
         guideline: g.chunk_content,
         similarity: g.similarity,
       })),
-      vault_documents: documents.map((d: any) => ({
-        id: d.id,
-        file_name: d.file_name,
-        category: d.category,
-        facility: d.facility_name,
-        doctor: d.doctor_name,
-        date: d.document_date,
-        summary: d.summary,
-      })),
+      vault_documents: documents.map((d: any) => {
+        const ext = allExtracted.find((e: any) => e.document_id === d.id);
+        const docData = ext?.confirmed_data || ext?.raw_extracted || {};
+        return {
+          id: d.id,
+          file_name: d.file_name,
+          category: d.category,
+          facility: d.facility_name,
+          doctor: d.doctor_name,
+          date: d.document_date,
+          summary: d.summary,
+          lab_results: docData.lab_results || [],
+          medications: docData.medications || [],
+          diagnoses: docData.diagnoses || [],
+        };
+      }),
     };
 
     const systemInstruction = `You are ChronicAI Super Clinical Intelligence Agent — a world-class, autonomous medical AI copilot for chronic disease management, clinical diagnostics, and patient advocacy.
@@ -305,9 +338,9 @@ You are assisting ${patientDossier.patient_name}.
 
 YOUR CORE MISSION & AGENTIC ROLES:
 1. DEEP MEDICAL REASONING & COMPREHENSIVE ANALYSIS:
-   - When a document is attached or referred to: Provide an EXHAUSTIVE, structured clinical breakdown. State the test name, exact value, unit, reference range, whether it is normal or abnormal, the physiological role of that biomarker (e.g. renal filtration for creatinine, glycemic control for HbA1c, liver enzymes, lipids, hematology), and what it implies for the patient's overall health and chronic disease status.
+   - When a document is attached or referred to (e.g. "tell me about this", "what is this", "explain my lab report", etc.): Provide an EXHAUSTIVE, structured clinical breakdown. State the test name, exact value, unit, reference range, whether it is normal or abnormal, the physiological role of that biomarker (e.g. renal filtration for creatinine, glycemic control for HbA1c, liver enzymes, lipids, hematology/CBC/platelets/MPV), and what it implies for the patient's overall health and chronic disease status.
    - When answering ANY medical or health question: Answer with high clinical intelligence, thoroughness, and scientific clarity. Explain the pathophysiology, mechanism of action, lifestyle/diet impacts, and clinical practice standards (ADA, ACC/AHA, KDIGO, GOLD, etc.).
-   - NEVER give a lazy or dismissive response. If a document or summary is present, dive in, read its details and summary, and explain it thoroughly.
+   - CRITICAL GROUNDED INTELLIGENCE RULE: NEVER say or claim that data metrics, lab values, or records are "not loaded into your digital vault records yet" or "missing" if ANY document, summary, lab result, or biomarker is present in the patient dossier or vault documents. You have full access to all verified records in the vault (such as Serum Creatinine, Complete Blood Count, Platelets, MPV, Hemoglobin, Prescriptions, etc.). Always examine the dossier and provide a comprehensive clinical analysis.
 
 2. AGENTIC CAPABILITIES & STRUCTURED ACTION PLANS:
    Structure your clinical responses using clear markdown sections:
@@ -371,8 +404,9 @@ Return strictly a valid JSON object matching this schema:
     const candidateModels = [
       "gemini-3.5-flash-lite",
       "gemini-3.1-flash-lite",
-      "gemini-flash-latest",
       "gemini-3.5-flash",
+      "gemini-flash-latest",
+      "gemini-flash-lite-latest",
     ];
 
     let geminiRes: Response | null = null;
