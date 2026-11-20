@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -60,21 +61,33 @@ export function AppSidebar() {
       <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-white shadow-sm">
-              <ShieldCheck className="h-5 w-5" />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5">
+              <Image
+                src="/logo.png"
+                alt="ChronicAI Logo"
+                width={30}
+                height={30}
+                className="object-contain"
+              />
             </div>
             <div>
-              <span className="text-sm font-bold tracking-tight text-slate-900 block leading-tight">
-                Universal Medical AI
+              <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white block leading-tight">
+                Chronic<span className="text-emerald-600">AI</span>
               </span>
-              <span className="text-[10px] font-medium text-teal-700 block tracking-wide">
+              <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 block tracking-wide">
                 LIFELONG HEALTH
               </span>
             </div>
           </Link>
         ) : (
-          <Link href="/dashboard" className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-white shadow-sm">
-            <ShieldCheck className="h-5 w-5" />
+          <Link href="/dashboard" className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5">
+            <Image
+              src="/logo.png"
+              alt="ChronicAI Logo"
+              width={30}
+              height={30}
+              className="object-contain"
+            />
           </Link>
         )}
 

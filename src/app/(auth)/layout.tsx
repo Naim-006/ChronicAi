@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity } from "lucide-react";
+import Image from "next/image";
 
 export default function AuthLayout({
   children,
@@ -9,8 +9,15 @@ export default function AuthLayout({
   return (
     <div className="mint-wash flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <Link href="/" className="mb-8 flex items-center gap-2.5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/25">
-          <Activity className="h-5 w-5" />
+        <span className="relative flex h-10 w-10 items-center justify-center rounded-2xl overflow-hidden bg-white shadow-md shadow-emerald-500/20 border border-slate-200 p-1">
+          <Image
+            src="/logo.png"
+            alt="ChronicAI Logo"
+            width={34}
+            height={34}
+            className="object-contain"
+            priority
+          />
         </span>
         <span className="font-display text-xl font-bold tracking-tight">
           Chronic<span className="text-emerald-600">AI</span>

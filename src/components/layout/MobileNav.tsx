@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -53,10 +54,18 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-slate-200">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-700 text-white">
-                <ShieldCheck className="h-5 w-5" />
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden bg-white border border-slate-200 p-0.5">
+                <Image
+                  src="/logo.png"
+                  alt="ChronicAI Logo"
+                  width={26}
+                  height={26}
+                  className="object-contain"
+                />
               </div>
-              <span className="text-sm font-bold text-slate-900">Universal Medical AI</span>
+              <span className="text-sm font-bold text-slate-900">
+                Chronic<span className="text-emerald-600">AI</span>
+              </span>
             </div>
             <button
               type="button"

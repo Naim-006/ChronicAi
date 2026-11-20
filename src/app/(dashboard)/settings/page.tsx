@@ -78,11 +78,15 @@ export default function SettingsPage() {
     (user?.user_metadata?.picture as string) ||
     null;
 
+  const hasInitializedLang = useRef(false);
+
   useEffect(() => {
-    if (profile?.preferences) {
+    if (profile?.preferences && !hasInitializedLang.current) {
+      hasInitializedLang.current = true;
       const prefs = profile.preferences as any;
       if (prefs.explanation_depth) setAiDepth(prefs.explanation_depth);
-      if (prefs.language && ["en", "bn", "es"].includes(prefs.language)) {
+      const localLang = typeof window !== "undefined" ? (localStorage.getItem("chronicai_language") as Language | null) : null;
+      if (!localLang && prefs.language && ["en", "bn", "es"].includes(prefs.language)) {
         setLanguage(prefs.language);
       }
       if (prefs.notifications_enabled !== undefined) {
@@ -91,6 +95,24 @@ export default function SettingsPage() {
       }
     }
   }, [profile, setLanguage]);
+
+  const handleLanguageChange = async (newLang: Language) => {
+    hasInitializedLang.current = true;
+    setLanguage(newLang);
+    if (effectiveUserId) {
+      try {
+        const currentPrefs = (profile?.preferences as any) || {};
+        await updateHealthProfile(effectiveUserId, {
+          preferences: {
+            ...currentPrefs,
+            language: newLang,
+          },
+        });
+      } catch (e) {
+        console.error("Auto-saving language preference failed:", e);
+      }
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -255,7 +277,7 @@ export default function SettingsPage() {
             </div>
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
+              onChange={(e) => handleLanguageChange(e.target.value as Language)}
               className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 cursor-pointer min-w-[160px]"
             >
               <option value="en">English (US)</option>

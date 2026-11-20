@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Home,
@@ -120,8 +121,15 @@ export function DesktopNavRail() {
       {/* Brand Header */}
       <div className="flex h-[72px] items-center px-5 border-b border-slate-200/60 dark:border-white/[0.06]">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 shadow-md shadow-emerald-500/25 transition-transform group-hover:scale-105">
-            <Activity className="h-5 w-5 stroke-[2.5]" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-sm shadow-emerald-500/20 transition-transform group-hover:scale-105 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 p-1">
+            <Image
+              src="/logo.png"
+              alt="ChronicAI Logo"
+              width={34}
+              height={34}
+              className="object-contain"
+              priority
+            />
           </div>
           {!isCollapsed && (
             <div>

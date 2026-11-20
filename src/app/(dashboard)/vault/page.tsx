@@ -1994,7 +1994,7 @@ export default function VaultPage() {
                               {med.name} {med.dosage}
                             </span>
                             <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                              {med.frequency} · {med.instructions || "As directed"}
+                              {med.frequency} · {formatMedInstruction(med.instructions, language) || "As directed"}
                             </span>
                           </div>
                           <span className="rounded-md bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200/50">

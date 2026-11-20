@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   X,
@@ -175,8 +176,14 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
         {/* Compact Clean Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-white/10 bg-gradient-to-r from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-[#070d18]/50">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
-              <ShieldCheck className="h-5 w-5" />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-sm shadow-emerald-500/20 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 p-0.5">
+              <Image
+                src="/logo.png"
+                alt="ChronicAI Logo"
+                width={30}
+                height={30}
+                className="object-contain"
+              />
             </div>
             <div>
               <span className="block text-sm font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">

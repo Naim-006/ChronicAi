@@ -27,6 +27,10 @@ const hindSiliguri = Hind_Siliguri({
 export const metadata: Metadata = {
   title: "ChronicAI — Lifelong Health Intelligence",
   description: "Your medical life in one calm, intelligent place.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

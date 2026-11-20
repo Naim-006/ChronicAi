@@ -39,7 +39,8 @@ import {
   getMedicationLogs,
 } from "@/lib/supabase/services/medications";
 import { useRealtimeTables } from "@/hooks/useRealtime";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatMedInstruction } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface DayAdherenceData {
   dayLabel: string;
@@ -53,6 +54,7 @@ interface DayAdherenceData {
 
 export default function MedicationsPage() {
   const { effectiveUserId } = useAuth();
+  const { language } = useLanguage();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [medLogs, setMedLogs] = useState<MedicationLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -247,11 +249,12 @@ export default function MedicationsPage() {
     setFormGeneric(med.generic_name || "");
     setFormStrength(med.strength || med.dosage || "");
     setFormFrequency(med.frequency || "Once daily");
-    setFormTiming(med.instructions?.split(" - ")[0] || "Morning after meal");
+    const rawTiming = med.instructions?.split(" - ")[0] || "Morning after meal";
+    setFormTiming(formatMedInstruction(rawTiming, language));
     setFormRoute(med.route || "oral");
     setFormDoc(med.prescribing_doctor || "");
     setFormCondition(med.related_condition || "");
-    setFormNotes(med.instructions || "");
+    setFormNotes(formatMedInstruction(med.instructions, language) || "");
     setFormStartDate(med.start_date || todayStr);
     setFormEndDate(med.end_date || "");
     setFormStatus(med.status || "active");
@@ -840,7 +843,7 @@ export default function MedicationsPage() {
                         </div>
                         {med.instructions && (
                           <div className="text-[10px] text-slate-500 italic mt-0.5">
-                            {med.instructions}
+                            {formatMedInstruction(med.instructions, language)}
                           </div>
                         )}
                       </td>
@@ -1010,7 +1013,7 @@ export default function MedicationsPage() {
 
                   {med.instructions && (
                     <p className="mt-2 text-[11px] text-slate-600 dark:text-slate-300 italic bg-emerald-50/50 dark:bg-emerald-950/30 p-2 rounded-xl border border-emerald-200/40 dark:border-emerald-800/30">
-                      {med.instructions}
+                      {formatMedInstruction(med.instructions, language)}
                     </p>
                   )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -335,12 +336,19 @@ export default function LandingPage() {
       {/* Navigation Header */}
       <header className="sticky top-0 z-50 border-b border-slate-200/80 dark:border-white/[0.08] bg-white/85 dark:bg-[#070d18]/90 backdrop-blur-2xl">
         <div className="relative mx-auto flex h-14 sm:h-16 max-w-6xl items-center justify-between px-3.5 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
             <motion.span
               whileHover={{ rotate: 8, scale: 1.05 }}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 shadow-sm shadow-emerald-500/25"
+              className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5"
             >
-              <Activity className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+              <Image
+                src="/logo.png"
+                alt="ChronicAI Logo"
+                width={30}
+                height={30}
+                className="object-contain"
+                priority
+              />
             </motion.span>
             <span className="font-display text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
               Chronic<span className="text-emerald-500 dark:text-emerald-400">AI</span>
@@ -680,7 +688,15 @@ export default function LandingPage() {
       <footer className="relative border-t border-slate-200/80 dark:border-white/[0.08] bg-white/70 dark:bg-[#070d18]/80 py-8 sm:py-10 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-center sm:text-left text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="relative flex h-6 w-6 items-center justify-center rounded-lg overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5 shrink-0">
+              <Image
+                src="/logo.png"
+                alt="ChronicAI"
+                width={20}
+                height={20}
+                className="object-contain"
+              />
+            </div>
             <span className="font-display font-extrabold text-slate-900 dark:text-white">
               Chronic<span className="text-emerald-500 dark:text-emerald-400">AI</span>
             </span>
