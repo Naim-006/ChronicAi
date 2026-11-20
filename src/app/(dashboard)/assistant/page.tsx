@@ -561,7 +561,7 @@ export default function AssistantPage() {
         conversation_id: activeSessionId,
         role: "assistant",
         content:
-          "I am currently unable to reach the clinical copilot engine. Please check your connection and try again.",
+          "I am currently unable to reach the clinical AI engine. Please check your connection and try again.",
         created_at: new Date().toISOString(),
       };
       setSessions((prev) =>

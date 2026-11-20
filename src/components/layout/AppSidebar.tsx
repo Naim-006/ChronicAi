@@ -32,7 +32,7 @@ const primaryNav: NavItem[] = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Medical Records", href: "/vault", icon: FolderArchive, badge: "1 new" },
   { name: "Medical Timeline", href: "/timeline", icon: Clock },
-  { name: "Clinical Copilot", href: "/assistant", icon: Stethoscope },
+  { name: "Clinical AI", href: "/assistant", icon: Stethoscope },
   { name: "Medications", href: "/medications", icon: Pill },
   { name: "Appointments", href: "/appointments", icon: CalendarDays },
   { name: "Health Analytics", href: "/metrics", icon: LineChart },

@@ -53,7 +53,7 @@ const navGroups: NavGroup[] = [
         icon: Home,
       },
       {
-        name: "Clinical Copilot",
+        name: "Clinical AI",
         href: "/assistant",
         icon: Stethoscope,
         highlight: true,

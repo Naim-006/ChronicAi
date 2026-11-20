@@ -179,7 +179,7 @@ export function MobileTabBar() {
       aliases: ["/timeline", "/summaries"],
     },
     {
-      name: t("nav.short_copilot", "Copilot"),
+      name: t("nav.short_copilot", "AI"),
       href: "/assistant",
       icon: Stethoscope,
       isCenterCopilot: true,

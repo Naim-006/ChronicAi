@@ -741,7 +741,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* 4. Copilot */}
+          {/* 4. AI */}
           <Link
             href="/assistant"
             className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-emerald-500/40"
@@ -751,7 +751,7 @@ export default function DashboardPage() {
             </div>
             <div className="min-w-0 flex-1">
               <span className="block text-xs font-bold text-slate-900 dark:text-white truncate">
-                Copilot
+                AI
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
                 Clinical guidance

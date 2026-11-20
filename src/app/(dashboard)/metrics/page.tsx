@@ -412,7 +412,7 @@ export default function MetricsPage() {
             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--secondary)] px-3 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
           >
             <Stethoscope className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Copilot Consult</span>
+            <span>AI Consult</span>
           </Link>
         </div>
       </div>

@@ -414,7 +414,7 @@ export default function ChronicCarePage() {
             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--secondary)] px-3 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
           >
             <Stethoscope className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Consult Copilot</span>
+            <span>Consult AI</span>
           </Link>
         </div>
       </div>
@@ -733,7 +733,7 @@ export default function ChronicCarePage() {
                       )}`}
                       className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
                     >
-                      <span>Copilot Guidance</span>
+                      <span>AI Guidance</span>
                       <ChevronRight className="h-3 w-3" />
                     </Link>
                   </div>

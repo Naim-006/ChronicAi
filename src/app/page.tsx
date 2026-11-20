@@ -391,7 +391,7 @@ export default function LandingPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200/80 dark:border-emerald-500/30 px-3 py-1 text-[11px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-300">
             <Sparkles className="h-3 w-3 text-emerald-500" />
-            <span>Grounded Medical Copilot & Records Vault</span>
+            <span>Grounded Medical AI & Records Vault</span>
           </div>
 
           <motion.h1
