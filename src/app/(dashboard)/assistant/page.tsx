@@ -711,13 +711,13 @@ How can I assist you with your health records, lab panels, or medication schedul
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="text-xs font-normal leading-relaxed text-slate-800 dark:text-slate-100 space-y-2 [&>h3]:text-sm [&>h3]:font-bold [&>h3]:text-slate-900 dark:[&>h3]:text-white [&>h3]:mt-3 [&>h3]:mb-1 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:space-y-1 [&>p]:leading-relaxed [&_strong]:font-semibold [&_strong]:text-slate-900 dark:[&_strong]:text-emerald-300">
+                  <div className="text-xs sm:text-sm font-bangla font-normal leading-relaxed text-slate-800 dark:text-slate-100 space-y-2 [&>h3]:text-sm sm:[&>h3]:text-base [&>h3]:font-bold [&>h3]:text-slate-900 dark:[&>h3]:text-white [&>h3]:mt-3 [&>h3]:mb-1 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:space-y-1 [&>p]:leading-relaxed [&_strong]:font-semibold [&_strong]:text-slate-900 dark:[&_strong]:text-emerald-300">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {msg.content}
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <div className="whitespace-pre-line text-xs font-normal leading-relaxed">
+                  <div className="whitespace-pre-line text-xs sm:text-sm font-bangla font-normal leading-relaxed">
                     {msg.content}
                   </div>
                 )}
@@ -901,7 +901,7 @@ How can I assist you with your health records, lab panels, or medication schedul
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
                 className={cn(
-                  "h-10 sm:h-11 w-full rounded-2xl border bg-slate-100/80 dark:bg-white/5 pl-3.5 pr-3 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-[#0c1527] shadow-2xs transition-all",
+                  "h-10 sm:h-11 w-full rounded-2xl border bg-slate-100/80 dark:bg-white/5 pl-3.5 pr-3 text-xs sm:text-sm font-bangla font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-[#0c1527] shadow-2xs transition-all",
                   isListening
                     ? "border-rose-500/80 ring-2 ring-rose-500/30 placeholder:text-rose-500 dark:placeholder:text-rose-400"
                     : "border-slate-200/90 dark:border-white/10 focus:ring-2 focus:ring-emerald-500"

@@ -3,9 +3,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-manrope), var(--font-plus-jakarta), ui-sans-serif,
+  --font-sans: var(--font-plus-jakarta), var(--font-hind-siliguri), "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-manrope), var(--font-plus-jakarta), var(--font-hind-siliguri), "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif,
     system-ui, sans-serif;
+  --font-bangla: var(--font-hind-siliguri), "Hind Siliguri", "Noto Sans Bengali", sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
@@ -571,3 +572,13 @@
 nextjs-portal {
   display: none !important;
 }
+
+/* Modern Bengali Typography Support */
+.font-bangla, [lang="bn"], :lang(bn) {
+  font-family: var(--font-hind-siliguri), "Hind Siliguri", "Noto Sans Bengali", sans-serif;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+

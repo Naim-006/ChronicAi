@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
+import { Manrope, Plus_Jakarta_Sans, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -17,6 +17,13 @@ const manrope = Manrope({
   display: "swap",
 });
 
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-hind-siliguri",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "ChronicAI — Lifelong Health Intelligence",
   description: "Your medical life in one calm, intelligent place.",
@@ -28,7 +35,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${manrope.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${plusJakarta.variable} ${manrope.variable} ${hindSiliguri.variable} h-full`}
+    >
       <body className="h-full font-sans text-[var(--foreground)] antialiased selection:bg-emerald-100 selection:text-emerald-900">
         <ThemeProvider>
           <LanguageProvider>
