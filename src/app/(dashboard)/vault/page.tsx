@@ -416,9 +416,9 @@ export default function VaultPage() {
           <button
             type="button"
             onClick={handleOpenScanner}
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50/80 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-sm transition-all hover:bg-emerald-100 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-500/10 px-3.5 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 shadow-sm transition-all hover:bg-emerald-100 dark:hover:bg-emerald-500/20 active:scale-95"
           >
-            <Camera className="h-4 w-4 text-emerald-600" />
+            <Camera className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <span className="hidden xs:inline">Live Camera</span> Scanner
           </button>
 
@@ -438,15 +438,15 @@ export default function VaultPage() {
 
       {/* Notification Toast */}
       {notification && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-bold text-emerald-900 shadow-sm animate-in fade-in slide-in-from-top-2">
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/60 p-4 text-xs font-bold text-emerald-900 dark:text-emerald-300 shadow-sm animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{notification}</span>
           </div>
           <button
             type="button"
             onClick={() => setNotification(null)}
-            className="text-emerald-700 hover:text-emerald-900 p-1"
+            className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white p-1"
           >
             <X className="h-4 w-4" />
           </button>
@@ -455,53 +455,53 @@ export default function VaultPage() {
 
       {/* Quick Vault Metrics */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <div className="soft-card p-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+        <div className="soft-card p-3.5 sm:p-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
             <FileCheck className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-[var(--foreground)]">
+            <span className="text-xl font-extrabold text-slate-900 dark:text-white">
               {documents.length}
             </span>
-            <span className="block text-[11px] font-medium text-[var(--muted-foreground)]">
+            <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
               Total Records
             </span>
           </div>
         </div>
 
-        <div className="soft-card p-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 border border-teal-100">
+        <div className="soft-card p-3.5 sm:p-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:bg-teal-500/15 dark:text-teal-400 border border-teal-500/20 shadow-xs">
             <Activity className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-teal-700">38</span>
-            <span className="block text-[11px] font-medium text-[var(--muted-foreground)]">
+            <span className="text-xl font-extrabold text-teal-700 dark:text-teal-400">38</span>
+            <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
               Parsed Biomarkers
             </span>
           </div>
         </div>
 
-        <div className="soft-card p-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+        <div className="soft-card p-3.5 sm:p-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400 border border-amber-500/20 shadow-xs">
             <Clock className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-amber-700">
+            <span className="text-xl font-extrabold text-amber-700 dark:text-amber-400">
               {reviewCount}
             </span>
-            <span className="block text-[11px] font-medium text-[var(--muted-foreground)]">
+            <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
               Verification Queue
             </span>
           </div>
         </div>
 
-        <div className="soft-card p-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+        <div className="soft-card p-3.5 sm:p-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400 border border-blue-500/20 shadow-xs">
             <Shield className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-blue-700">100%</span>
-            <span className="block text-[11px] font-medium text-[var(--muted-foreground)]">
+            <span className="text-xl font-extrabold text-blue-700 dark:text-blue-400">100%</span>
+            <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
               HIPAA Compliant
             </span>
           </div>
@@ -513,26 +513,26 @@ export default function VaultPage() {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative overflow-hidden rounded-3xl border-2 border-dashed p-6 sm:p-8 text-center transition-all ${
+        className={`relative overflow-hidden rounded-3xl border-2 border-dashed p-5 sm:p-8 text-center transition-all ${
           isDragging
-            ? "border-emerald-500 bg-emerald-50/80 scale-[1.005]"
-            : "border-slate-300/80 bg-white hover:border-emerald-400 hover:bg-slate-50/50"
+            ? "border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10 scale-[1.005]"
+            : "border-slate-300/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md hover:border-emerald-400 hover:bg-slate-50/50 dark:hover:bg-white/[0.06]"
         }`}
       >
         <div className="mx-auto flex max-w-md flex-col items-center justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-100 to-teal-50 text-emerald-600 shadow-sm">
-            <UploadCloud className="h-7 w-7" />
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-100 to-teal-50 dark:from-emerald-500/20 dark:to-teal-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm">
+            <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
 
-          <h3 className="mt-3 text-sm sm:text-base font-bold text-[var(--foreground)]">
+          <h3 className="mt-3 text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
             Drag & Drop Medical Records, Lab Panels, or Prescriptions
           </h3>
-          <p className="mt-1 text-xs text-[var(--muted-foreground)] max-w-sm">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm">
             PDF, PNG, JPG, or DICOM files up to 25MB. AI automatically scans, parses biomarkers, and presents them for manual verification.
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-all">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+            <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:brightness-105 active:scale-95 transition-all">
               <UploadCloud className="h-3.5 w-3.5" />
               Browse Device Files
               <input
@@ -544,8 +544,8 @@ export default function VaultPage() {
             </label>
 
             {/* Direct Mobile Camera Capture */}
-            <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
-              <Camera className="h-3.5 w-3.5 text-emerald-600" />
+            <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 dark:border-white/15 bg-white dark:bg-white/[0.06] px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 transition-all">
+              <Camera className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               Scan with Camera
               <input
                 type="file"
@@ -687,14 +687,14 @@ export default function VaultPage() {
             />
           </div>
 
-          <div className="flex items-center rounded-xl border border-[var(--border)] bg-white p-0.5 shadow-sm">
+          <div className="flex items-center rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.05] backdrop-blur-md p-0.5 shadow-xs">
             <button
               type="button"
               onClick={() => setViewMode("cards")}
-              className={`rounded-lg p-2 transition-colors ${
+              className={`rounded-lg p-2 transition-colors cursor-pointer ${
                 viewMode === "cards"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-white"
               }`}
               title="Card Grid"
             >
@@ -703,10 +703,10 @@ export default function VaultPage() {
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`rounded-lg p-2 transition-colors ${
+              className={`rounded-lg p-2 transition-colors cursor-pointer ${
                 viewMode === "table"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-white"
               }`}
               title="Table View"
             >
@@ -730,8 +730,8 @@ export default function VaultPage() {
               onClick={() => setCategoryFilter(cat.id)}
               className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
                 categoryFilter === cat.id
-                  ? "bg-[var(--foreground)] text-white shadow-sm"
-                  : "border border-[var(--border)] bg-white text-[var(--muted-foreground)] hover:bg-slate-50"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black shadow-sm dark:shadow-[0_0_12px_rgba(16,185,129,0.35)]"
+                  : "border border-slate-200/80 dark:border-white/10 bg-white/70 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
               }`}
             >
               {cat.label}
