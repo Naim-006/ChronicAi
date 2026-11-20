@@ -181,7 +181,7 @@ export default function NotificationsPage() {
       {/* Filter Tabs */}
       <div className="flex items-center gap-1 overflow-x-auto border-b border-[var(--border)] pb-2 text-xs font-semibold hide-scrollbar">
         {[
-          { id: "all", label: "All Alerts", count: notifications.length },
+          { id: "all", label: "All", count: notifications.length },
           { id: "unread", label: "Unread", count: unreadCount },
           {
             id: "critical",

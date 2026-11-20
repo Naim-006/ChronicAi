@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -18,9 +18,14 @@ import {
   Loader2,
   Sparkles,
   ArrowRight,
+  Pencil,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Building2,
 } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/utils";
-import { Appointment } from "@/types/medical";
+import { Appointment, AppointmentStatus } from "@/types/medical";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +33,8 @@ import { useAuth } from "@/context/AuthContext";
 import {
   getAppointments,
   createAppointment,
+  updateAppointment,
+  deleteAppointment,
 } from "@/lib/supabase/services/appointments";
 import { useRealtimeTables } from "@/hooks/useRealtime";
 
@@ -46,6 +53,128 @@ export default function AppointmentsPage() {
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
   const [loc, setLoc] = useState("");
+
+  // Action Menu & Edit/Delete States
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  // Edit Modal State
+  const [editingApt, setEditingApt] = useState<Appointment | null>(null);
+  const [editDocName, setEditDocName] = useState("");
+  const [editSpecialty, setEditSpecialty] = useState("");
+  const [editClinic, setEditClinic] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editReason, setEditReason] = useState("");
+  const [editStatus, setEditStatus] = useState<AppointmentStatus>("upcoming");
+  const [isUpdatingApt, setIsUpdatingApt] = useState(false);
+
+  // Delete Modal State
+  const [deletingApt, setDeletingApt] = useState<Appointment | null>(null);
+  const [isDeletingApt, setIsDeletingApt] = useState(false);
+
+  // Close 3-dot menu on click outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest(".appointment-menu-container")) {
+        setActiveMenuId(null);
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, []);
+
+  const handleOpenEdit = (apt: Appointment) => {
+    setActiveMenuId(null);
+    setEditingApt(apt);
+    setEditDocName(apt.doctor_name || "");
+    setEditSpecialty(apt.specialty || "");
+    setEditClinic(apt.clinic_or_hospital || "");
+    setEditDate(apt.appointment_date || "");
+    setEditTime(apt.appointment_time || "");
+    setEditReason(apt.reason || "");
+    setEditStatus(apt.status || "upcoming");
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingApt || !editDocName.trim() || !editDate) return;
+
+    setIsUpdatingApt(true);
+    try {
+      const updates = {
+        doctor_name: editDocName.trim(),
+        specialty: editSpecialty.trim() || "General Medicine",
+        clinic_or_hospital: editClinic.trim() || "Healthcare Facility",
+        appointment_date: editDate,
+        appointment_time: editTime || "10:00:00",
+        reason: editReason.trim() || "Medical Consultation",
+        status: editStatus,
+      };
+
+      const success = await updateAppointment(editingApt.id, updates, effectiveUserId);
+      if (success) {
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === editingApt.id ? { ...a, ...updates } : a))
+        );
+        setEditingApt(null);
+        setNotification(`Appointment with ${updates.doctor_name} updated successfully.`);
+      } else {
+        setNotification("Failed to update appointment. Please try again.");
+      }
+    } catch (err: any) {
+      setNotification(`Error updating appointment: ${err?.message || "Unknown error"}`);
+    } finally {
+      setIsUpdatingApt(false);
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
+
+  const handleOpenDelete = (apt: Appointment) => {
+    setActiveMenuId(null);
+    setDeletingApt(apt);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingApt) return;
+
+    setIsDeletingApt(true);
+    try {
+      const success = await deleteAppointment(deletingApt.id, effectiveUserId);
+      if (success) {
+        setAppointments((prev) => prev.filter((a) => a.id !== deletingApt.id));
+        setNotification(`Appointment with ${deletingApt.doctor_name} cancelled and removed.`);
+        setDeletingApt(null);
+      } else {
+        setNotification("Failed to delete appointment. Please try again.");
+      }
+    } catch (err: any) {
+      setNotification(`Error deleting appointment: ${err?.message || "Unknown error"}`);
+    } finally {
+      setIsDeletingApt(false);
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
+
+  const handleToggleStatus = async (apt: Appointment) => {
+    setActiveMenuId(null);
+    const newStatus = apt.status === "completed" ? "upcoming" : "completed";
+    try {
+      const success = await updateAppointment(apt.id, { status: newStatus }, effectiveUserId);
+      if (success) {
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === apt.id ? { ...a, status: newStatus } : a))
+        );
+        setNotification(
+          `Appointment marked as ${newStatus === "completed" ? "Completed" : "Upcoming"}.`
+        );
+      }
+    } catch (err: any) {
+      setNotification(`Error: ${err?.message || "Failed to update status"}`);
+    } finally {
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
 
   const loadApts = React.useCallback(async () => {
     if (!effectiveUserId) {
@@ -157,6 +286,22 @@ export default function AppointmentsPage() {
         className="lg:mb-2"
       />
 
+      {notification && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 dark:border-emerald-800 p-3.5 text-xs font-bold text-emerald-900 dark:text-emerald-300 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>{notification}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotification(null)}
+            className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 p-1"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Forest hero with tabs — desktop softens to a card strip */}
       <section className="soft-card overflow-hidden p-0">
         <div className="forest-surface px-5 py-4 sm:px-6">
@@ -254,12 +399,52 @@ export default function AppointmentsPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
+                <div className="relative appointment-menu-container">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuId(activeMenuId === apt.id ? null : apt.id);
+                    }}
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    title="Appointment Actions"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+
+                  {activeMenuId === apt.id && (
+                    <div className="absolute right-0 top-8 z-30 w-48 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl py-1.5 animate-in fade-in zoom-in-95 text-xs font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(apt)}
+                        className="w-full flex items-center gap-2 px-3.5 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer"
+                      >
+                        <Pencil className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Edit Consultation</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(apt)}
+                        className="w-full flex items-center gap-2 px-3.5 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+                        <span>{apt.status === "completed" ? "Mark as Upcoming" : "Mark as Completed"}</span>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDelete(apt)}
+                        className="w-full flex items-center gap-2 px-3.5 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Cancel / Delete</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-between border-t border-[var(--border)]/80 pt-3">
@@ -413,6 +598,184 @@ export default function AppointmentsPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT APPOINTMENT MODAL */}
+      {editingApt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="soft-card-lift w-full max-w-md space-y-4 p-6 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                  <Pencil className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-[var(--foreground)]">
+                    Edit Consultation
+                  </h3>
+                  <span className="text-[10px] text-[var(--muted-foreground)] block">
+                    Update appointment timing, physician, or clinic
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingApt(null)}
+                className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Attending Physician *
+                </label>
+                <Input
+                  required
+                  placeholder="e.g. Dr. Salim Yazdi"
+                  value={editDocName}
+                  onChange={(e) => setEditDocName(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">Specialty</label>
+                  <Input
+                    placeholder="e.g. Dermatology"
+                    value={editSpecialty}
+                    onChange={(e) => setEditSpecialty(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as any)}
+                    className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 text-xs font-semibold text-[var(--foreground)] focus:outline-none"
+                  >
+                    <option value="upcoming">Upcoming</option>
+                    <option value="completed">Completed</option>
+                    <option value="rescheduled">Rescheduled</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">Date *</label>
+                  <Input
+                    type="date"
+                    required
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">Time</label>
+                  <Input
+                    type="time"
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Consultation Reason
+                </label>
+                <Input
+                  placeholder="e.g. Follow-up on skin lesions"
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">Clinic / Facility</label>
+                <Input
+                  placeholder="e.g. CMH, Dhaka"
+                  value={editClinic}
+                  onChange={(e) => setEditClinic(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 border-t border-[var(--border)] pt-3">
+                <Button type="button" variant="outline" onClick={() => setEditingApt(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isUpdatingApt}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                >
+                  {isUpdatingApt ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      Updating…
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deletingApt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="soft-card-lift w-full max-w-sm space-y-4 p-6 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-[var(--foreground)]">
+                  Cancel Consultation?
+                </h3>
+                <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+                  Are you sure you want to remove your visit with{" "}
+                  <strong className="text-[var(--foreground)]">{deletingApt.doctor_name}</strong> on{" "}
+                  {formatDate(deletingApt.appointment_date)}?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 border-t border-[var(--border)] pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDeletingApt(null)}
+              >
+                Keep Visit
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleConfirmDelete}
+                disabled={isDeletingApt}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              >
+                {isDeletingApt ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  "Yes, Delete"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}

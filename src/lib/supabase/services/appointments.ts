@@ -160,3 +160,70 @@ export async function createAppointment(
     created_at: data.created_at,
   };
 }
+
+export async function updateAppointment(
+  appointmentId: string,
+  updates: Partial<Appointment>,
+  userId?: string
+): Promise<boolean> {
+  if (!appointmentId) return false;
+
+  try {
+    const res = await fetch("/api/appointments/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appointmentId, id: appointmentId, userId, ...updates }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) return true;
+    }
+  } catch (e) {
+    console.warn("API update failed, trying direct supabase client:", e);
+  }
+
+  if (!isSupabaseConfigured()) return true;
+
+  try {
+    const supabase = createClient();
+    let query = supabase.from("appointments").update(updates).eq("id", appointmentId);
+    if (userId) query = query.eq("user_id", userId);
+    const { error } = await query;
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteAppointment(
+  appointmentId: string,
+  userId?: string
+): Promise<boolean> {
+  if (!appointmentId) return false;
+
+  try {
+    const res = await fetch("/api/appointments/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appointmentId, id: appointmentId, userId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) return true;
+    }
+  } catch (e) {
+    console.warn("API delete failed, trying direct supabase client:", e);
+  }
+
+  if (!isSupabaseConfigured()) return true;
+
+  try {
+    const supabase = createClient();
+    let query = supabase.from("appointments").delete().eq("id", appointmentId);
+    if (userId) query = query.eq("user_id", userId);
+    const { error } = await query;
+    return !error;
+  } catch {
+    return false;
+  }
+}
