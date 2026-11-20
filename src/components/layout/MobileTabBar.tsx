@@ -50,138 +50,6 @@ export function MobileTabBar() {
     return () => observer.disconnect();
   }, []);
 
-  // Scroll-aware Auto-Hide: Hide smoothly on scroll down, reveal on scroll up
-  const [isVisible, setIsVisible] = useState(true);
-  const navRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    // Always start visible when navigating to a new page
-    setIsVisible(true);
-
-    let lastScrollY =
-      typeof window !== "undefined"
-        ? window.pageYOffset || document.documentElement.scrollTop || 0
-        : 0;
-    let touchStartY = 0;
-    let touchStartX = 0;
-    let lastTouchY = 0;
-    let isTouching = false;
-    let ticking = false;
-
-    // 1. Direct Touch Gesture Tracking for mobile devices
-    const handleTouchStart = (e: TouchEvent) => {
-      if (!e.touches || e.touches.length === 0) return;
-      // If touching inside the bottom bar itself, ignore so tabs can be tapped or swiped
-      if (navRef.current && navRef.current.contains(e.target as Node)) {
-        return;
-      }
-      touchStartY = e.touches[0].clientY;
-      touchStartX = e.touches[0].clientX;
-      lastTouchY = e.touches[0].clientY;
-      isTouching = true;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isTouching || !e.touches || e.touches.length === 0) return;
-      if (navRef.current && navRef.current.contains(e.target as Node)) {
-        return;
-      }
-
-      const currentY = e.touches[0].clientY;
-      const currentX = e.touches[0].clientX;
-      const deltaYFromStart = touchStartY - currentY; // positive = swiped up (scrolling down)
-      const deltaXFromStart = currentX - touchStartX;
-      const stepDeltaY = lastTouchY - currentY;
-      lastTouchY = currentY;
-
-      // Ensure it is predominantly a vertical scroll gesture
-      if (Math.abs(deltaYFromStart) > Math.abs(deltaXFromStart) * 0.75) {
-        if (stepDeltaY > 8 && deltaYFromStart > 18) {
-          // Swiped up -> scrolling down -> hide dock smoothly
-          setIsVisible(false);
-        } else if (stepDeltaY < -8 && deltaYFromStart < -18) {
-          // Swiped down -> scrolling up -> reveal dock smoothly
-          setIsVisible(true);
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      isTouching = false;
-    };
-
-    // 2. Scroll Event Tracking (captures window & scrollable sub-containers)
-    const handleScroll = (e: Event) => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentY =
-            window.pageYOffset ||
-            document.documentElement.scrollTop ||
-            document.body.scrollTop ||
-            0;
-          const diff = currentY - lastScrollY;
-
-          if (currentY <= 25) {
-            // Near top of document -> show dock
-            setIsVisible(true);
-          } else if (Math.abs(diff) > 12) {
-            if (diff > 0) {
-              // Scrolling down
-              setIsVisible(false);
-            } else {
-              // Scrolling up
-              setIsVisible(true);
-            }
-            lastScrollY = currentY;
-          }
-
-          // If an internal scroll container (e.g., chat stream) is scrolling
-          const target = e.target as HTMLElement;
-          if (
-            target &&
-            target !== (document as any) &&
-            target !== (window as any) &&
-            typeof target.scrollTop === "number"
-          ) {
-            if (target.scrollTop <= 20) {
-              setIsVisible(true);
-            }
-          }
-
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    // 3. Wheel Event Tracking (for desktop/devtools mobile emulation)
-    const handleWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) > 10) {
-        if (e.deltaY > 0) {
-          setIsVisible(false);
-        } else {
-          setIsVisible(true);
-        }
-      }
-    };
-
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("touchend", handleTouchEnd, { passive: true });
-    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
-    window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
-    window.addEventListener("wheel", handleWheel, { passive: true });
-
-    return () => {
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-      window.removeEventListener("touchcancel", handleTouchEnd);
-      window.removeEventListener("scroll", handleScroll, { capture: true } as any);
-      window.removeEventListener("wheel", handleWheel);
-    };
-  }, [pathname]);
-
   const tabs = [
     {
       name: t("nav.home", "Home"),
@@ -283,16 +151,18 @@ export function MobileTabBar() {
     }
   };
 
-  // Balanced, sleek floating capsule dock without awkward protruding dome
-  const H = 68;
-  const topBaseline = 6;
-  const bottom = 64;
-  const capRadius = 29; // (64 - 6) / 2
+  // Exact geometric parameters derived from reference design:
+  // - Stadium pill shape with curved ends (height 62px from y=28 to y=90)
+  // - Smooth curved hump over center Copilot button (spread = 72px, apex at y=6)
+  const H = 94;
+  const topBaseline = 28;
+  const bottom = 90;
+  const capRadius = 31; // (90 - 28) / 2
   const cx = width / 2;
-  const spread = 48;
-  const cpSpread = 26;
-  const cpPeak = 14;
-  const domePeakY = 3; // subtle 3px gentle curve, sits level with other tabs
+  const spread = 72; // width where curve begins curving up
+  const cpSpread = 44; // baseline control point
+  const cpPeak = 24; // apex control point
+  const domePeakY = 6; // apex of dome
 
   // Continuous C1-smooth SVG path with horizontal tangents at baseline and apex
   const svgPath = `
@@ -308,22 +178,14 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav
-      ref={navRef}
-      className={cn(
-        "fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-300 ease-in-out will-change-transform",
-        isVisible
-          ? "translate-y-0 opacity-100"
-          : "translate-y-28 opacity-0 pointer-events-none"
-      )}
-    >
+    <nav className="fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-200">
       <div
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={cn(
-          "pointer-events-auto relative w-full h-[68px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
+          "pointer-events-auto relative w-full h-[94px] select-none touch-pan-y cursor-grab active:cursor-grabbing",
           waveState.active && "animate-liquid-wave"
         )}
       >
@@ -405,38 +267,34 @@ export function MobileTabBar() {
 
             const Icon = tab.icon;
 
-            // Center Copilot Button: Harmonious, gently elevated button
+            // Center Copilot Button: Elevated floating green circle in dome
             if (tab.isCenterCopilot) {
               return (
                 <div
                   key={tab.name}
-                  className="flex flex-col items-center justify-start h-full pt-[7px]"
+                  className="flex flex-col items-center justify-start h-full pt-[11px]"
                 >
                   <Link
                     href={tab.href!}
                     aria-label="Chronic AI Copilot"
                     className="flex flex-col items-center justify-center group active:scale-95 transition-transform outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [-webkit-tap-highlight-color:transparent]"
                   >
-                    {/* Floating Mascot Button */}
+                    {/* Floating Green Circle */}
                     <div
                       className={cn(
-                        "flex h-[40px] w-[40px] sm:h-[42px] sm:w-[42px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500/20 via-[#0b1728] to-teal-500/20 border-2 border-emerald-400 shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all overflow-hidden p-0.5",
+                        "flex h-[50px] w-[50px] sm:h-[54px] sm:w-[54px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_6px_20px_rgba(16,185,129,0.38)] transition-all",
                         isActive
-                          ? "ring-2 ring-emerald-400 ring-offset-1 ring-offset-[#0b1325] scale-105"
+                          ? "ring-2 ring-emerald-400 ring-offset-2 ring-offset-[#0b1325] scale-105"
                           : "group-hover:scale-105"
                       )}
                     >
-                      <img
-                        src="/images/ai-doctor.png"
-                        alt="Copilot"
-                        className="h-full w-full object-contain"
-                      />
+                      <Icon className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.3] text-slate-950" />
                     </div>
 
                     {/* Copilot Text */}
                     <span
                       className={cn(
-                        "text-[9px] sm:text-[10px] leading-none tracking-tight whitespace-nowrap mt-1",
+                        "text-[10px] sm:text-[11px] leading-none tracking-tight whitespace-nowrap mt-1",
                         isActive ? "font-bold text-emerald-400" : "font-medium text-slate-400 dark:text-slate-400"
                       )}
                     >
@@ -444,7 +302,7 @@ export function MobileTabBar() {
                     </span>
 
                     {/* Spacer to align with tab indicators */}
-                    <span className="h-[2px] w-3 rounded-full bg-transparent mt-0.5" />
+                    <span className="h-[3px] w-3 rounded-full bg-transparent mt-1" />
                   </Link>
                 </div>
               );
@@ -454,7 +312,7 @@ export function MobileTabBar() {
             return (
               <div
                 key={tab.name}
-                className="flex flex-col items-center justify-start h-full pt-[11px]"
+                className="flex flex-col items-center justify-start h-full pt-[39px]"
               >
                 <Link
                   href={tab.href!}
