@@ -21,7 +21,9 @@ export function MobileTabBar() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const containerRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const [width, setWidth] = useState(420);
+  const [isVisible, setIsVisible] = useState(true);
 
   // Swipe gesture & wavy transition state
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -35,6 +37,119 @@ export function MobileTabBar() {
     direction: "left",
     key: 0,
   });
+
+  // Scroll & touch awareness: smoothly auto-hide dock on scroll down, reveal on scroll up
+  useEffect(() => {
+    setIsVisible(true);
+
+    let lastScrollY =
+      typeof window !== "undefined"
+        ? window.pageYOffset || document.documentElement.scrollTop || 0
+        : 0;
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let lastTouchY = 0;
+    let isTouching = false;
+    let ticking = false;
+
+    // 1. Direct Touch Gesture Tracking for mobile devices
+    const handleGlobalTouchStart = (e: TouchEvent) => {
+      if (!e.touches || e.touches.length === 0) return;
+      if (navRef.current && navRef.current.contains(e.target as Node)) {
+        return; // ignore touches inside the dock itself
+      }
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      lastTouchY = e.touches[0].clientY;
+      isTouching = true;
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (!isTouching || !e.touches || e.touches.length === 0) return;
+      if (navRef.current && navRef.current.contains(e.target as Node)) {
+        return;
+      }
+
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const deltaYFromStart = touchStartY - currentY; // positive = scrolling down
+      const deltaXFromStart = currentX - touchStartX;
+      const stepDeltaY = lastTouchY - currentY;
+      lastTouchY = currentY;
+
+      // Ensure gesture is predominantly vertical
+      if (Math.abs(deltaYFromStart) > Math.abs(deltaXFromStart) * 0.75) {
+        if (stepDeltaY > 8 && deltaYFromStart > 18) {
+          // Swiped up -> scrolling down -> hide dock smoothly
+          setIsVisible(false);
+        } else if (stepDeltaY < -8 && deltaYFromStart < -18) {
+          // Swiped down -> scrolling up -> reveal dock smoothly
+          setIsVisible(true);
+        }
+      }
+    };
+
+    const handleGlobalTouchEnd = () => {
+      isTouching = false;
+    };
+
+    // 2. Window Scroll Event Tracking
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY =
+            window.pageYOffset ||
+            document.documentElement.scrollTop ||
+            document.body.scrollTop ||
+            0;
+          const diff = currentY - lastScrollY;
+
+          if (currentY <= 25) {
+            setIsVisible(true);
+          } else if (Math.abs(diff) > 12) {
+            if (diff > 0) {
+              // Scrolling down -> disappear
+              setIsVisible(false);
+            } else {
+              // Scrolling up -> appear
+              setIsVisible(true);
+            }
+            lastScrollY = currentY;
+          }
+
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // 3. Wheel event tracking (for mouse & trackpad)
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > 10) {
+        if (e.deltaY > 0) {
+          setIsVisible(false);
+        } else {
+          setIsVisible(true);
+        }
+      }
+    };
+
+    window.addEventListener("touchstart", handleGlobalTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleGlobalTouchMove, { passive: true });
+    window.addEventListener("touchend", handleGlobalTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleGlobalTouchEnd, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    window.addEventListener("wheel", handleWheel, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", handleGlobalTouchStart);
+      window.removeEventListener("touchmove", handleGlobalTouchMove);
+      window.removeEventListener("touchend", handleGlobalTouchEnd);
+      window.removeEventListener("touchcancel", handleGlobalTouchEnd);
+      window.removeEventListener("scroll", handleScroll, { capture: true } as any);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -178,7 +293,15 @@ export function MobileTabBar() {
   `.replace(/\s+/g, " ").trim();
 
   return (
-    <nav className="fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-200">
+    <nav
+      ref={navRef}
+      className={cn(
+        "fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-300 ease-in-out will-change-transform",
+        isVisible
+          ? "translate-y-0 opacity-100"
+          : "translate-y-28 opacity-0 pointer-events-none"
+      )}
+    >
       <div
         ref={containerRef}
         onTouchStart={handleTouchStart}
