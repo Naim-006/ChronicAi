@@ -744,14 +744,10 @@ export default function DashboardPage() {
           {/* 4. Copilot */}
           <Link
             href="/assistant"
-            className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-purple-500/40"
+            className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-emerald-500/40"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden bg-gradient-to-tr from-emerald-500/15 via-[#0b1728] to-teal-500/15 border border-emerald-500/30 shadow-xs dark:shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-transform group-hover:scale-105 p-0.5">
-              <img
-                src="/images/ai-doctor.png"
-                alt="Copilot"
-                className="h-full w-full object-contain"
-              />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-transform group-hover:scale-105">
+              <Stethoscope className="h-5 w-5 stroke-[2.3] text-slate-950" />
             </div>
             <div className="min-w-0 flex-1">
               <span className="block text-xs font-bold text-slate-900 dark:text-white truncate">
