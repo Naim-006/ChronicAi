@@ -294,8 +294,6 @@ Return a JSON object with:
       parts: [{ text: query }],
     });
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-
     const geminiPayload = {
       systemInstruction: {
         parts: [{ text: systemInstruction }],
@@ -307,28 +305,44 @@ Return a JSON object with:
       },
     };
 
-    let geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(geminiPayload),
-    });
+    // Robust Multi-Model Fallback for high availability
+    const candidateModels = [
+      "gemini-3.5-flash",
+      "gemini-flash-latest",
+      "gemini-3.1-flash-lite",
+    ];
 
-    if (!geminiRes.ok && geminiRes.status === 404) {
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      geminiRes = await fetch(fallbackUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(geminiPayload),
-      });
+    let geminiRes: Response | null = null;
+    let lastErrorText = "";
+
+    for (const modelName of candidateModels) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(geminiPayload),
+        });
+
+        if (res.ok) {
+          geminiRes = res;
+          break;
+        } else {
+          lastErrorText = await res.text();
+          console.warn(`Model ${modelName} returned status ${res.status}:`, lastErrorText.slice(0, 100));
+        }
+      } catch (fetchErr: any) {
+        lastErrorText = fetchErr?.message || "Network error";
+        console.warn(`Model ${modelName} fetch error:`, lastErrorText);
+      }
     }
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
+    if (!geminiRes || !geminiRes.ok) {
       return NextResponse.json(
         {
           success: false,
           error: "GEMINI_ERROR",
-          message: `Gemini API returned error: ${errText.slice(0, 180)}`,
+          message: `Gemini API returned error: ${lastErrorText.slice(0, 180)}`,
         },
         { status: 502 }
       );

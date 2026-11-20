@@ -156,30 +156,44 @@ Return ONLY valid JSON matching this schema:
       },
     };
 
-    let geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const candidateModels = [
+      "gemini-3.5-flash",
+      "gemini-flash-latest",
+      "gemini-3.1-flash-lite",
+    ];
 
-    // Fallback to gemini-1.5-flash if 2.5 is unavailable on this key
-    if (!geminiRes.ok && geminiRes.status === 404) {
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      geminiRes = await fetch(fallbackUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    let geminiRes: Response | null = null;
+    let lastErrorText = "";
+
+    for (const modelName of candidateModels) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          geminiRes = res;
+          break;
+        } else {
+          lastErrorText = await res.text();
+          console.warn(`OCR model ${modelName} returned status ${res.status}:`, lastErrorText.slice(0, 100));
+        }
+      } catch (fetchErr: any) {
+        lastErrorText = fetchErr?.message || "Network error";
+        console.warn(`OCR model ${modelName} fetch error:`, lastErrorText);
+      }
     }
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
+    if (!geminiRes || !geminiRes.ok) {
       let parsedErr: any = null;
       try {
-        parsedErr = JSON.parse(errText);
+        parsedErr = JSON.parse(lastErrorText);
       } catch {}
 
-      const msg = parsedErr?.error?.message || `Gemini API returned status ${geminiRes.status}`;
+      const msg = parsedErr?.error?.message || `Gemini API returned status ${geminiRes?.status || 502}`;
       return NextResponse.json(
         {
           success: false,
