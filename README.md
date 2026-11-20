@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🩺 ChronicAI · Intelligent Clinical Healthcare OS
+# 🩺 ChronicAI · Lifelong Health Intelligence & Clinical Copilot
 ### *Your Entire Medical Life. Synthesized, Grounded & Patient-First.*
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.4.6_App_Router-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
