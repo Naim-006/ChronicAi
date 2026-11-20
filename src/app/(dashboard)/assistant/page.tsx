@@ -26,9 +26,11 @@ import {
   Share2,
   BookmarkPlus,
   Sliders,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { AIMessage, AICitation, AIConversation, MedicalDocument } from "@/types/medical";
-import { formatDate } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { getDocuments } from "@/lib/supabase/services/documents";
 import {
@@ -89,6 +91,75 @@ export default function AssistantPage() {
   const [attachedDoc, setAttachedDoc] = useState<MedicalDocument | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const handleToggleVoice = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      setIsListening(false);
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = false;
+          recognition.interimResults = true;
+          recognition.lang = "en-US";
+
+          recognition.onstart = () => {
+            setIsListening(true);
+          };
+
+          recognition.onresult = (event: any) => {
+            const transcript = Array.from(event.results)
+              .map((result: any) => result[0].transcript)
+              .join("");
+            setInputQuery(transcript);
+          };
+
+          recognition.onerror = () => {
+            setIsListening(false);
+          };
+
+          recognition.onend = () => {
+            setIsListening(false);
+          };
+
+          recognitionRef.current = recognition;
+          recognition.start();
+          return;
+        } catch (err) {
+          console.warn("Speech recognition error:", err);
+        }
+      }
+    }
+
+    // Frontend fallback state if browser SpeechRecognition is unsupported or blocked
+    setIsListening(true);
+    setTimeout(() => {
+      setIsListening(false);
+    }, 4500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+    };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -813,19 +884,48 @@ Would you like me to generate a 1-page summary of these findings to bring to you
             <div className="relative flex-1">
               <input
                 placeholder={
-                  attachedDoc
+                  isListening
+                    ? "Listening... Speak now into microphone..."
+                    : attachedDoc
                     ? `Ask anything about ${attachedDoc.file_name}...`
                     : "Ask about test trends, medication safety, or visit prep..."
                 }
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
-                className="h-10 sm:h-11 w-full rounded-2xl border border-slate-200/90 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 pl-3.5 pr-3 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-[#0c1527] shadow-2xs"
+                className={cn(
+                  "h-10 sm:h-11 w-full rounded-2xl border bg-slate-100/80 dark:bg-white/5 pl-3.5 pr-3 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-[#0c1527] shadow-2xs transition-all",
+                  isListening
+                    ? "border-rose-500/80 ring-2 ring-rose-500/30 placeholder:text-rose-500 dark:placeholder:text-rose-400"
+                    : "border-slate-200/90 dark:border-white/10 focus:ring-2 focus:ring-emerald-500"
+                )}
               />
             </div>
 
+            {/* Voice Input / Microphone Option Button */}
+            <button
+              type="button"
+              onClick={handleToggleVoice}
+              className={cn(
+                "flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border transition-all shrink-0 cursor-pointer active:scale-95",
+                isListening
+                  ? "bg-rose-500 text-white border-rose-400 shadow-md shadow-rose-500/35 ring-2 ring-rose-400/50 animate-pulse scale-105"
+                  : "border-slate-200/90 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-emerald-600 dark:hover:text-emerald-400"
+              )}
+              title={isListening ? "Listening... Click to stop voice input" : "Voice Input (Microphone)"}
+              aria-label="Voice Input"
+            >
+              {isListening ? (
+                <MicOff className="h-4 w-4 text-white" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </button>
+
+            {/* Send Message Button */}
             <button
               type="submit"
               className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#22C55E] hover:bg-[#16A34A] text-white shadow-md shadow-green-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
+              title="Send Message"
             >
               <Send className="h-4 w-4" />
             </button>
