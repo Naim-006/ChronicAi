@@ -293,6 +293,17 @@ export function MobileTabBar() {
     Z
   `.replace(/\s+/g, " ").trim();
 
+  // Upper silhouette edge path for a distinct, crisp border separating bar from body content
+  const topBorderPath = `
+    M 0, ${topBaseline + cornerRadius}
+    Q 0, ${topBaseline} ${cornerRadius}, ${topBaseline}
+    L ${cx - spread}, ${topBaseline}
+    C ${cx - cpSpread}, ${topBaseline} ${cx - cpPeak}, ${domePeakY} ${cx}, ${domePeakY}
+    C ${cx + cpPeak}, ${domePeakY} ${cx + cpSpread}, ${topBaseline} ${cx + spread}, ${topBaseline}
+    L ${width - cornerRadius}, ${topBaseline}
+    Q ${width}, ${topBaseline} ${width}, ${topBaseline + cornerRadius}
+  `.replace(/\s+/g, " ").trim();
+
   return (
     <nav
       ref={navRef}
@@ -356,21 +367,38 @@ export function MobileTabBar() {
 
         {/* Crisp Border and Smooth Dome Silhouette */}
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible drop-shadow-[0_-6px_22px_rgba(15,23,42,0.14)]"
           width="100%"
           height={H}
           viewBox={`0 0 ${width} ${H}`}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          {/* Main translucent glass silhouette */}
           <path
             d={svgPath}
-            fill={isDark ? "rgba(11, 19, 37, 0.50)" : "rgba(255, 255, 255, 0.35)"}
-            stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.65)"}
-            strokeWidth="1.2"
-            strokeOpacity="1"
-            strokeLinejoin="round"
+            fill={isDark ? "rgba(11, 19, 37, 0.55)" : "rgba(255, 255, 255, 0.40)"}
+            stroke="none"
+          />
+
+          {/* Distinct Upper Border to visually separate bar from body content */}
+          <path
+            d={topBorderPath}
+            fill="none"
+            stroke={isDark ? "rgba(255, 255, 255, 0.28)" : "rgba(100, 116, 139, 0.45)"}
+            strokeWidth="1.8"
             strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Subtle teal accent rim glow on the top curve */}
+          <path
+            d={topBorderPath}
+            fill="none"
+            stroke={isDark ? "rgba(52, 211, 153, 0.25)" : "rgba(16, 185, 129, 0.35)"}
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </svg>
 

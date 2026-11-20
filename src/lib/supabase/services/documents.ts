@@ -128,6 +128,34 @@ export async function createExtractedRecord(
   };
 }
 
+export async function getExtractedRecords(userId: string): Promise<ExtractedRecord[]> {
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("extracted_records")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((d: any) => ({
+    id: d.id,
+    document_id: d.document_id,
+    user_id: d.user_id,
+    raw_extracted: d.raw_extracted as any,
+    confirmed_data: (d.confirmed_data as any) || undefined,
+    confidence_score: Number(d.confidence_score || 0),
+    status: d.status,
+    reviewed_at: d.reviewed_at || undefined,
+    created_at: d.created_at,
+  }));
+}
+
 export async function updateDocumentRecord(
   documentId: string,
   updates: Partial<MedicalDocument>,

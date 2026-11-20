@@ -28,6 +28,9 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  Building2,
+  Stethoscope,
+  Pill,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { MedicalDocument, ExtractedRecord, DocumentCategory, MetricType } from "@/types/medical";
@@ -35,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import {
   getDocuments,
+  getExtractedRecords,
   createDocumentRecord,
   createExtractedRecord as dbCreateExtracted,
   updateDocumentRecord,
@@ -80,6 +84,122 @@ interface ExtractedDiagItem {
   notes?: string;
 }
 
+// Smart Medical Tags Helper: Replaces raw developer OCR tags with real clinical concepts patients need
+function getPatientFriendlyTags(doc: MedicalDocument): string[] {
+  const rawTags = (doc.tags || []).filter((t) => {
+    const lower = t.toLowerCase();
+    return (
+      !lower.includes("gemini") &&
+      !lower.includes("ocr") &&
+      !lower.includes("ingestion") &&
+      !lower.includes("pipeline") &&
+      !lower.includes("json") &&
+      !lower.includes("extraction") &&
+      !lower.includes("ingested") &&
+      !lower.includes("raw")
+    );
+  });
+
+  const derivedTags: string[] = [];
+  const textToScan = `${doc.file_name} ${doc.summary || ""} ${doc.doctor_name || ""} ${doc.facility_name || ""}`.toLowerCase();
+
+  // Document Type / Care Category
+  if (doc.category === "prescription" || textToScan.includes("prescription") || textToScan.includes("rx")) {
+    derivedTags.push("Prescription");
+  } else if (doc.category === "lab_report" || textToScan.includes("blood") || textToScan.includes("lab") || textToScan.includes("cbc")) {
+    derivedTags.push("Lab Report");
+  } else if (doc.category === "imaging" || textToScan.includes("x-ray") || textToScan.includes("mri") || textToScan.includes("scan") || textToScan.includes("ultrasound")) {
+    derivedTags.push("Imaging & Radiology");
+  } else if (doc.category === "discharge_summary") {
+    derivedTags.push("Discharge Summary");
+  } else if (doc.category === "doctor_note") {
+    derivedTags.push("Doctor Note");
+  }
+
+  // Clinical Specialties & Common Health Conditions
+  if (
+    textToScan.includes("lesion") ||
+    textToScan.includes("thigh") ||
+    textToScan.includes("skin") ||
+    textToScan.includes("rash") ||
+    textToScan.includes("fungal") ||
+    textToScan.includes("dermat") ||
+    textToScan.includes("tinea")
+  ) {
+    derivedTags.push("Dermatology");
+  }
+  if (
+    textToScan.includes("diabetes") ||
+    textToScan.includes("glucose") ||
+    textToScan.includes("sugar") ||
+    textToScan.includes("hba1c") ||
+    textToScan.includes("insulin")
+  ) {
+    derivedTags.push("Endocrinology");
+  }
+  if (
+    textToScan.includes("pressure") ||
+    textToScan.includes("hypertension") ||
+    textToScan.includes("cardio") ||
+    textToScan.includes("heart") ||
+    textToScan.includes("ecg")
+  ) {
+    derivedTags.push("Cardiology");
+  }
+  if (
+    textToScan.includes("kidney") ||
+    textToScan.includes("creatinine") ||
+    textToScan.includes("urea") ||
+    textToScan.includes("renal")
+  ) {
+    derivedTags.push("Nephrology");
+  }
+  if (
+    textToScan.includes("cbc") ||
+    textToScan.includes("hemoglobin") ||
+    textToScan.includes("platelet") ||
+    textToScan.includes("wbc") ||
+    textToScan.includes("anemia")
+  ) {
+    derivedTags.push("Hematology");
+  }
+  if (
+    textToScan.includes("lipid") ||
+    textToScan.includes("cholesterol") ||
+    textToScan.includes("triglyceride") ||
+    textToScan.includes("ldl") ||
+    textToScan.includes("hdl")
+  ) {
+    derivedTags.push("Lipid Profile");
+  }
+  if (
+    textToScan.includes("ointment") ||
+    textToScan.includes("cream") ||
+    textToScan.includes("topical") ||
+    textToScan.includes("lotion")
+  ) {
+    derivedTags.push("Topical Therapy");
+  }
+  if (
+    textToScan.includes("capsule") ||
+    textToScan.includes("tablet") ||
+    textToScan.includes("oral") ||
+    textToScan.includes("daily") ||
+    textToScan.includes("mg")
+  ) {
+    derivedTags.push("Active Regimen");
+  }
+
+  // Combine and deduplicate
+  const combined = Array.from(new Set([...rawTags, ...derivedTags]));
+  if (combined.length === 0) {
+    combined.push(doc.category === "prescription" ? "Prescription" : "Medical Record");
+    if (doc.status === "verified") combined.push("Verified Record");
+  }
+
+  return combined.slice(0, 4);
+}
+
 export default function VaultPage() {
   const { profile, session, effectiveUserId, refreshProfile } = useAuth();
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
@@ -92,17 +212,23 @@ export default function VaultPage() {
   const loadDocs = React.useCallback(async () => {
     if (!effectiveUserId) {
       setDocuments([]);
+      setExtractedRecords([]);
       setIsLoading(false);
       return;
     }
     try {
-      const fetched = await getDocuments(effectiveUserId);
+      const [fetchedDocs, fetchedExtracted] = await Promise.all([
+        getDocuments(effectiveUserId),
+        getExtractedRecords(effectiveUserId),
+      ]);
       const uniqueDocs = Array.from(
-        new Map((fetched || []).map((d) => [d.id, d])).values()
+        new Map((fetchedDocs || []).map((d) => [d.id, d])).values()
       );
       setDocuments(uniqueDocs);
+      setExtractedRecords(fetchedExtracted || []);
     } catch {
       setDocuments([]);
+      setExtractedRecords([]);
     } finally {
       setIsLoading(false);
     }
@@ -168,6 +294,18 @@ export default function VaultPage() {
   const [editDocDoctor, setEditDocDoctor] = useState("");
   const [editDocSummary, setEditDocSummary] = useState("");
   const [isUpdatingDoc, setIsUpdatingDoc] = useState(false);
+
+  // Medical Document Inspection Modal State
+  const [inspectingDoc, setInspectingDoc] = useState<MedicalDocument | null>(null);
+
+  const currentInspectingRecord = React.useMemo(() => {
+    if (!inspectingDoc) return null;
+    return extractedRecords.find((r) => r.document_id === inspectingDoc.id) || null;
+  }, [inspectingDoc, extractedRecords]);
+
+  const handleOpenInspect = (doc: MedicalDocument) => {
+    setInspectingDoc(doc);
+  };
 
   const [deletingDoc, setDeletingDoc] = useState<MedicalDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
@@ -518,7 +656,21 @@ export default function VaultPage() {
         doctor_name: editDoctor || "Treating Clinician",
         status: "verified",
         summary: editSummary,
-        tags: ["Verified Record", "Gemini OCR Extracted", "Clinical Ingestion"],
+        tags: Array.from(
+          new Set([
+            editCategory === "prescription"
+              ? "Prescription"
+              : editCategory === "lab_report"
+              ? "Lab Report"
+              : editCategory === "imaging"
+              ? "Imaging"
+              : "Medical Record",
+            ...editDiagnoses.map((d) => d.name),
+            editLabs.length > 0 ? "Biomarkers Extracted" : "",
+            editMeds.length > 0 ? "Prescribed Meds" : "",
+            "Verified Record",
+          ])
+        ).filter(Boolean).slice(0, 4),
       });
 
       // 3. Save extracted record
@@ -1256,12 +1408,7 @@ export default function VaultPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setActiveReviewDoc(doc);
-                            setReviewRecord(
-                              extractedRecords.find((r) => r.document_id === doc.id) || null
-                            );
-                          }}
+                          onClick={() => handleOpenInspect(doc)}
                           className="inline-flex items-center gap-1 text-emerald-600 font-bold hover:underline"
                         >
                           <Eye className="h-3.5 w-3.5" />
@@ -1284,16 +1431,31 @@ export default function VaultPage() {
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${iconTones[idx % iconTones.length]}`}
-                  >
-                    <FileText className="h-5 w-5" />
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${
+                        doc.category === "prescription"
+                          ? "bg-teal-50 text-teal-600 border-teal-200"
+                          : doc.category === "imaging"
+                          ? "bg-purple-50 text-purple-600 border-purple-200"
+                          : iconTones[idx % iconTones.length]
+                      }`}
+                    >
+                      {doc.category === "prescription" ? (
+                        <Pill className="h-5 w-5" />
+                      ) : (
+                        <FileText className="h-5 w-5" />
+                      )}
+                    </div>
+                    <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                      {doc.category.replace("_", " ")}
+                    </span>
                   </div>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
                       doc.status === "verified"
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                        : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
                     }`}
                   >
                     {doc.status === "verified" ? "Verified" : "Review Needed"}
@@ -1304,27 +1466,34 @@ export default function VaultPage() {
                   <h4 className="font-extrabold text-sm text-[var(--foreground)] group-hover:text-emerald-700 transition-colors line-clamp-1">
                     {doc.file_name.replace(".pdf", "").replace(/_/g, " ")}
                   </h4>
-                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                    {doc.facility_name} · {doc.doctor_name}
-                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                    <span className="inline-flex items-center gap-1">
+                      <Building2 className="h-3 w-3 text-slate-400 shrink-0" />
+                      <span>{doc.facility_name || "Clinical Facility"}</span>
+                    </span>
+                    <span>·</span>
+                    <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 truncate">
+                      <Stethoscope className="h-3 w-3 text-emerald-600 shrink-0" />
+                      <span>{doc.doctor_name || "Treating Physician"}</span>
+                    </span>
+                  </div>
                 </div>
 
-                <p className="mt-3 text-xs text-[var(--muted-foreground)] line-clamp-2 leading-relaxed border-t border-[var(--border)] pt-3">
+                <p className="mt-3 text-xs text-[var(--muted-foreground)] line-clamp-2 leading-relaxed border-t border-[var(--border)] pt-2.5">
                   {doc.summary}
                 </p>
 
-                {doc.tags && doc.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {doc.tags.map((tag, tIdx) => (
-                      <span
-                        key={tIdx}
-                        className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Smart Patient-Facing Clinical Tags */}
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {getPatientFriendlyTags(doc).map((tag, tIdx) => (
+                    <span
+                      key={tIdx}
+                      className="rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-5 flex items-center justify-between border-t border-[var(--border)] pt-3">
@@ -1367,13 +1536,9 @@ export default function VaultPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setActiveReviewDoc(doc);
-                      setReviewRecord(
-                        extractedRecords.find((r) => r.document_id === doc.id) || null
-                      );
-                    }}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-800"
+                    onClick={() => handleOpenInspect(doc)}
+                    title="Inspect Report Details & Extracted Clinical Biomarkers"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-800 px-1 py-1"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     Inspect
@@ -2029,6 +2194,278 @@ export default function VaultPage() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* COMPREHENSIVE MEDICAL RECORD INSPECTION MODAL */}
+      {inspectingDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 px-6 py-4">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${
+                    inspectingDoc.category === "prescription"
+                      ? "bg-teal-50 text-teal-600 border-teal-200"
+                      : inspectingDoc.category === "imaging"
+                      ? "bg-purple-50 text-purple-600 border-purple-200"
+                      : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                  }`}
+                >
+                  {inspectingDoc.category === "prescription" ? (
+                    <Pill className="h-5 w-5" />
+                  ) : inspectingDoc.category === "imaging" ? (
+                    <Scan className="h-5 w-5" />
+                  ) : (
+                    <FileText className="h-5 w-5" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      {inspectingDoc.category.replace("_", " ")}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        inspectingDoc.status === "verified"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
+                      }`}
+                    >
+                      {inspectingDoc.status === "verified" ? (
+                        <>
+                          <CheckCircle2 className="h-3 w-3" /> Verified Record
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="h-3 w-3" /> Needs Review
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <h3 className="mt-1 text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+                    {inspectingDoc.file_name.replace(".pdf", "").replace(/_/g, " ")}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Document Date: {formatDate(inspectingDoc.document_date)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {inspectingDoc.file_path && (
+                  <button
+                    type="button"
+                    onClick={() => handleViewOriginalDocument(inspectingDoc)}
+                    disabled={openingDocId === inspectingDoc.id}
+                    title="View Original Uploaded File"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 border border-emerald-200/60 dark:border-emerald-800 px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    {openingDocId === inspectingDoc.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    )}
+                    <span>Original File</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setInspectingDoc(null)}
+                  className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* Facility & Doctor Banner */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-3.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <Building2 className="h-3.5 w-3.5 text-teal-600" />
+                    Healthcare Facility
+                  </div>
+                  <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+                    {inspectingDoc.facility_name || "General Healthcare Facility"}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-3.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <Stethoscope className="h-3.5 w-3.5 text-emerald-600" />
+                    Treating Clinician / Physician
+                  </div>
+                  <div className="mt-1 text-sm font-bold text-slate-900 dark:text-slate-100">
+                    {inspectingDoc.doctor_name || "Attending Physician"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Clinical Narrative & Summary */}
+              {inspectingDoc.summary && (
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 p-4 shadow-xs">
+                  <div className="flex items-center gap-2 text-xs font-extrabold text-slate-700 dark:text-slate-200 mb-2">
+                    <FileCheck className="h-4 w-4 text-emerald-600" />
+                    Clinical Summary & Consultation Findings
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                    {inspectingDoc.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Extracted Biomarkers Table (if present) */}
+              {currentInspectingRecord?.raw_extracted?.lab_results &&
+                currentInspectingRecord.raw_extracted.lab_results.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Activity className="h-4 w-4 text-emerald-600" />
+                        Extracted Biomarkers & Lab Results ({currentInspectingRecord.raw_extracted.lab_results.length})
+                      </h4>
+                    </div>
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 dark:bg-slate-800/90 border-b border-slate-100 dark:border-slate-700 text-[11px] font-bold text-slate-500">
+                          <tr>
+                            <th className="py-2.5 px-3">Test / Biomarker</th>
+                            <th className="py-2.5 px-3">Result Value</th>
+                            <th className="py-2.5 px-3">Reference Range</th>
+                            <th className="py-2.5 pr-3 text-right">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {currentInspectingRecord.raw_extracted.lab_results.map((lab: any, idx: number) => (
+                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50">
+                              <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
+                                {lab.test_name}
+                              </td>
+                              <td className="py-2.5 px-3 font-extrabold text-emerald-700 dark:text-emerald-400">
+                                {lab.value} {lab.unit}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500">
+                                {lab.reference_range || "Standard"}
+                              </td>
+                              <td className="py-2.5 pr-3 text-right">
+                                <span
+                                  className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    lab.is_abnormal
+                                      ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                      : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  }`}
+                                >
+                                  {lab.is_abnormal ? "Abnormal" : "Normal"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+              {/* Extracted Medications (if present) */}
+              {currentInspectingRecord?.raw_extracted?.medications &&
+                currentInspectingRecord.raw_extracted.medications.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <Pill className="h-4 w-4 text-teal-600" />
+                      Prescribed Medications & Regimens ({currentInspectingRecord.raw_extracted.medications.length})
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {currentInspectingRecord.raw_extracted.medications.map((med: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3"
+                        >
+                          <div className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                            {med.name}
+                          </div>
+                          <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+                            {med.dosage} · {med.frequency}
+                          </div>
+                          {med.instructions && (
+                            <div className="text-[10px] text-slate-500 mt-1 italic">
+                              {med.instructions}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Diagnoses (if present) */}
+              {currentInspectingRecord?.raw_extracted?.diagnoses &&
+                currentInspectingRecord.raw_extracted.diagnoses.length > 0 && (
+                  <div className="space-y-1.5">
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                      Identified Diagnoses & Impressions
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentInspectingRecord.raw_extracted.diagnoses.map((diag: string, idx: number) => (
+                        <span
+                          key={idx}
+                          className="rounded-lg bg-teal-50 dark:bg-teal-950/60 border border-teal-200/70 dark:border-teal-800 px-2.5 py-1 text-xs font-semibold text-teal-800 dark:text-teal-300"
+                        >
+                          {diag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Patient-Centric Health Tags */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Clinical Tags & Specialty Classifications
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {getPatientFriendlyTags(inspectingDoc).map((tag, tIdx) => (
+                    <span
+                      key={tIdx}
+                      className="rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 px-6 py-3.5">
+              <span className="text-xs text-slate-400">
+                {(inspectingDoc.file_size / 1024).toFixed(0)} KB · Added {formatDate(inspectingDoc.created_at)}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toEdit = inspectingDoc;
+                    setInspectingDoc(null);
+                    handleOpenEditDoc(toEdit);
+                  }}
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <Pencil className="inline-block h-3.5 w-3.5 mr-1" />
+                  Edit Record
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInspectingDoc(null)}
+                  className="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
