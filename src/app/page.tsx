@@ -475,9 +475,9 @@ export default function LandingPage() {
             transition={{ duration: 0.65, delay: 0.1 }}
             className="mt-3.5 font-display text-3xl font-black leading-[1.12] tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-[3.3rem]"
           >
-            All your health records.{" "}
+            All your Medical need in.{" "}
             <span className="relative inline-block text-emerald-600 dark:text-emerald-400">
-              One calm place.
+              One place.
               <svg
                 className="absolute -bottom-1 sm:-bottom-2 left-0 w-full"
                 viewBox="0 0 200 12"
