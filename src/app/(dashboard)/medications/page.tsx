@@ -1,48 +1,50 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Pill, Plus, Check, X, ShieldAlert, ShieldCheck, AlertTriangle, Search, Stethoscope, Loader2 } from "lucide-react";
-import { Medication } from "@/types/medical";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Pill,
+  Plus,
+  Check,
+  X,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  Search,
+  Loader2,
+  Calendar,
+  TrendingUp,
+  BarChart3,
+  Clock,
+  Sparkles,
+  Info,
+} from "lucide-react";
+import { Medication, MedicationLog } from "@/types/medical";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { getMedications, createMedication, logMedicationAdherence } from "@/lib/supabase/services/medications";
+import {
+  getMedications,
+  createMedication,
+  logMedicationAdherence,
+  getMedicationLogs,
+} from "@/lib/supabase/services/medications";
 import { useRealtimeTables } from "@/hooks/useRealtime";
+
+interface DayAdherenceData {
+  dayLabel: string;
+  dayShort: string;
+  dateKey: string;
+  taken: number;
+  total: number;
+  rate: number;
+  isToday: boolean;
+}
 
 export default function MedicationsPage() {
   const { effectiveUserId } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
+  const [medLogs, setMedLogs] = useState<MedicationLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const loadMeds = React.useCallback(async () => {
-    if (!effectiveUserId) {
-      setMedications([]);
-      setIsLoading(false);
-      return;
-    }
-    try {
-      const fetched = await getMedications(effectiveUserId);
-      setMedications(fetched || []);
-    } catch {
-      setMedications([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [effectiveUserId]);
-
-  useEffect(() => {
-    loadMeds();
-  }, [loadMeds]);
-
-  // Realtime subscription: syncs medication records and adherence logs live
-  useRealtimeTables({
-    tables: ["medications", "medication_logs"],
-    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
-    enabled: Boolean(effectiveUserId),
-    onChange: () => {
-      loadMeds();
-    },
-  });
   const [loggedMeds, setLoggedMeds] = useState<Record<string, boolean>>({});
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -55,62 +57,74 @@ export default function MedicationsPage() {
     alternative?: string;
   } | null>(null);
 
-  const checkDrugInteraction = (drugName: string) => {
-    const q = drugName.toLowerCase().trim();
-    if (!q) return;
-
-    if (q.includes("ibuprofen") || q.includes("advil") || q.includes("aleve") || q.includes("naproxen") || q.includes("motrin")) {
-      setInteractionResult({
-        drug: drugName,
-        level: "moderate",
-        interactingWith: "Lisinopril 20mg & Jardiance 10mg",
-        mechanism: "NSAIDs inhibit renal vasodilatory prostaglandins, decreasing eGFR and counteracting ACE-inhibitor blood pressure reduction.",
-        alternative: "Acetaminophen (Tylenol) 500mg every 6 hours (max 2000mg/day) is recommended.",
-      });
-    } else if (q.includes("sudafed") || q.includes("pseudoephedrine") || q.includes("decongestant")) {
-      setInteractionResult({
-        drug: drugName,
-        level: "moderate",
-        interactingWith: "Lisinopril 20mg",
-        mechanism: "Sympathomimetic alpha-1 stimulation triggers systemic vasoconstriction, elevating systolic blood pressure by 10-15 mmHg.",
-        alternative: "Saline nasal irrigation or Coricidin HBP (decongestant-free cold relief).",
-      });
-    } else if (q.includes("amoxicillin") || q.includes("penicillin") || q.includes("antibiotic")) {
-      setInteractionResult({
-        drug: drugName,
-        level: "severe",
-        interactingWith: "Patient Allergy Profile",
-        mechanism: "Severe anaphylactic allergy documented on your Emergency Medical Card. Beta-lactam antibiotics are strictly contraindicated.",
-        alternative: "Azithromycin (Macrolide) or Doxycycline as approved by Dr. Catherine Wei.",
-      });
-    } else if (q.includes("aspirin")) {
-      setInteractionResult({
-        drug: drugName,
-        level: "safe",
-        interactingWith: "Cardiovascular Regimen",
-        mechanism: "Low-dose 81mg enteric-coated aspirin is compatible with Lisinopril and Atorvastatin under clinical guidance.",
-      });
-    } else {
-      setInteractionResult({
-        drug: drugName,
-        level: "safe",
-        mechanism: `No critical clinical interactions detected between ${drugName} and your 4 active prescriptions. Always verify with your pharmacist.`,
-      });
-    }
-  };
-
+  // Form state
   const [name, setName] = useState("");
   const [dose, setDose] = useState("");
-  const [freq, setFreq] = useState("");
+  const [freq, setFreq] = useState("Once daily");
   const [doc, setDoc] = useState("");
+  const [condition, setCondition] = useState("");
   const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  // Load medications and historical logs
+  const loadData = useCallback(async () => {
+    if (!effectiveUserId) {
+      setMedications([]);
+      setMedLogs([]);
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const [fetchedMeds, fetchedLogs] = await Promise.all([
+        getMedications(effectiveUserId),
+        getMedicationLogs(effectiveUserId, 14),
+      ]);
+      setMedications(fetchedMeds || []);
+      setMedLogs(fetchedLogs || []);
+
+      // Populate today's initial checklist state from database logs
+      const todayLogs = (fetchedLogs || []).filter(
+        (l) => l.scheduled_time?.startsWith(todayStr) || l.created_at?.startsWith(todayStr)
+      );
+      const initialMap: Record<string, boolean> = {};
+      todayLogs.forEach((l) => {
+        if (l.status === "taken") {
+          initialMap[l.medication_id] = true;
+        }
+      });
+      setLoggedMeds((prev) => ({ ...initialMap, ...prev }));
+    } catch {
+      setMedications([]);
+      setMedLogs([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [effectiveUserId, todayStr]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Realtime synchronization
+  useRealtimeTables({
+    tables: ["medications", "medication_logs"],
+    filter: effectiveUserId ? `user_id=eq.${effectiveUserId}` : undefined,
+    enabled: Boolean(effectiveUserId),
+    onChange: () => {
+      loadData();
+    },
+  });
+
+  // Toggle dose taken/missed for today
   const toggleMed = async (medId: string) => {
     const nextState = !loggedMeds[medId];
     setLoggedMeds((prev) => ({
       ...prev,
       [medId]: nextState,
     }));
+
     if (effectiveUserId) {
       try {
         await logMedicationAdherence({
@@ -120,25 +134,32 @@ export default function MedicationsPage() {
           recorded_time: new Date().toISOString(),
           status: nextState ? "taken" : "missed",
         });
-      } catch {}
+        // Refresh logs to update chart in real time
+        const updatedLogs = await getMedicationLogs(effectiveUserId, 14);
+        setMedLogs(updatedLogs || []);
+      } catch (err) {
+        console.error("Failed to log medication adherence:", err);
+      }
     }
   };
 
+  // Add prescription handler
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !dose || !effectiveUserId) return;
+    if (!name.trim() || !dose.trim() || !effectiveUserId) return;
+    setIsSubmitting(true);
 
     try {
       const newMed = await createMedication({
         user_id: effectiveUserId,
-        name,
-        strength: dose,
-        dosage: dose,
-        frequency: freq || "Once daily",
-        instructions: notes || "Take as prescribed with water.",
-        start_date: new Date().toISOString().split("T")[0],
-        prescribing_doctor: doc || "Consulting Physician",
-        related_condition: "General Care",
+        name: name.trim(),
+        strength: dose.trim(),
+        dosage: dose.trim(),
+        frequency: freq.trim() || "Once daily",
+        instructions: notes.trim() || "Take as prescribed with water.",
+        start_date: todayStr,
+        prescribing_doctor: doc.trim() || "Consulting Physician",
+        related_condition: condition.trim() || "General Care",
         status: "active",
       });
 
@@ -146,159 +167,455 @@ export default function MedicationsPage() {
       setShowAddModal(false);
       setName("");
       setDose("");
-      setFreq("");
+      setFreq("Once daily");
       setDoc("");
+      setCondition("");
       setNotes("");
     } catch (err) {
       console.error("Failed to add medication", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const takenCount = Object.values(loggedMeds).filter(Boolean).length;
-  const adherence = Math.round((takenCount / Math.max(medications.length, 1)) * 100);
+  // Clinical safety interaction checker
+  const checkDrugInteraction = (drugName: string) => {
+    const q = drugName.toLowerCase().trim();
+    if (!q) return;
 
-  const matrixMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"];
+    const currentMedNames = medications.map((m) => m.name).join(" & ");
+
+    if (
+      q.includes("ibuprofen") ||
+      q.includes("advil") ||
+      q.includes("aleve") ||
+      q.includes("naproxen") ||
+      q.includes("motrin")
+    ) {
+      setInteractionResult({
+        drug: drugName,
+        level: "moderate",
+        interactingWith: currentMedNames || "Active Renoprotective Regimen",
+        mechanism:
+          "NSAIDs inhibit renal vasodilatory prostaglandins, decreasing eGFR and counteracting antihypertensive efficacy.",
+        alternative: "Acetaminophen (Tylenol) 500mg every 6 hours (max 2000mg/day) is recommended.",
+      });
+    } else if (
+      q.includes("sudafed") ||
+      q.includes("pseudoephedrine") ||
+      q.includes("decongestant")
+    ) {
+      setInteractionResult({
+        drug: drugName,
+        level: "moderate",
+        interactingWith: currentMedNames || "Antihypertensive Regimen",
+        mechanism:
+          "Sympathomimetic alpha-1 stimulation triggers systemic vasoconstriction, elevating systolic blood pressure by 10-15 mmHg.",
+        alternative: "Saline nasal irrigation or Coricidin HBP (decongestant-free cold relief).",
+      });
+    } else if (
+      q.includes("amoxicillin") ||
+      q.includes("penicillin") ||
+      q.includes("antibiotic")
+    ) {
+      setInteractionResult({
+        drug: drugName,
+        level: "severe",
+        interactingWith: "Patient Allergy Profile",
+        mechanism:
+          "Severe allergy documented on your Emergency Medical Card. Beta-lactam antibiotics are strictly contraindicated.",
+        alternative: "Azithromycin (Macrolide) or Doxycycline as approved by your physician.",
+      });
+    } else if (q.includes("aspirin")) {
+      setInteractionResult({
+        drug: drugName,
+        level: "safe",
+        interactingWith: currentMedNames || "Cardiovascular Protocol",
+        mechanism:
+          "Low-dose 81mg enteric-coated aspirin is compatible with your active prescriptions under clinical guidance.",
+      });
+    } else {
+      setInteractionResult({
+        drug: drugName,
+        level: "safe",
+        mechanism: `No critical clinical contraindications detected between ${drugName} and your ${medications.length} active prescriptions. Always verify with your pharmacist.`,
+      });
+    }
+  };
+
+  // Dynamic category options derived from real data
+  const availableCategories = useMemo(() => {
+    const cats = new Set<string>();
+    medications.forEach((m) => {
+      if (m.related_condition?.trim()) {
+        cats.add(m.related_condition.trim());
+      }
+    });
+    return [
+      { id: "all", label: "All Active" },
+      ...Array.from(cats).map((c) => ({ id: c.toLowerCase(), label: c })),
+    ];
+  }, [medications]);
+
+  // Filtered medication list
+  const filteredMedications = useMemo(() => {
+    if (categoryFilter === "all") return medications;
+    return medications.filter(
+      (m) => m.related_condition?.toLowerCase() === categoryFilter.toLowerCase()
+    );
+  }, [medications, categoryFilter]);
+
+  // Today's summary numbers
+  const takenCount = useMemo(
+    () => Object.values(loggedMeds).filter(Boolean).length,
+    [loggedMeds]
+  );
+  const todayAdherence = useMemo(
+    () =>
+      medications.length > 0
+        ? Math.round((takenCount / medications.length) * 100)
+        : 0,
+    [takenCount, medications.length]
+  );
+
+  // REAL 7-Day Adherence Chart Calculation
+  const weekChartData: DayAdherenceData[] = useMemo(() => {
+    const days: DayAdherenceData[] = [];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateKey = d.toISOString().split("T")[0];
+      const isToday = i === 0;
+
+      const dayLabel = isToday
+        ? "Today"
+        : d.toLocaleDateString("en-US", { weekday: "short" });
+      const dayShort = isToday
+        ? "Today"
+        : d.toLocaleDateString("en-US", { weekday: "narrow" });
+
+      if (isToday) {
+        const total = medications.length;
+        const taken = takenCount;
+        const rate = total > 0 ? Math.round((taken / total) * 100) : 0;
+        days.push({ dayLabel, dayShort, dateKey, taken, total, rate, isToday });
+      } else {
+        // Calculate from real database logs for that specific date
+        const dayLogs = medLogs.filter(
+          (l) =>
+            (l.scheduled_time?.startsWith(dateKey) ||
+              l.created_at?.startsWith(dateKey)) &&
+            l.status === "taken"
+        );
+        const uniqueMedIdsTaken = new Set(dayLogs.map((l) => l.medication_id)).size;
+        const total = medications.length;
+        const rate =
+          total > 0
+            ? Math.min(100, Math.round((uniqueMedIdsTaken / total) * 100))
+            : 0;
+        days.push({
+          dayLabel,
+          dayShort,
+          dateKey,
+          taken: uniqueMedIdsTaken,
+          total,
+          rate,
+          isToday,
+        });
+      }
+    }
+    return days;
+  }, [medications.length, takenCount, medLogs]);
+
+  // Overall 7-day adherence average
+  const weeklyAverageRate = useMemo(() => {
+    if (medications.length === 0) return 0;
+    const sum = weekChartData.reduce((acc, d) => acc + d.rate, 0);
+    return Math.round(sum / weekChartData.length);
+  }, [weekChartData, medications.length]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-6xl mx-auto pb-16">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold text-[var(--foreground)]">Medications</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
-            {medications.length} active prescriptions · {adherence}% logged today
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
+            Medications & Prescriptions
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
+            {medications.length} active prescriptions · {todayAdherence}% logged today
           </p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} size="sm">
-          <Plus className="h-3.5 w-3.5" />
-          Add med
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm self-start sm:self-auto"
+        >
+          <Plus className="h-4 w-4 mr-1.5" />
+          Add Prescription
         </Button>
       </div>
 
-      {/* Soft emerald summary banner */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 p-5 text-white shadow-[var(--shadow-lift)] sm:p-6">
-        <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/15 blur-2xl" />
+      {/* Hero Summary Protocol Banner */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 dark:from-emerald-950/90 dark:via-slate-900 dark:to-teal-950 p-5 sm:p-6 text-white shadow-lg border border-emerald-500/20">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
-              <Pill className="h-5 w-5" />
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 dark:bg-white/10 backdrop-blur-md shadow-inner border border-white/20">
+              <Pill className="h-6 w-6 text-emerald-100" />
             </div>
             <div>
-              <h2 className="text-lg font-extrabold tracking-tight">Daily protocol</h2>
-              <p className="text-xs text-emerald-50/90">
+              <h2 className="text-lg font-extrabold tracking-tight text-white">
+                Daily Medication Protocol
+              </h2>
+              <p className="text-xs text-emerald-100/90 mt-0.5">
                 {takenCount} of {medications.length} doses logged today
               </p>
             </div>
           </div>
-          <div className="soft-inset flex items-center gap-3 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur-md">
-            <div className="text-3xl font-extrabold">{adherence}%</div>
-            <div className="text-[11px] font-semibold leading-tight text-emerald-50">
-              Adherence
+
+          <div className="flex items-center gap-3 rounded-2xl bg-white/15 dark:bg-white/10 px-4 py-3 backdrop-blur-md border border-white/15 self-start sm:self-auto">
+            <div className="text-3xl font-extrabold tracking-tight text-white">
+              {todayAdherence}%
+            </div>
+            <div className="text-[11px] font-bold leading-tight text-emerald-100">
+              Today&apos;s
               <br />
-              today
+              Adherence
             </div>
           </div>
         </div>
 
-        <div className="relative mt-5 flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-          {[
-            { id: "all", label: "All" },
-            { id: "metabolic", label: "Metabolic" },
-            { id: "cardio", label: "Cardio" },
-            { id: "statin", label: "Lipids" },
-            { id: "supplements", label: "Supplements" },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setCategoryFilter(cat.id)}
-              className={`shrink-0 cursor-pointer rounded-2xl px-4 py-1.5 text-xs font-bold transition-all ${
-                categoryFilter === cat.id
-                  ? "bg-white text-emerald-800 shadow-sm"
-                  : "bg-white/15 text-white hover:bg-white/25"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        {/* Dynamic Category Filter Bar */}
+        {availableCategories.length > 1 && (
+          <div className="relative mt-5 flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+            {availableCategories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoryFilter(cat.id)}
+                className={`shrink-0 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                  categoryFilter === cat.id
+                    ? "bg-white text-emerald-900 shadow-sm dark:bg-emerald-400 dark:text-emerald-950"
+                    : "bg-white/15 text-white/90 hover:bg-white/25 hover:text-white dark:bg-white/10"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Adherence matrix */}
-      <section className="soft-card space-y-4 p-5">
-        <div className="flex flex-col gap-3 border-b border-[var(--border)]/80 pb-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-            Monthly adherence
-          </span>
-          <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-[var(--muted-foreground)]">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
-              Metformin
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              Lisinopril
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-              Atorvastatin
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-sky-400" />
-              Vitamin D3
+      {/* REAL MEDICATION ADHERENCE & FREQUENCY CHART */}
+      <section className="soft-card p-5 sm:p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border)] pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <BarChart3 className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-extrabold text-[var(--foreground)] tracking-tight">
+                7-Day Adherence Analytics
+              </h2>
+              <span className="text-xs text-[var(--muted-foreground)] block">
+                Calculated in real-time from your active prescriptions and confirmed dose logs.
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
+              <TrendingUp className="h-3.5 w-3.5" />
+              {weeklyAverageRate}% 7-Day Consistency
             </span>
           </div>
         </div>
 
-        <div className="overflow-x-auto max-w-full">
-          <table className="w-full min-w-[320px] text-center text-xs">
-            <thead>
-              <tr className="text-[11px] font-extrabold uppercase text-[var(--muted-foreground)]">
-                <th className="pb-3 pl-2 text-left">Month</th>
-                <th className="pb-3">Met</th>
-                <th className="pb-3">Lis</th>
-                <th className="pb-3">Ato</th>
-                <th className="pb-3">Vit D</th>
-                <th className="pb-3 pr-2 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)]/70">
-              {matrixMonths.map((month) => (
-                <tr key={month} className="transition-colors hover:bg-[var(--muted)]/50">
-                  <td className="py-3 pl-2 text-left font-bold text-[var(--foreground)]">
-                    {month}
-                  </td>
-                  {[
-                    "bg-slate-100 text-slate-600",
-                    "bg-emerald-100 text-emerald-700",
-                    "bg-amber-100 text-amber-700",
-                    "bg-sky-100 text-sky-700",
-                  ].map((tone, i) => (
-                    <td key={i} className="py-3">
+        {medications.length === 0 ? (
+          <div className="p-8 text-center space-y-3">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--secondary)] text-[var(--muted-foreground)]">
+              <Pill className="h-6 w-6" />
+            </div>
+            <h3 className="text-sm font-bold text-[var(--foreground)]">
+              No active medications registered
+            </h3>
+            <p className="text-xs text-[var(--muted-foreground)] max-w-sm mx-auto">
+              Add your medications or import them from a scanned medical report in your Vault to visualize real-time adherence charts.
+            </p>
+            <Button
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+              className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Add First Medication
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* 7-Day Vertical Bar Chart */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted-foreground)] block">
+                Daily Dose Completion (Past 7 Days)
+              </span>
+
+              <div className="grid grid-cols-7 gap-2 sm:gap-4 pt-6 pb-2 items-end h-40">
+                {weekChartData.map((day) => {
+                  const isFull = day.rate === 100;
+                  const isPartial = day.rate > 0 && day.rate < 100;
+                  const barHeight = Math.max(day.rate, 6);
+
+                  return (
+                    <div
+                      key={day.dateKey}
+                      className="flex flex-col items-center justify-end h-full gap-2 group"
+                    >
+                      {/* Rate label above bar */}
                       <span
-                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${tone}`}
+                        className={`text-[10px] font-extrabold transition-opacity ${
+                          day.isToday
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-[var(--muted-foreground)]"
+                        }`}
                       >
-                        <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                        {day.rate}%
                       </span>
-                    </td>
-                  ))}
-                  <td className="py-3 pr-2 text-right">
-                    <span className="rounded-xl border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-700">
-                      100%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+                      {/* Bar track */}
+                      <div className="w-full max-w-[48px] h-24 rounded-xl bg-[var(--secondary)] flex items-end p-1 overflow-hidden">
+                        <div
+                          style={{ height: `${barHeight}%` }}
+                          className={`w-full rounded-lg transition-all duration-500 ${
+                            isFull
+                              ? "bg-gradient-to-t from-emerald-600 to-teal-500 shadow-xs shadow-emerald-500/25"
+                              : isPartial
+                              ? "bg-gradient-to-t from-amber-500 to-amber-400"
+                              : "bg-slate-300 dark:bg-slate-700 opacity-40"
+                          }`}
+                        />
+                      </div>
+
+                      {/* Day Label */}
+                      <div className="text-center">
+                        <span
+                          className={`text-xs block font-bold truncate ${
+                            day.isToday
+                              ? "text-emerald-600 dark:text-emerald-400 underline decoration-2 underline-offset-4"
+                              : "text-[var(--foreground)]"
+                          }`}
+                        >
+                          <span className="hidden sm:inline">{day.dayLabel}</span>
+                          <span className="sm:hidden">{day.dayShort}</span>
+                        </span>
+                        <span className="text-[9px] text-[var(--muted-foreground)] block">
+                          {day.taken}/{day.total}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Real Per-Medication Protocol Table */}
+            <div className="space-y-3 pt-3 border-t border-[var(--border)]">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted-foreground)] block">
+                Active Regimen & Dose Frequency
+              </span>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px] text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[var(--border)] text-[11px] font-extrabold uppercase text-[var(--muted-foreground)]">
+                      <th className="py-2.5 pl-2">Medication</th>
+                      <th className="py-2.5 px-3">Strength & Frequency</th>
+                      <th className="py-2.5 px-3">Indication</th>
+                      <th className="py-2.5 px-3">Today&apos;s Status</th>
+                      <th className="py-2.5 pr-2 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]/70">
+                    {medications.map((med) => {
+                      const isTaken = loggedMeds[med.id];
+                      return (
+                        <tr
+                          key={med.id}
+                          className="transition-colors hover:bg-[var(--muted)]/50"
+                        >
+                          <td className="py-3 pl-2 font-bold text-[var(--foreground)]">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                <Pill className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <span className="block font-bold">{med.name}</span>
+                                <span className="text-[10px] text-[var(--muted-foreground)]">
+                                  {med.prescribing_doctor || "Physician Prescribed"}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-[var(--muted-foreground)]">
+                            <div className="font-semibold text-[var(--foreground)]">
+                              {med.strength || med.dosage}
+                            </div>
+                            <div className="text-[10px]">{med.frequency}</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="inline-block rounded-md border border-[var(--border)] bg-[var(--secondary)] px-2 py-0.5 text-[10px] font-bold text-[var(--foreground)]">
+                              {med.related_condition || "General Care"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                                isTaken
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                              }`}
+                            >
+                              {isTaken ? (
+                                <>
+                                  <Check className="h-3 w-3" /> Logged Taken
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-3 w-3" /> Scheduled
+                                </>
+                              )}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-2 text-right">
+                            <button
+                              type="button"
+                              onClick={() => toggleMed(med.id)}
+                              className={`cursor-pointer px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                                isTaken
+                                  ? "border border-[var(--border)] bg-[var(--secondary)] text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
+                                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                              }`}
+                            >
+                              {isTaken ? "Undo" : "Take Dose"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Clinical Drug-Drug Interaction Safety Engine */}
-      <section className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-[var(--shadow-soft)] space-y-4">
-        <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+      <section className="soft-card p-5 sm:p-6 space-y-4">
+        <div className="flex items-start justify-between border-b border-[var(--border)] pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
@@ -306,19 +623,19 @@ export default function MedicationsPage() {
                 Drug-Drug Interaction Safety Engine
               </h2>
               <span className="text-[11px] text-[var(--muted-foreground)] block">
-                Instant safety screening against your active prescriptions and allergies.
+                Instant clinical safety screening against your active prescriptions and allergies.
               </span>
             </div>
           </div>
-          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-700 border border-emerald-100 hidden sm:inline">
-            {medications.length} Meds Cross-Referenced
+          <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-3 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hidden sm:inline">
+            {medications.length} Prescriptions Screened
           </span>
         </div>
 
         {/* Search input to test drug */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
             <input
               type="text"
               placeholder="Test any OTC drug, supplement, or new prescription (e.g. Ibuprofen, Sudafed)..."
@@ -330,21 +647,23 @@ export default function MedicationsPage() {
                   checkDrugInteraction(testDrugInput);
                 }
               }}
-              className="h-11 w-full rounded-2xl border border-slate-200/90 bg-slate-50/60 pl-10 pr-4 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] pl-10 pr-4 text-xs font-medium text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
             />
           </div>
           <button
             type="button"
             onClick={() => checkDrugInteraction(testDrugInput)}
-            className="flex h-11 shrink-0 items-center justify-center gap-1.5 px-4 rounded-2xl bg-[#18261F] text-white text-xs font-bold shadow-sm hover:bg-[#253D30] transition-colors cursor-pointer"
+            className="flex h-11 shrink-0 items-center justify-center gap-1.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white text-xs font-bold shadow-sm transition-all cursor-pointer active:scale-95"
           >
             <span>Analyze Safety</span>
           </button>
         </div>
 
         {/* Quick test chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold text-slate-600 max-w-full hide-scrollbar">
-          <span className="text-[10px] text-slate-400 font-bold shrink-0">Quick Check:</span>
+        <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold max-w-full hide-scrollbar">
+          <span className="text-[10px] text-[var(--muted-foreground)] font-bold shrink-0">
+            Quick Check:
+          </span>
           {["Ibuprofen (Advil)", "Pseudoephedrine (Sudafed)", "Amoxicillin", "Aspirin 81mg"].map((drug) => (
             <button
               key={drug}
@@ -353,7 +672,7 @@ export default function MedicationsPage() {
                 setTestDrugInput(drug);
                 checkDrugInteraction(drug);
               }}
-              className="whitespace-nowrap px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer shrink-0"
+              className="whitespace-nowrap px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--secondary)] text-[var(--foreground)] hover:bg-[var(--muted)] hover:border-emerald-500/40 transition-colors cursor-pointer shrink-0"
             >
               {drug}
             </button>
@@ -363,22 +682,22 @@ export default function MedicationsPage() {
         {/* Interaction Results Banner */}
         {interactionResult && (
           <div
-            className={`p-3.5 sm:p-4 rounded-2xl border space-y-2.5 animate-in fade-in ${
+            className={`p-4 rounded-2xl border space-y-2.5 animate-in fade-in ${
               interactionResult.level === "severe"
-                ? "bg-rose-50/80 border-rose-200 text-rose-950"
+                ? "bg-rose-50/90 border-rose-200 text-rose-950 dark:bg-rose-950/40 dark:border-rose-900/70 dark:text-rose-200"
                 : interactionResult.level === "moderate"
-                ? "bg-amber-50/80 border-amber-200 text-amber-950"
-                : "bg-emerald-50/80 border-emerald-200 text-emerald-950"
+                ? "bg-amber-50/90 border-amber-200 text-amber-950 dark:bg-amber-950/40 dark:border-amber-900/70 dark:text-amber-200"
+                : "bg-emerald-50/90 border-emerald-200 text-emerald-950 dark:bg-emerald-950/40 dark:border-emerald-900/70 dark:text-emerald-200"
             }`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
               <div className="flex items-center gap-2 min-w-0">
                 {interactionResult.level === "severe" ? (
-                  <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+                  <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
                 ) : interactionResult.level === "moderate" ? (
-                  <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
+                  <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                 ) : (
-                  <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 )}
                 <span className="text-xs font-extrabold truncate">
                   {interactionResult.drug}:{" "}
@@ -390,19 +709,19 @@ export default function MedicationsPage() {
                 </span>
               </div>
               {interactionResult.interactingWith && (
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/70 border border-slate-200/60 self-start sm:self-auto shrink-0">
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/70 dark:bg-black/30 border border-current self-start sm:self-auto shrink-0">
                   Affects: {interactionResult.interactingWith}
                 </span>
               )}
             </div>
 
-            <p className="text-xs leading-relaxed text-slate-700">
+            <p className="text-xs leading-relaxed opacity-90">
               {interactionResult.mechanism}
             </p>
 
             {interactionResult.alternative && (
-              <div className="p-2.5 rounded-xl bg-white/90 border border-amber-200/60 text-xs font-bold text-emerald-900 flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+              <div className="p-2.5 rounded-xl bg-white/90 dark:bg-black/40 border border-current text-xs font-bold flex items-center gap-2">
+                <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>Clinical Alternative: {interactionResult.alternative}</span>
               </div>
             )}
@@ -410,46 +729,48 @@ export default function MedicationsPage() {
         )}
       </section>
 
-      {/* Today's checklist */}
-      <section>
-        <div className="mb-3 flex items-center justify-between px-0.5">
+      {/* Today's Checklist */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-0.5">
           <h2 className="text-sm font-extrabold text-[var(--foreground)]">
-            Today&apos;s doses
+            Today&apos;s Doses Checklist
           </h2>
-          <span className="text-xs font-bold text-emerald-600">
-            {takenCount} of {medications.length} logged
+          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            {takenCount} of {filteredMedications.length} logged
           </span>
         </div>
 
-        <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden">
+        <div className="soft-card divide-y divide-[var(--border)]/70 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center p-12">
               <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
             </div>
-          ) : medications.length === 0 ? (
+          ) : filteredMedications.length === 0 ? (
             <div className="p-10 text-center space-y-2">
               <Pill className="mx-auto h-8 w-8 text-[var(--muted-foreground)]/40" />
-              <h3 className="text-sm font-bold text-[var(--foreground)]">No medications added yet</h3>
+              <h3 className="text-sm font-bold text-[var(--foreground)]">
+                No medications in this category
+              </h3>
               <p className="text-xs text-[var(--muted-foreground)]">
-                Add your active prescriptions or extract them automatically from uploaded medical documents.
+                Try selecting &quot;All Active&quot; or add a new prescription above.
               </p>
             </div>
           ) : (
-            medications.map((med) => {
+            filteredMedications.map((med) => {
               const isTaken = loggedMeds[med.id];
               return (
                 <button
                   key={med.id}
                   type="button"
                   onClick={() => toggleMed(med.id)}
-                  className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors hover:bg-[var(--muted)]/60"
+                  className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors hover:bg-[var(--muted)]/50"
                 >
                   <div className="flex min-w-0 items-center gap-3.5">
                     <span
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all ${
                         isTaken
                           ? "scale-105 border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                          : "border-[var(--border)] bg-white"
+                          : "border-[var(--border)] bg-[var(--background)] hover:border-emerald-500/60"
                       }`}
                     >
                       {isTaken && <Check className="h-4 w-4 stroke-[3]" />}
@@ -465,22 +786,24 @@ export default function MedicationsPage() {
                         >
                           {med.name}
                         </h3>
-                        <span className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                          {med.strength}
+                        <span className="rounded-lg border border-emerald-200/60 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                          {med.strength || med.dosage}
                         </span>
                       </div>
                       <span className="mt-0.5 block truncate text-xs text-[var(--muted-foreground)]">
-                        {med.frequency} · {med.prescribing_doctor}
+                        {med.frequency} · {med.prescribing_doctor || "Physician"} · {med.related_condition || "General Care"}
                       </span>
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <span
                       className={`block text-xs font-bold ${
-                        isTaken ? "text-emerald-600" : "text-[var(--muted-foreground)]"
+                        isTaken
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-[var(--muted-foreground)]"
                       }`}
                     >
-                      {isTaken ? "Logged" : "Tap to log"}
+                      {isTaken ? "Logged Taken" : "Tap to Log"}
                     </span>
                   </div>
                 </button>
@@ -490,13 +813,19 @@ export default function MedicationsPage() {
         </div>
       </section>
 
+      {/* Add Prescription Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="soft-card-lift w-full max-w-md space-y-4 p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md space-y-4 p-6 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-              <h3 className="text-base font-extrabold text-[var(--foreground)]">
-                Add prescription
-              </h3>
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  <Pill className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-extrabold text-[var(--foreground)]">
+                  Add Prescription
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
@@ -505,56 +834,100 @@ export default function MedicationsPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
+
             <form onSubmit={handleAdd} className="space-y-3.5 text-xs">
               <div>
-                <label className="mb-1 block font-bold">Medication *</label>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Medication Name *
+                </label>
                 <Input
                   required
-                  placeholder="e.g. Metformin"
+                  placeholder="e.g. Lisinopril, Metformin"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block font-bold">Dose *</label>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Dose / Strength *
+                  </label>
                   <Input
                     required
-                    placeholder="500 mg"
+                    placeholder="e.g. 20 mg"
                     value={dose}
                     onChange={(e) => setDose(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block font-bold">Frequency</label>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Frequency
+                  </label>
                   <Input
-                    placeholder="Twice daily"
+                    placeholder="e.g. Once daily"
                     value={freq}
                     onChange={(e) => setFreq(e.target.value)}
                   />
                 </div>
               </div>
-              <div>
-                <label className="mb-1 block font-bold">Physician</label>
-                <Input
-                  placeholder="Prescribing doctor"
-                  value={doc}
-                  onChange={(e) => setDoc(e.target.value)}
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Prescribing Doctor
+                  </label>
+                  <Input
+                    placeholder="e.g. Dr. Catherine Wei"
+                    value={doc}
+                    onChange={(e) => setDoc(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-bold text-[var(--foreground)]">
+                    Target Condition
+                  </label>
+                  <Input
+                    placeholder="e.g. Hypertension, Diabetes"
+                    value={condition}
+                    onChange={(e) => setCondition(e.target.value)}
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="mb-1 block font-bold">Instructions</label>
+                <label className="mb-1 block font-bold text-[var(--foreground)]">
+                  Clinical Instructions / Notes
+                </label>
                 <Input
-                  placeholder="Take with food"
+                  placeholder="e.g. Take with morning meal and full glass of water"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
+
               <div className="flex justify-end gap-2.5 border-t border-[var(--border)] pt-3">
-                <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAddModal(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit">Save</Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Prescription"
+                  )}
+                </Button>
               </div>
             </form>
           </div>

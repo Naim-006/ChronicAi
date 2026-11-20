@@ -130,3 +130,38 @@ export async function logMedicationAdherence(
     created_at: data.created_at,
   };
 }
+
+export async function getMedicationLogs(
+  userId: string,
+  limitDays = 14
+): Promise<MedicationLog[]> {
+  if (!userId || !isSupabaseConfigured()) {
+    return [];
+  }
+
+  const supabase = createClient();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - limitDays);
+
+  const { data, error } = await supabase
+    .from("medication_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("created_at", startDate.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((d: any) => ({
+    id: d.id,
+    medication_id: d.medication_id,
+    user_id: d.user_id,
+    scheduled_time: d.scheduled_time,
+    recorded_time: d.recorded_time || undefined,
+    status: d.status,
+    notes: d.notes || undefined,
+    created_at: d.created_at,
+  }));
+}
