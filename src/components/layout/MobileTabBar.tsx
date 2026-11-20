@@ -152,18 +152,16 @@ export function MobileTabBar() {
     }
   };
 
-  // Exact geometric parameters derived from reference design:
-  // - Stadium pill shape with curved ends (height 62px from y=28 to y=90)
-  // - Smooth curved hump over center Copilot button (spread = 72px, apex at y=6)
-  const H = 94;
-  const topBaseline = 28;
-  const bottom = 90;
-  const capRadius = 31; // (90 - 28) / 2
+  // Balanced, sleek floating capsule dock without awkward protruding dome
+  const H = 68;
+  const topBaseline = 6;
+  const bottom = 64;
+  const capRadius = 29; // (64 - 6) / 2
   const cx = width / 2;
-  const spread = 72; // width where curve begins curving up
-  const cpSpread = 44; // baseline control point
-  const cpPeak = 24; // apex control point
-  const domePeakY = 6; // apex of dome
+  const spread = 48;
+  const cpSpread = 26;
+  const cpPeak = 14;
+  const domePeakY = 3; // subtle 3px gentle curve, sits level with other tabs
 
   // Continuous C1-smooth SVG path with horizontal tangents at baseline and apex
   const svgPath = `
@@ -268,34 +266,38 @@ export function MobileTabBar() {
 
             const Icon = tab.icon;
 
-            // Center Copilot Button: Elevated floating green circle in dome
+            // Center Copilot Button: Harmonious, gently elevated button
             if (tab.isCenterCopilot) {
               return (
                 <div
                   key={tab.name}
-                  className="flex flex-col items-center justify-start h-full pt-[11px]"
+                  className="flex flex-col items-center justify-start h-full pt-[7px]"
                 >
                   <Link
                     href={tab.href!}
                     aria-label="Chronic AI Copilot"
                     className="flex flex-col items-center justify-center group active:scale-95 transition-transform outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [-webkit-tap-highlight-color:transparent]"
                   >
-                    {/* Floating Green Circle */}
+                    {/* Floating Mascot Button */}
                     <div
                       className={cn(
-                        "flex h-[50px] w-[50px] sm:h-[54px] sm:w-[54px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_6px_20px_rgba(16,185,129,0.38)] transition-all",
+                        "flex h-[40px] w-[40px] sm:h-[42px] sm:w-[42px] items-center justify-center rounded-full bg-[#3b4e6b] border-2 border-emerald-400/80 shadow-[0_4px_14px_rgba(16,185,129,0.3)] transition-all overflow-hidden p-0.5",
                         isActive
-                          ? "ring-2 ring-emerald-400 ring-offset-2 ring-offset-[#0b1325] scale-105"
+                          ? "ring-2 ring-emerald-400 ring-offset-1 ring-offset-[#0b1325] scale-105"
                           : "group-hover:scale-105"
                       )}
                     >
-                      <Icon className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.3] text-slate-950" />
+                      <img
+                        src="/images/ai-doctor.png"
+                        alt="Copilot"
+                        className="h-full w-full object-cover rounded-full scale-110"
+                      />
                     </div>
 
                     {/* Copilot Text */}
                     <span
                       className={cn(
-                        "text-[10px] sm:text-[11px] leading-none tracking-tight whitespace-nowrap mt-1",
+                        "text-[9px] sm:text-[10px] leading-none tracking-tight whitespace-nowrap mt-1",
                         isActive ? "font-bold text-emerald-400" : "font-medium text-slate-400 dark:text-slate-400"
                       )}
                     >
@@ -303,7 +305,7 @@ export function MobileTabBar() {
                     </span>
 
                     {/* Spacer to align with tab indicators */}
-                    <span className="h-[3px] w-3 rounded-full bg-transparent mt-1" />
+                    <span className="h-[2px] w-3 rounded-full bg-transparent mt-0.5" />
                   </Link>
                 </div>
               );
@@ -313,7 +315,7 @@ export function MobileTabBar() {
             return (
               <div
                 key={tab.name}
-                className="flex flex-col items-center justify-start h-full pt-[39px]"
+                className="flex flex-col items-center justify-start h-full pt-[11px]"
               >
                 <Link
                   href={tab.href!}

@@ -113,13 +113,20 @@ export default function AssistantPage() {
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [loadingAudioId, setLoadingAudioId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { language } = useLanguage();
   const [voiceLang, setVoiceLang] = useState<"bn-BD" | "en-US">("bn-BD");
   const [isListening, setIsListening] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -328,40 +335,103 @@ How can I assist you with your health records, lab panels, or medication schedul
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleReadAloud = (msgId: string, content: string) => {
+  const fallbackSpeechSynthesis = (msgId: string, cleanText: string, isBengali: boolean) => {
+    setLoadingAudioId(null);
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      alert("আপনার ব্রাউজারে স্পিচ সিন্থেসিস (SpeechSynthesis) অডিও সাপোর্ট পাওয়া যায়নি।");
-      return;
-    }
-
-    if (speakingId === msgId) {
-      window.speechSynthesis.cancel();
       setSpeakingId(null);
       return;
     }
+    try {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = isBengali ? "bn-BD" : "en-US";
+      utterance.rate = 0.95;
 
-    window.speechSynthesis.cancel();
+      const voices = window.speechSynthesis.getVoices();
+      const matchedVoice = voices.find(
+        (v) => (isBengali ? v.lang.startsWith("bn") : v.lang.startsWith("en"))
+      );
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+      }
+
+      utterance.onstart = () => setSpeakingId(msgId);
+      utterance.onend = () => setSpeakingId(null);
+      utterance.onerror = () => setSpeakingId(null);
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      setSpeakingId(null);
+    }
+  };
+
+  const handleReadAloud = async (msgId: string, content: string) => {
+    // If currently speaking or loading this message, stop immediately
+    if (speakingId === msgId || loadingAudioId === msgId) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setSpeakingId(null);
+      setLoadingAudioId(null);
+      return;
+    }
+
+    // Stop any other playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
     const cleanText = cleanMarkdownForSpeech(content);
     if (!cleanText) return;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
     const hasBengali = /[\u0980-\u09FF]/.test(cleanText);
-    utterance.lang = hasBengali ? "bn-BD" : "en-US";
-    utterance.rate = 0.95;
+    const lang = hasBengali ? "bn" : "en";
 
-    const voices = window.speechSynthesis.getVoices();
-    const matchedVoice = voices.find(
-      (v) => (hasBengali ? v.lang.startsWith("bn") : v.lang.startsWith("en"))
-    );
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
+    setLoadingAudioId(msgId);
+
+    try {
+      const res = await fetch("/api/assistant/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleanText, lang }),
+      });
+
+      if (!res.ok) {
+        throw new Error("TTS endpoint returned error status");
+      }
+
+      const blob = await res.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onplay = () => {
+        setLoadingAudioId(null);
+        setSpeakingId(msgId);
+      };
+
+      audio.onended = () => {
+        setSpeakingId(null);
+        setLoadingAudioId(null);
+        audioRef.current = null;
+      };
+
+      audio.onerror = () => {
+        fallbackSpeechSynthesis(msgId, cleanText, hasBengali);
+      };
+
+      await audio.play();
+    } catch {
+      // Graceful fallback to browser speech synthesis
+      fallbackSpeechSynthesis(msgId, cleanText, hasBengali);
     }
-
-    utterance.onstart = () => setSpeakingId(msgId);
-    utterance.onend = () => setSpeakingId(null);
-    utterance.onerror = () => setSpeakingId(null);
-
-    window.speechSynthesis.speak(utterance);
   };
 
   const handleSend = async (textToSend?: string) => {
@@ -605,8 +675,12 @@ How can I assist you with your health records, lab panels, or medication schedul
               <Clock className="h-4 w-4" />
             </button>
 
-            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#22C55E] to-[#16A34A] text-white shadow-md shadow-green-600/20 shrink-0">
-              <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full overflow-hidden border-2 border-emerald-400/40 bg-[#3b4e6b] shadow-md shadow-emerald-500/20 shrink-0">
+              <img
+                src="/images/ai-doctor.png"
+                alt="ChronicAI Copilot"
+                className="h-full w-full object-cover scale-110"
+              />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -761,8 +835,12 @@ How can I assist you with your health records, lab panels, or medication schedul
               }`}
             >
               {msg.role === "assistant" && (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#22C55E] text-white shadow-xs mt-0.5">
-                  <Stethoscope className="h-4 w-4" />
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full overflow-hidden border border-emerald-500/30 bg-[#3b4e6b] shadow-xs mt-0.5 ring-1 ring-emerald-400/20">
+                  <img
+                    src="/images/ai-doctor.png"
+                    alt="ChronicAI Copilot"
+                    className="h-full w-full object-cover scale-110"
+                  />
                 </div>
               )}
 
@@ -815,13 +893,24 @@ How can I assist you with your health records, lab panels, or medication schedul
                         onClick={() => handleReadAloud(msg.id, msg.content)}
                         className={cn(
                           "flex items-center gap-1 px-2 py-0.5 rounded-full transition-colors cursor-pointer text-[10px] font-medium",
-                          speakingId === msg.id
+                          speakingId === msg.id || loadingAudioId === msg.id
                             ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold"
                             : "hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5"
                         )}
-                        title={speakingId === msg.id ? "Stop Reading (অডিও থামান)" : "Read Aloud (পড়ে শোনান)"}
+                        title={
+                          speakingId === msg.id
+                            ? "Stop Reading (অডিও থামান)"
+                            : loadingAudioId === msg.id
+                            ? "Loading Natural Voice..."
+                            : "Read Aloud (ন্যাচারাল ভয়েসে শুনুন)"
+                        }
                       >
-                        {speakingId === msg.id ? (
+                        {loadingAudioId === msg.id ? (
+                          <>
+                            <Loader2 className="h-3 w-3 text-emerald-700 dark:text-emerald-400 animate-spin" />
+                            <span>লোড হচ্ছে...</span>
+                          </>
+                        ) : speakingId === msg.id ? (
                           <>
                             <VolumeX className="h-3 w-3 text-emerald-700 dark:text-emerald-400 animate-pulse" />
                             <span>থামান</span>
@@ -861,8 +950,15 @@ How can I assist you with your health records, lab panels, or medication schedul
 
           {isTyping && (
             <div className="flex gap-3 items-center text-xs text-slate-500 dark:text-slate-400 py-1">
-              <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
-                <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-full overflow-hidden border border-emerald-500/30 bg-[#3b4e6b] shadow-xs shrink-0">
+                <img
+                  src="/images/ai-doctor.png"
+                  alt="Analyzing..."
+                  className="h-full w-full object-cover scale-110 animate-pulse"
+                />
+                <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                  <Loader2 className="h-3.5 w-3.5 text-white animate-spin" />
+                </div>
               </div>
               <span className="font-medium">
                 Analyzing verified patient health records & clinical guidelines...
@@ -956,13 +1052,13 @@ How can I assist you with your health records, lab panels, or medication schedul
               e.preventDefault();
               handleSend();
             }}
-            className="flex items-center gap-2"
+            className="flex items-end gap-1.5 sm:gap-2"
           >
             {/* Paperclip Document Attachment Button */}
             <button
               type="button"
               onClick={() => setShowAttachMenu(!showAttachMenu)}
-              className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border transition-colors shrink-0 cursor-pointer ${
+              className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl border transition-colors shrink-0 cursor-pointer ${
                 attachedDoc
                   ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
                   : "border-slate-200/90 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-white"
@@ -972,8 +1068,20 @@ How can I assist you with your health records, lab panels, or medication schedul
               <Paperclip className="h-4 w-4" />
             </button>
 
-            <div className="relative flex-1">
-              <input
+            {/* Auto-expanding Message Textarea */}
+            <div className="relative flex-1 min-w-0">
+              <textarea
+                rows={isInputFocused || inputQuery.length > 20 ? 3 : 1}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => !inputQuery.trim() && setIsInputFocused(false)}
+                value={inputQuery}
+                onChange={(e) => setInputQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
                 placeholder={
                   isListening
                     ? voiceLang === "bn-BD"
@@ -985,22 +1093,22 @@ How can I assist you with your health records, lab panels, or medication schedul
                     ? "চিকিৎসা সংক্রান্ত যেকোনো প্রশ্ন বাংলায় বা ইংরেজিতে লিখুন..."
                     : "Ask about test trends, medication safety, or visit prep..."
                 }
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
                 className={cn(
-                  "h-10 sm:h-11 w-full rounded-2xl border bg-slate-100/80 dark:bg-white/5 pl-3.5 pr-3 text-xs sm:text-sm font-bangla font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-[#0c1527] shadow-2xs transition-all",
-                  isListening
-                    ? "border-rose-500/80 ring-2 ring-rose-500/30 placeholder:text-rose-500 dark:placeholder:text-rose-400"
-                    : "border-slate-200/90 dark:border-white/10 focus:ring-2 focus:ring-emerald-500"
+                  "w-full rounded-2xl border bg-slate-100/80 dark:bg-white/5 px-3 sm:px-3.5 py-2 text-xs sm:text-sm font-bangla font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-[#0c1527] shadow-2xs resize-none transition-all duration-200 leading-relaxed",
+                  isInputFocused || inputQuery.length > 20
+                    ? "h-20 sm:h-24 border-emerald-500/80 ring-2 ring-emerald-500/30 shadow-md"
+                    : "h-9 sm:h-10 border-slate-200/90 dark:border-white/10",
+                  isListening &&
+                    "border-rose-500/80 ring-2 ring-rose-500/30 placeholder:text-rose-500 dark:placeholder:text-rose-400"
                 )}
               />
             </div>
 
-            {/* Voice Language Toggle Pill */}
+            {/* Compact Voice Language Toggle Pill */}
             <button
               type="button"
               onClick={() => setVoiceLang((prev) => (prev === "bn-BD" ? "en-US" : "bn-BD"))}
-              className="flex h-10 sm:h-11 items-center justify-center px-2 sm:px-2.5 rounded-2xl border border-slate-200/90 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shrink-0 cursor-pointer active:scale-95"
+              className="flex h-9 sm:h-10 items-center justify-center px-1.5 sm:px-2 rounded-xl sm:rounded-2xl border border-slate-200/90 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shrink-0 cursor-pointer active:scale-95"
               title={
                 voiceLang === "bn-BD"
                   ? "ভয়েস ভাষা: বাংলা (ইংরেজি করতে ক্লিক করুন)"
@@ -1008,26 +1116,8 @@ How can I assist you with your health records, lab panels, or medication schedul
               }
               aria-label="Toggle voice language"
             >
-              <span
-                className={cn(
-                  "px-1 py-0.5 rounded text-[10px] transition-colors",
-                  voiceLang === "bn-BD"
-                    ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold"
-                    : "text-slate-400 font-medium"
-                )}
-              >
-                বাং
-              </span>
-              <span className="text-slate-300 dark:text-white/20 mx-0.5 text-[10px]">/</span>
-              <span
-                className={cn(
-                  "px-1 py-0.5 rounded text-[10px] transition-colors",
-                  voiceLang === "en-US"
-                    ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold"
-                    : "text-slate-400 font-medium"
-                )}
-              >
-                EN
+              <span className="px-1 py-0.5 rounded text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-500/15">
+                {voiceLang === "bn-BD" ? "বাং" : "EN"}
               </span>
             </button>
 
@@ -1036,7 +1126,7 @@ How can I assist you with your health records, lab panels, or medication schedul
               type="button"
               onClick={handleToggleVoice}
               className={cn(
-                "flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border transition-all shrink-0 cursor-pointer active:scale-95",
+                "flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl border transition-all shrink-0 cursor-pointer active:scale-95",
                 isListening
                   ? "bg-rose-500 text-white border-rose-400 shadow-md shadow-rose-500/35 ring-2 ring-rose-400/50 animate-pulse scale-105"
                   : "border-slate-200/90 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-emerald-600 dark:hover:text-emerald-400"
@@ -1058,7 +1148,8 @@ How can I assist you with your health records, lab panels, or medication schedul
             {/* Send Message Button */}
             <button
               type="submit"
-              className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#22C55E] hover:bg-[#16A34A] text-white shadow-md shadow-green-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
+              disabled={!inputQuery.trim() && !isListening}
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-[#22C55E] hover:bg-[#16A34A] disabled:opacity-40 text-white shadow-md shadow-green-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
               title="Send Message"
             >
               <Send className="h-4 w-4" />
