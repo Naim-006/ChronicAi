@@ -390,10 +390,10 @@ export default function MetricsPage() {
         <div>
          
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--foreground)]">
-            Health Analytics & Longitudinal Trends
+            Health Trends &amp; Lab Results
           </h1>
           <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
-             {normalizedList.length} biomarkers extracted from your records.
+            {normalizedList.length} lab tests and vitals tracked from your records.
           </p>
         </div>
 
@@ -404,7 +404,7 @@ export default function MetricsPage() {
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm"
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Log Biometric
+            Log Vitals
           </Button>
 
           <Link
@@ -412,7 +412,7 @@ export default function MetricsPage() {
             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--secondary)] px-3 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
           >
             <Stethoscope className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>AI Consult</span>
+            <span>Ask Copilot</span>
           </Link>
         </div>
       </div>

@@ -431,10 +431,10 @@ export default function ScreeningsPage() {
                 <span>Grounded in Your Medical Records</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                Personalized Clinical Risk Stratification
+                Personalized Health Risk Assessment
               </h2>
               <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
-                Objective, evidence-based risk analysis synthesized from your {vaultOverview.docCount} verified medical documents, {metrics.length > 0 ? metrics.length : 28} clinical biomarkers, and active prescriptions.
+                Clear, personalized health assessment based directly on your {vaultOverview.docCount} medical records, lab tests, and active medications.
               </p>
             </div>
 
@@ -799,7 +799,7 @@ export default function ScreeningsPage() {
 
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
               <CheckCircle2 className="h-3 w-3 shrink-0" />
-              <span>Grounded in Longitudinal Vault Biometrics</span>
+              <span>Based on Your Verified Medical Records</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-[var(--secondary)] border border-[var(--border)] flex items-center justify-between text-xs">

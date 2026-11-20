@@ -510,10 +510,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-1">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Active Health Profile
-              </span>
+              
               <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
                 {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
               </span>
@@ -871,7 +868,7 @@ export default function DashboardPage() {
                         .map((c: any) => (typeof c === "string" ? c : c?.name || ""))
                         .filter(Boolean)
                         .join(" · ")
-                    : "No Chronic Conditions · Preventive Protocol Active"}
+                    : "No chronic conditions recorded · General good health"}
                 </span>
               </div>
             </div>
@@ -906,7 +903,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mt-2 text-[11px] font-semibold">
               <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
-                Continuous Realtime Care Monitoring
+                Daily health tracking active
               </span>
             </div>
 
@@ -1078,10 +1075,10 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-                    Log Daily Biometrics
+                    Log Your Daily Vitals
                   </h3>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Encrypted personal health entry
+                    Private health record
                   </span>
                 </div>
               </div>

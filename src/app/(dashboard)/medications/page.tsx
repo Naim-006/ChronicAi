@@ -609,10 +609,10 @@ export default function MedicationsPage() {
             </div>
             <div>
               <h2 className="text-lg font-extrabold tracking-tight text-white">
-                Daily Medication & Course Tracking
+                Daily Medications
               </h2>
               <p className="text-xs text-emerald-100/90 mt-0.5">
-                {takenCount} of {activeMeds.length} active daily doses logged today
+                {takenCount} of {activeMeds.length} scheduled doses taken today
               </p>
             </div>
           </div>
@@ -622,9 +622,9 @@ export default function MedicationsPage() {
               {todayAdherence}%
             </div>
             <div className="text-[11px] font-bold leading-tight text-emerald-100">
-              Today&apos;s
+              Taken
               <br />
-              Adherence
+              Today
             </div>
           </div>
         </div>

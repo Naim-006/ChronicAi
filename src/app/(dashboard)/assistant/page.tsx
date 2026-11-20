@@ -81,7 +81,7 @@ export default function AssistantPage() {
           id: "msg-welcome",
           conversation_id: "conv-initial",
           role: "assistant",
-          content: "Hello! I am your Clinical Assistant, grounded directly in your verified medical records, diagnostic lab panels, and health guidelines.\n\nHow can I assist you with your health records, lab panels, or medication schedule today?",
+          content: "Hello! I'm here to help you understand your medical reports, track your medications, and answer questions about your health.\n\nWhat would you like to look at today?",
           created_at: new Date().toISOString(),
         },
       ],
@@ -676,7 +676,7 @@ export default function AssistantPage() {
               </h1>
               <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold truncate flex items-center gap-1 mt-0.5">
                 <ShieldCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0 inline" />
-                <span className="truncate">{patientName}&apos;s EHR Grounded</span>
+                <span className="truncate">{patientName}&apos;s Health Records Linked</span>
               </span>
             </div>
           </div>
@@ -942,7 +942,7 @@ export default function AssistantPage() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
               <span className="font-medium animate-pulse">
-                Analyzing verified patient EHR records & clinical practice standards...
+                Checking your health records and medical guidelines...
               </span>
             </div>
           )}
@@ -1068,7 +1068,7 @@ export default function AssistantPage() {
                     ? `Ask about ${attachedDoc.file_name}...`
                     : activeVoiceLang === "bn-BD"
                     ? "চিকিৎসা সংক্রান্ত যেকোনো প্রশ্ন লিখুন..."
-                    : "Ask about lab trends, medications, guidelines..."
+                    : "Ask about your lab tests, medicines, or health..."
                 }
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}

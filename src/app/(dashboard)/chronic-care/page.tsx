@@ -393,10 +393,10 @@ export default function ChronicCarePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
-            Personalized Care Protocol
+            Chronic Care &amp; Health Conditions
           </h1>
           <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5">
-            {conditions.length} diagnosed chronic condition{conditions.length === 1 ? "" : "s"} · {activeCount} active protocol{activeCount === 1 ? "" : "s"}
+            {conditions.length} health condition{conditions.length === 1 ? "" : "s"} recorded · {activeCount} active care plan{activeCount === 1 ? "" : "s"}
           </p>
         </div>
 
@@ -414,7 +414,7 @@ export default function ChronicCarePage() {
             className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--secondary)] px-3 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
           >
             <Stethoscope className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Consult AI</span>
+            <span>Ask Copilot</span>
           </Link>
         </div>
       </div>
@@ -449,7 +449,7 @@ export default function ChronicCarePage() {
                     Auto-Detected from Medical Records ({detectedDiagnoses.length})
                   </h3>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                    Grounded Extraction
+                    Found in Records
                   </span>
                 </div>
                 <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
@@ -468,7 +468,7 @@ export default function ChronicCarePage() {
               ) : (
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
               )}
-              Sync to Care Protocols
+              Add to Health Profile
             </Button>
           </div>
         </div>

@@ -1058,11 +1058,11 @@ export default function VaultPage() {
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
               <Shield className="h-3 w-3" />
-               Secured
+              Private &amp; Secure
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-1">
-            Upload your record ai will detect and analyse for you !
+            Store and organize your prescriptions, lab results, and medical reports in one place.
           </p>
         </div>
 
