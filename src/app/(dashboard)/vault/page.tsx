@@ -72,7 +72,7 @@ interface ExtractedDiagItem {
 }
 
 export default function VaultPage() {
-  const { profile, effectiveUserId, refreshProfile } = useAuth();
+  const { profile, session, effectiveUserId, refreshProfile } = useAuth();
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
   const [extractedRecords, setExtractedRecords] = useState<ExtractedRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -603,6 +603,7 @@ export default function VaultPage() {
             headers: {
               "Content-Type": "application/json",
               "x-gemini-api-key": storedKey,
+              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
             },
             body: JSON.stringify({
               documentId: savedDoc.id,

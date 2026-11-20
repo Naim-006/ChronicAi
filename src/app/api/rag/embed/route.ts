@@ -45,8 +45,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Initialize Supabase Client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Initialize Supabase Client with service role or caller's auth token
+    const authHeader = req.headers.get("authorization");
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY, {
+      global: {
+        headers: authHeader ? { Authorization: authHeader } : {},
+      },
+    });
 
     const insertedRows = [];
 
