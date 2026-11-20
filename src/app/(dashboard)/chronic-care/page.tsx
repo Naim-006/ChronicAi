@@ -78,49 +78,49 @@ export default function ChronicCarePage() {
       />
 
       {/* Target status */}
-      <section className="soft-card space-y-3 p-5">
+      <section className="soft-card space-y-3.5 p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            <span className="text-xs font-bold text-[var(--foreground)]">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+            <span className="text-xs font-extrabold text-slate-900 dark:text-white">
               Care plan: Active Protocol
             </span>
           </div>
-          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+          <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-500/20">
             ADA 2026 Clinical Guidelines
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 pt-1 sm:grid-cols-4 sm:gap-3">
           <div className="soft-inset rounded-2xl p-3 text-center">
-            <span className="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">
+            <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Target HbA1c
             </span>
-            <div className="mt-1 text-base font-extrabold text-emerald-700 dark:text-emerald-400">
+            <div className="mt-1 text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
               &lt; 7.0%
             </div>
           </div>
           <div className="soft-inset rounded-2xl p-3 text-center">
-            <span className="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">
+            <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Fasting Goal
             </span>
-            <div className="mt-1 text-base font-extrabold text-[var(--foreground)]">
-              80 - 130
+            <div className="mt-1 text-base sm:text-lg font-black text-slate-900 dark:text-white">
+              80 – 130
             </div>
           </div>
           <div className="soft-inset rounded-2xl p-3 text-center">
-            <span className="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">
+            <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Blood Pressure
             </span>
-            <div className="mt-1 text-base font-extrabold text-[var(--foreground)]">
+            <div className="mt-1 text-base sm:text-lg font-black text-slate-900 dark:text-white">
               &lt; 130/80
             </div>
           </div>
           <div className="soft-inset rounded-2xl p-3 text-center">
-            <span className="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">
+            <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Renal Target
             </span>
-            <div className="mt-1 text-base font-extrabold text-[var(--foreground)]">
+            <div className="mt-1 text-base sm:text-lg font-black text-slate-900 dark:text-white">
               eGFR &gt; 60
             </div>
           </div>
@@ -175,51 +175,51 @@ export default function ChronicCarePage() {
         </span>
         <div className="soft-card divide-y divide-[var(--border)]/80 overflow-hidden p-0">
           <div className="flex items-start gap-3 p-3.5">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold text-[var(--foreground)]">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
                   Diabetic Retinal Exam
                 </span>
-                <span className="shrink-0 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                <span className="shrink-0 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold">
                   Annual Screening
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--muted-foreground)]">
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                 Dilated fundus examination negative for diabetic retinopathy. Recommended interval: once every 12 months.
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3.5">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold text-[var(--foreground)]">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
                   Metabolic Panel &amp; HbA1c
                 </span>
-                <span className="shrink-0 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                <span className="shrink-0 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold">
                   Quarterly Review
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--muted-foreground)]">
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                 Glycemic control and lipid panel evaluation. Recommended interval: once every 3 months.
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3.5">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold text-[var(--foreground)]">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
                   Urine Microalbumin (UACR)
                 </span>
-                <span className="shrink-0 rounded-full bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                <span className="shrink-0 rounded-full bg-amber-50 text-amber-800 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold">
                   Renal Check
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--muted-foreground)]">
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                 Renal microalbumin monitoring for early kidney nephropathy detection.
               </p>
             </div>
