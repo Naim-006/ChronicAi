@@ -26,12 +26,20 @@ import {
   ChevronRight,
   ExternalLink,
   Loader2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { MedicalDocument, ExtractedRecord, DocumentCategory, MetricType } from "@/types/medical";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { getDocuments, createDocumentRecord, createExtractedRecord as dbCreateExtracted } from "@/lib/supabase/services/documents";
+import {
+  getDocuments,
+  createDocumentRecord,
+  createExtractedRecord as dbCreateExtracted,
+  updateDocumentRecord,
+  deleteDocumentRecord,
+} from "@/lib/supabase/services/documents";
 import { logHealthMetric } from "@/lib/supabase/services/metrics";
 import { createMedication } from "@/lib/supabase/services/medications";
 import { updateHealthProfile } from "@/lib/supabase/services/profile";
@@ -150,6 +158,93 @@ export default function VaultPage() {
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
   const [isSavingRecord, setIsSavingRecord] = useState(false);
   const [openingDocId, setOpeningDocId] = useState<string | null>(null);
+
+  // Existing Document Edit & Delete State
+  const [editingDoc, setEditingDoc] = useState<MedicalDocument | null>(null);
+  const [editDocTitle, setEditDocTitle] = useState("");
+  const [editDocCategory, setEditDocCategory] = useState<DocumentCategory>("lab_report");
+  const [editDocDate, setEditDocDate] = useState("");
+  const [editDocFacility, setEditDocFacility] = useState("");
+  const [editDocDoctor, setEditDocDoctor] = useState("");
+  const [editDocSummary, setEditDocSummary] = useState("");
+  const [isUpdatingDoc, setIsUpdatingDoc] = useState(false);
+
+  const [deletingDoc, setDeletingDoc] = useState<MedicalDocument | null>(null);
+  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
+
+  const handleOpenEditDoc = (doc: MedicalDocument) => {
+    setEditingDoc(doc);
+    setEditDocTitle(doc.file_name || "");
+    setEditDocCategory(doc.category || "lab_report");
+    setEditDocDate(doc.document_date || new Date().toISOString().split("T")[0]);
+    setEditDocFacility(doc.facility_name || "");
+    setEditDocDoctor(doc.doctor_name || "");
+    setEditDocSummary(doc.summary || "");
+  };
+
+  const handleSaveEditDoc = async () => {
+    if (!editingDoc) return;
+    if (!editDocTitle.trim()) {
+      setNotification("Document title is required.");
+      return;
+    }
+    setIsUpdatingDoc(true);
+    try {
+      const updates = {
+        file_name: editDocTitle.trim(),
+        category: editDocCategory,
+        document_date: editDocDate || undefined,
+        facility_name: editDocFacility.trim() || undefined,
+        doctor_name: editDocDoctor.trim() || undefined,
+        summary: editDocSummary.trim() || undefined,
+      };
+
+      const success = await updateDocumentRecord(editingDoc.id, updates, effectiveUserId);
+      if (success) {
+        setDocuments((prev) =>
+          prev.map((d) => (d.id === editingDoc.id ? { ...d, ...updates } : d))
+        );
+        setNotification("Document updated successfully.");
+        setEditingDoc(null);
+      } else {
+        setNotification("Failed to update document. Please try again.");
+      }
+    } catch (err: any) {
+      setNotification("Error updating document: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsUpdatingDoc(false);
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
+
+  const handleOpenDeleteDoc = (doc: MedicalDocument) => {
+    setDeletingDoc(doc);
+  };
+
+  const handleConfirmDeleteDoc = async () => {
+    if (!deletingDoc) return;
+    setIsDeletingDoc(true);
+    try {
+      const success = await deleteDocumentRecord(deletingDoc.id, effectiveUserId);
+      if (success) {
+        setDocuments((prev) => prev.filter((d) => d.id !== deletingDoc.id));
+        setExtractedRecords((prev) => prev.filter((r) => r.document_id !== deletingDoc.id));
+        if (activeReviewDoc?.id === deletingDoc.id) {
+          setActiveReviewDoc(null);
+          setReviewRecord(null);
+        }
+        setNotification(`"${deletingDoc.file_name}" has been deleted from your vault.`);
+        setDeletingDoc(null);
+      } else {
+        setNotification("Failed to delete document. Please try again.");
+      }
+    } catch (err: any) {
+      setNotification("Error deleting document: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsDeletingDoc(false);
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
 
   const handleViewOriginalDocument = async (doc: MedicalDocument) => {
     setOpeningDocId(doc.id);
@@ -1124,7 +1219,7 @@ export default function VaultPage() {
                       </span>
                     </td>
                     <td className="py-3.5 pr-6 text-right">
-                      <div className="inline-flex items-center justify-end gap-2">
+                      <div className="inline-flex items-center justify-end gap-1.5 sm:gap-2">
                         {doc.file_path && (
                           <button
                             type="button"
@@ -1141,6 +1236,24 @@ export default function VaultPage() {
                             <span className="hidden sm:inline">File</span>
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditDoc(doc)}
+                          title="Edit Document Details"
+                          className="inline-flex items-center gap-1 text-slate-600 hover:text-emerald-700 font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDeleteDoc(doc)}
+                          title="Delete Document Record"
+                          className="inline-flex items-center gap-1 text-rose-500 hover:text-rose-700 font-bold px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => {
@@ -1218,7 +1331,7 @@ export default function VaultPage() {
                 <span className="text-[11px] font-semibold text-[var(--muted-foreground)]">
                   {formatDate(doc.document_date)}
                 </span>
-                <div className="inline-flex items-center gap-2">
+                <div className="inline-flex items-center gap-1 sm:gap-1.5">
                   {doc.file_path && (
                     <button
                       type="button"
@@ -1237,6 +1350,23 @@ export default function VaultPage() {
                   )}
                   <button
                     type="button"
+                    onClick={() => handleOpenEditDoc(doc)}
+                    title="Edit Document"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDeleteDoc(doc)}
+                    title="Delete Document Record"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-rose-500 hover:text-rose-700 px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       setActiveReviewDoc(doc);
                       setReviewRecord(
@@ -1246,7 +1376,7 @@ export default function VaultPage() {
                     className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-800"
                   >
                     <Eye className="h-3.5 w-3.5" />
-                    Inspect Record
+                    Inspect
                   </button>
                 </div>
               </div>
@@ -1674,6 +1804,232 @@ export default function VaultPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* EDIT DOCUMENT MODAL */}
+      {editingDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600">
+                  <Pencil className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                    Edit Document Details
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Update record metadata, clinical facility, or category
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingDoc(null)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Document / Report Title *
+                </label>
+                <Input
+                  value={editDocTitle}
+                  onChange={(e) => setEditDocTitle(e.target.value)}
+                  placeholder="e.g. Complete Blood Count (CBC)"
+                  className="w-full text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={editDocCategory}
+                    onChange={(e) => setEditDocCategory(e.target.value as DocumentCategory)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="lab_report">Lab Report</option>
+                    <option value="prescription">Prescription</option>
+                    <option value="imaging">Imaging (X-Ray / MRI / CT)</option>
+                    <option value="discharge_summary">Discharge Summary</option>
+                    <option value="doctor_note">Doctor Note</option>
+                    <option value="other">Other Medical Record</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Document Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={editDocDate}
+                    onChange={(e) => setEditDocDate(e.target.value)}
+                    className="w-full text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Facility / Hospital / Lab
+                  </label>
+                  <Input
+                    value={editDocFacility}
+                    onChange={(e) => setEditDocFacility(e.target.value)}
+                    placeholder="e.g. Apollo Hospital, Square Lab"
+                    className="w-full text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Treating Doctor / Clinician
+                  </label>
+                  <Input
+                    value={editDocDoctor}
+                    onChange={(e) => setEditDocDoctor(e.target.value)}
+                    placeholder="e.g. Dr. Sarah Jenkins"
+                    className="w-full text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Clinical Summary & Notes
+                </label>
+                <textarea
+                  rows={3}
+                  value={editDocSummary}
+                  onChange={(e) => setEditDocSummary(e.target.value)}
+                  placeholder="Key findings, impressions, or medications mentioned..."
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-3.5">
+              <button
+                type="button"
+                onClick={() => setEditingDoc(null)}
+                className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isUpdatingDoc}
+                onClick={handleSaveEditDoc}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:brightness-105 active:scale-95 disabled:opacity-60 transition-all"
+              >
+                {isUpdatingDoc ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Saving Changes...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deletingDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-rose-100 dark:border-rose-950/40 bg-rose-50/40 dark:bg-rose-950/20 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-900/40 text-rose-600">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                    Delete Medical Record?
+                  </h3>
+                  <p className="text-[11px] text-rose-600 font-semibold">
+                    Permanent action — cannot be undone
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeletingDoc(null)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to permanently delete:
+              </p>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-3">
+                <div className="font-bold text-xs text-slate-900 dark:text-white">
+                  {deletingDoc.file_name}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  {deletingDoc.facility_name ? `${deletingDoc.facility_name} · ` : ""}
+                  {formatDate(deletingDoc.document_date)}
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                This will delete the document file, associated AI extraction records, biomarkers, and embeddings from your secure cloud vault.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-3.5">
+              <button
+                type="button"
+                onClick={() => setDeletingDoc(null)}
+                disabled={isDeletingDoc}
+                className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Keep Document
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingDoc}
+                onClick={handleConfirmDeleteDoc}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-rose-600/25 hover:bg-rose-700 active:scale-95 disabled:opacity-60 transition-all"
+              >
+                {isDeletingDoc ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Yes, Delete Record
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

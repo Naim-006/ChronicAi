@@ -127,3 +127,62 @@ export async function createExtractedRecord(
     created_at: data.created_at,
   };
 }
+
+export async function updateDocumentRecord(
+  documentId: string,
+  updates: Partial<MedicalDocument>,
+  userId?: string
+): Promise<boolean> {
+  try {
+    const res = await fetch("/api/documents/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        documentId,
+        userId,
+        ...updates,
+      }),
+    });
+    const result = await res.json();
+    return Boolean(result.success);
+  } catch (err) {
+    console.warn("API update document failed, trying direct Supabase:", err);
+    if (!isSupabaseConfigured()) return false;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("medical_documents")
+      .update(updates)
+      .eq("id", documentId);
+    return !error;
+  }
+}
+
+export async function deleteDocumentRecord(
+  documentId: string,
+  userId?: string
+): Promise<boolean> {
+  try {
+    const res = await fetch("/api/documents/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        documentId,
+        userId,
+      }),
+    });
+    const result = await res.json();
+    return Boolean(result.success);
+  } catch (err) {
+    console.warn("API delete document failed, trying direct Supabase:", err);
+    if (!isSupabaseConfigured()) return false;
+    const supabase = createClient();
+    await supabase.from("extracted_records").delete().eq("document_id", documentId);
+    await supabase.from("document_embeddings").delete().eq("document_id", documentId);
+    await supabase.from("health_metrics").delete().eq("document_id", documentId);
+    const { error } = await supabase
+      .from("medical_documents")
+      .delete()
+      .eq("id", documentId);
+    return !error;
+  }
+}
