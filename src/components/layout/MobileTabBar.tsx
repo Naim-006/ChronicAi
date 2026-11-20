@@ -52,38 +52,100 @@ export function MobileTabBar() {
 
   // Scroll-aware Auto-Hide: Hide smoothly on scroll down, reveal on scroll up
   const [isVisible, setIsVisible] = useState(true);
-  const lastScrollYRef = useRef(0);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    // Always start visible when navigating to a new page
     setIsVisible(true);
-    lastScrollYRef.current = typeof window !== "undefined" ? window.scrollY : 0;
 
-    // Keep always docked on assistant page for constant input availability
-    if (pathname === "/assistant") {
-      setIsVisible(true);
-      return;
-    }
-
+    let lastScrollY =
+      typeof window !== "undefined"
+        ? window.pageYOffset || document.documentElement.scrollTop || 0
+        : 0;
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let lastTouchY = 0;
+    let isTouching = false;
     let ticking = false;
-    const threshold = 18;
 
-    const handleScroll = () => {
+    // 1. Direct Touch Gesture Tracking for mobile devices
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!e.touches || e.touches.length === 0) return;
+      // If touching inside the bottom bar itself, ignore so tabs can be tapped or swiped
+      if (navRef.current && navRef.current.contains(e.target as Node)) {
+        return;
+      }
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      lastTouchY = e.touches[0].clientY;
+      isTouching = true;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isTouching || !e.touches || e.touches.length === 0) return;
+      if (navRef.current && navRef.current.contains(e.target as Node)) {
+        return;
+      }
+
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const deltaYFromStart = touchStartY - currentY; // positive = swiped up (scrolling down)
+      const deltaXFromStart = currentX - touchStartX;
+      const stepDeltaY = lastTouchY - currentY;
+      lastTouchY = currentY;
+
+      // Ensure it is predominantly a vertical scroll gesture
+      if (Math.abs(deltaYFromStart) > Math.abs(deltaXFromStart) * 0.75) {
+        if (stepDeltaY > 8 && deltaYFromStart > 18) {
+          // Swiped up -> scrolling down -> hide dock smoothly
+          setIsVisible(false);
+        } else if (stepDeltaY < -8 && deltaYFromStart < -18) {
+          // Swiped down -> scrolling up -> reveal dock smoothly
+          setIsVisible(true);
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isTouching = false;
+    };
+
+    // 2. Scroll Event Tracking (captures window & scrollable sub-containers)
+    const handleScroll = (e: Event) => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-          const diff = currentScrollY - lastScrollYRef.current;
+          const currentY =
+            window.pageYOffset ||
+            document.documentElement.scrollTop ||
+            document.body.scrollTop ||
+            0;
+          const diff = currentY - lastScrollY;
 
-          if (currentScrollY < 40) {
+          if (currentY <= 25) {
+            // Near top of document -> show dock
             setIsVisible(true);
-          } else if (Math.abs(diff) > threshold) {
+          } else if (Math.abs(diff) > 12) {
             if (diff > 0) {
-              // Scrolling down -> hide smoothly
+              // Scrolling down
               setIsVisible(false);
             } else {
-              // Scrolling up -> reveal smoothly
+              // Scrolling up
               setIsVisible(true);
             }
-            lastScrollYRef.current = currentScrollY;
+            lastScrollY = currentY;
+          }
+
+          // If an internal scroll container (e.g., chat stream) is scrolling
+          const target = e.target as HTMLElement;
+          if (
+            target &&
+            target !== (document as any) &&
+            target !== (window as any) &&
+            typeof target.scrollTop === "number"
+          ) {
+            if (target.scrollTop <= 20) {
+              setIsVisible(true);
+            }
           }
 
           ticking = false;
@@ -92,8 +154,32 @@ export function MobileTabBar() {
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    // 3. Wheel Event Tracking (for desktop/devtools mobile emulation)
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > 10) {
+        if (e.deltaY > 0) {
+          setIsVisible(false);
+        } else {
+          setIsVisible(true);
+        }
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    window.addEventListener("wheel", handleWheel, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
+      window.removeEventListener("scroll", handleScroll, { capture: true } as any);
+      window.removeEventListener("wheel", handleWheel);
+    };
   }, [pathname]);
 
   const tabs = [
@@ -224,8 +310,9 @@ export function MobileTabBar() {
 
   return (
     <nav
+      ref={navRef}
       className={cn(
-        "fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-300 ease-in-out",
+        "fixed bottom-3 sm:bottom-4 md:bottom-5 left-0 right-0 z-50 mx-auto w-[94%] sm:w-[88%] md:w-[78%] max-w-xl pointer-events-none lg:hidden transition-all duration-300 ease-in-out will-change-transform",
         isVisible
           ? "translate-y-0 opacity-100"
           : "translate-y-28 opacity-0 pointer-events-none"
