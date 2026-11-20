@@ -219,7 +219,7 @@ How can I assist you with your health records, lab panels, or medication schedul
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = textToSend || inputQuery;
     if (!query.trim()) return;
 
@@ -232,6 +232,8 @@ How can I assist you with your health records, lab panels, or medication schedul
       "loss of consciousness",
       "can't breathe",
       "heart attack",
+      "coughing up blood",
+      "anaphylaxis",
     ];
     const hasRedFlag = redFlags.some((rf) => query.toLowerCase().includes(rf));
 
@@ -266,105 +268,62 @@ How can I assist you with your health records, lab panels, or medication schedul
       })
     );
 
+    if (effectiveUserId) {
+      try {
+        await saveMessage({
+          ...userMessage,
+          userId: effectiveUserId,
+        });
+      } catch {}
+    }
+
     if (!textToSend) setInputQuery("");
     const sentAttachedDoc = attachedDoc;
     setAttachedDoc(null);
     setShowAttachMenu(false);
     setIsTyping(true);
 
-    setTimeout(() => {
+    const storedKey =
+      (typeof window !== "undefined" ? localStorage.getItem("chronicai_gemini_key") : null) ||
+      (profile?.preferences as any)?.gemini_api_key ||
+      "";
+
+    try {
+      const res = await fetch("/api/assistant/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-gemini-api-key": storedKey,
+        },
+        body: JSON.stringify({
+          userId: effectiveUserId,
+          query: query,
+          messages: currentSession.messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          attachedDocId: sentAttachedDoc?.id,
+          explanationDepth: explanationDepth,
+          apiKey: storedKey || undefined,
+        }),
+      });
+
+      const chatResult = await res.json();
       let responseContent = "";
       let citations: AICitation[] = [];
 
-      const lower = query.toLowerCase();
-
-      if (sentAttachedDoc) {
-        responseContent = `I have cross-examined **${sentAttachedDoc.file_name}** (${sentAttachedDoc.facility_name}):
-
-• **Key Finding:** The report confirms routine follow-up status with no critical variance from your baseline.
-• **Clinical Context:** Biomarkers remain aligned with your primary care protocol under Dr. Catherine Wei.
-• **Action Point:** The extracted parameters have been verified and linked to your lifelong medical timeline.`;
-        citations = [
-          {
-            document_id: sentAttachedDoc.id,
-            document_title: sentAttachedDoc.file_name,
-            date: sentAttachedDoc.document_date || "2026-11-02",
-            page: 1,
-            snippet: "Values were read from the scan and checked by you before saving.",
-          },
-        ];
-      } else if (
-        lower.includes("metformin") ||
-        lower.includes("interaction") ||
-        lower.includes("lisinopril") ||
-        lower.includes("advil") ||
-        lower.includes("ibuprofen")
-      ) {
-        if (explanationDepth === "plain") {
-          responseContent = `Based on your verified prescriptions:
-
-• **Metformin (1000 mg)** and **Lisinopril (20 mg)** are completely safe and routinely prescribed together.
-• They work as a team: Metformin helps lower your blood sugar, while Lisinopril protects your kidneys and manages your blood pressure.
-• **Safety Tip:** If you ever need pain medicine, avoid NSAIDs like Advil/Ibuprofen because they can strain your kidneys. Tylenol (Acetaminophen) is much safer for you.`;
-        } else {
-          responseContent = `### Pharmacological Profile & Renal Safety Evaluation
-
-1. **Dual Regimen Assessment (Metformin + Lisinopril):**
-   - **Metformin ER 1000mg BID:** Primary biguanide antihyperglycemic. Enhances peripheral insulin sensitivity and reduces intestinal glucose absorption.
-   - **Lisinopril 20mg QD:** Angiotensin-Converting Enzyme (ACE) inhibitor. Reduces efferent arteriolar resistance, providing intraglomerular pressure reduction and diabetic renoprotection.
-2. **Interaction Risk:** None identified between active prescription agents.
-3. **Renal Clearance Caution:**
-   - Baseline eGFR is **68 mL/min/1.73m²**. Concurrent use of non-steroidal anti-inflammatory drugs (NSAIDs) is contraindicated due to acute renal hemodynamic reduction risk.`;
+      if (res.ok && chatResult.success) {
+        responseContent = chatResult.reply;
+        citations = chatResult.citations || [];
+        if (chatResult.is_emergency_flag) {
+          setEmergencyWarning(
+            "Critical Triage Alert: The symptoms you described may indicate a medical emergency. Please call 911 or go to the nearest emergency room immediately."
+          );
         }
-        citations = [
-          {
-            document_id: "doc-103",
-            document_title: "Active_Rx_Metformin_Lisinopril.pdf",
-            date: "2026-06-12",
-            page: 1,
-            snippet: "Metformin 1000mg BID + Lisinopril 20mg daily. Renal protective regimen.",
-          },
-        ];
-      } else if (
-        lower.includes("wei") ||
-        lower.includes("doctor") ||
-        lower.includes("visit") ||
-        lower.includes("question")
-      ) {
-        responseContent = `Here are 3 tailored discussion checkpoints for your upcoming consultation with **Dr. Catherine Wei** on December 8, 2026:
-
-1. **HbA1c Target Milestone (6.8%):**
-   - Point out that your HbA1c improved from 7.1% down to **6.8%**, reaching your clinician-defined target (< 7.0%). Ask if your current Metformin dosage should stay steady.
-2. **Renal Function Stability:**
-   - Your eGFR is steady at **68 mL/min** (Creatinine 1.04). Confirm that Lisinopril 20 mg continues to provide adequate kidney protection.
-3. **Annual Diabetic Checkpoint:**
-   - Present your clear retinal eye exam findings from Valley Eye Center and request annual urine microalbumin orders for early 2027.`;
-        citations = [
-          {
-            document_id: "doc-101",
-            document_title: "Metabolic_Lipid_Panel_Nov2026.pdf",
-            date: "2026-11-02",
-            page: 1,
-            snippet: "HbA1c 6.8%, Fasting Glucose 118 mg/dL, eGFR 68",
-          },
-        ];
       } else {
-        responseContent = `Based on your verified medical records from Quest Diagnostics (Nov 2, 2026):
-
-• **HbA1c:** **6.8%** — down from 7.1% in May 2026, successfully meeting your clinical target goal (< 7.0%).
-• **Fasting Plasma Glucose:** **118 mg/dL** — improved from 126 mg/dL.
-• **Renal Filtration:** eGFR is **68 mL/min** and Serum Creatinine is **1.04 mg/dL**, confirming stable Stage 2 CKD on current ACE inhibitor therapy.
-
-Would you like me to generate a 1-page summary of these findings to bring to your next doctor visit?`;
-        citations = [
-          {
-            document_id: "doc-101",
-            document_title: "Metabolic_Lipid_Panel_Nov2026.pdf",
-            date: "2026-11-02",
-            page: 1,
-            snippet: "Comprehensive diabetic panel: HbA1c 6.8%, eGFR 68, Creatinine 1.04",
-          },
-        ];
+        responseContent =
+          chatResult?.message ||
+          "I encountered an issue analyzing your records. Please check your network or Gemini API key in Settings.";
       }
 
       const assistantMessage: AIMessage = {
@@ -376,6 +335,15 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         created_at: new Date().toISOString(),
       };
 
+      if (effectiveUserId) {
+        try {
+          await saveMessage({
+            ...assistantMessage,
+            userId: effectiveUserId,
+          });
+        } catch {}
+      }
+
       setSessions((prev) =>
         prev.map((s) =>
           s.id === activeSessionId
@@ -383,8 +351,25 @@ Would you like me to generate a 1-page summary of these findings to bring to you
             : s
         )
       );
+    } catch {
+      const assistantMessage: AIMessage = {
+        id: `msg-${Date.now()}`,
+        conversation_id: activeSessionId,
+        role: "assistant",
+        content:
+          "I am currently unable to reach the clinical copilot engine. Please verify your internet connection or Gemini API key in Settings.",
+        created_at: new Date().toISOString(),
+      };
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === activeSessionId
+            ? { ...s, messages: [...s.messages, assistantMessage] }
+            : s
+        )
+      );
+    } finally {
       setIsTyping(false);
-    }, 700);
+    }
   };
 
   return (
@@ -456,7 +441,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         {/* Clinical Safety Protocol Footnote */}
         <div className="p-3 mt-2 rounded-2xl bg-slate-50 border border-slate-100 text-[10px] text-slate-500 leading-relaxed">
           <span className="font-bold text-slate-700 block mb-0.5">Clinical Protocol</span>
-          Responses cross-reference verified Quest Diagnostics lab panels and active prescriptions.
+          Responses cross-reference verified health vault records, clinical biomarkers, and active prescriptions.
         </div>
       </aside>
 

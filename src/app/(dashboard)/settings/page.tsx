@@ -18,6 +18,11 @@ import {
   User as UserIcon,
   Loader2,
   AlertCircle,
+  Key,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Cpu,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useLanguage, Language } from "@/context/LanguageContext";
@@ -34,6 +39,12 @@ export default function SettingsPage() {
   const [aiDepth, setAiDepth] = useState<"simple" | "balanced" | "detailed">("balanced");
   const [notifMeds, setNotifMeds] = useState(true);
   const [notifApts, setNotifApts] = useState(true);
+  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [keyTesting, setKeyTesting] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<"idle" | "valid" | "invalid">("idle");
+  const [keyStatusMsg, setKeyStatusMsg] = useState<string | null>(null);
+
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -78,6 +89,20 @@ export default function SettingsPage() {
     null;
 
   useEffect(() => {
+    // Check localStorage first, then profile preferences
+    const storedKey = typeof window !== "undefined" ? localStorage.getItem("chronicai_gemini_key") : null;
+    if (storedKey) {
+      setGeminiApiKey(storedKey);
+    } else if (profile?.preferences) {
+      const prefs = profile.preferences as any;
+      if (prefs.gemini_api_key) {
+        setGeminiApiKey(prefs.gemini_api_key);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("chronicai_gemini_key", prefs.gemini_api_key);
+        }
+      }
+    }
+
     if (profile?.preferences) {
       const prefs = profile.preferences as any;
       if (prefs.explanation_depth) setAiDepth(prefs.explanation_depth);
@@ -88,9 +113,82 @@ export default function SettingsPage() {
     }
   }, [profile]);
 
+  const handleTestApiKey = async () => {
+    if (!geminiApiKey.trim()) {
+      setKeyStatus("invalid");
+      setKeyStatusMsg("Please enter an API key first.");
+      setTimeout(() => setKeyStatusMsg(null), 3500);
+      return;
+    }
+
+    setKeyTesting(true);
+    setKeyStatus("idle");
+    setKeyStatusMsg(null);
+
+    try {
+      // Test Gemini model accessibility
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey.trim()}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "ping" }] }],
+          }),
+        }
+      );
+
+      if (res.ok) {
+        setKeyStatus("valid");
+        setKeyStatusMsg("Gemini API connected successfully! Multimodal OCR and Assistant are now active.");
+        if (typeof window !== "undefined") {
+          localStorage.setItem("chronicai_gemini_key", geminiApiKey.trim());
+        }
+      } else {
+        // Fallback test on gemini-1.5-flash
+        const res2 = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey.trim()}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: "ping" }] }],
+            }),
+          }
+        );
+
+        if (res2.ok) {
+          setKeyStatus("valid");
+          setKeyStatusMsg("Gemini API (v1.5) connected successfully!");
+          if (typeof window !== "undefined") {
+            localStorage.setItem("chronicai_gemini_key", geminiApiKey.trim());
+          }
+        } else {
+          setKeyStatus("invalid");
+          setKeyStatusMsg("Invalid Gemini API key or quota exceeded. Please verify at Google AI Studio.");
+        }
+      }
+    } catch {
+      setKeyStatus("invalid");
+      setKeyStatusMsg("Connection test failed. Please check network connectivity.");
+    } finally {
+      setKeyTesting(false);
+      setTimeout(() => setKeyStatusMsg(null), 5000);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const trimmedKey = geminiApiKey.trim();
+      if (typeof window !== "undefined") {
+        if (trimmedKey) {
+          localStorage.setItem("chronicai_gemini_key", trimmedKey);
+        } else {
+          localStorage.removeItem("chronicai_gemini_key");
+        }
+      }
+
       if (effectiveUserId) {
         await updateHealthProfile(effectiveUserId, {
           preferences: {
@@ -98,6 +196,7 @@ export default function SettingsPage() {
             theme,
             explanation_depth: aiDepth,
             notifications_enabled: notifMeds || notifApts,
+            ...(trimmedKey ? { gemini_api_key: trimmedKey } : {}),
           },
         });
         await refreshProfile();
@@ -156,10 +255,10 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            {t("settings.title", "Settings & Preferences")}
+            {t("settings.title", "Settings & AI Configuration")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {t("settings.subtitle", "Configure AI explanation depth, dark mode, language & export health records.")}
+            Configure Gemini AI, live document scanner, language &amp; clinical preferences.
           </p>
         </div>
 
@@ -167,117 +266,105 @@ export default function SettingsPage() {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center gap-1.5 rounded-full bg-emerald-600 dark:bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-full bg-emerald-600 dark:bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
         >
           <Save className="h-3.5 w-3.5" />
-          <span>{isSaving ? "Saving..." : t("action.save", "Save")}</span>
+          <span>{isSaving ? "Saving..." : t("action.save", "Save Changes")}</span>
         </button>
       </div>
 
       {isSaved && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 dark:border-emerald-800 p-3.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in duration-200">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          {t("action.saved", "Settings successfully saved.")}
+          Settings and AI configurations successfully saved.
         </div>
       )}
 
-      {/* Profile Photo & Storage Sync */}
+      {/* Group 0: Google Gemini AI & Scanner Engine */}
       <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
-          Profile Photo & Cloud Storage
-        </span>
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col sm:flex-row items-center sm:items-start justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              {currentAvatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={currentAvatar}
-                  alt={profile?.full_name || "Profile"}
-                  className="h-16 w-16 rounded-full object-cover ring-2 ring-emerald-500/30 shadow-xs"
+        <div className="flex items-center justify-between px-1 mb-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+            <Cpu className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            Google Gemini AI &amp; Multimodal OCR Engine
+          </span>
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+          >
+            Get Free Gemini Key
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs p-5 space-y-4">
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            ChronicAI uses Google Gemini to read scanned prescriptions, lab panels, and medical documents, auto-extract biomarkers into your lifelong database, and provide verified clinical reasoning.
+          </p>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Google Gemini API Key
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Key className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type={showApiKey ? "text" : "password"}
+                  value={geminiApiKey}
+                  onChange={(e) => {
+                    setGeminiApiKey(e.target.value);
+                    setKeyStatus("idle");
+                  }}
+                  placeholder="AIzaSy..."
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-9 pr-10 py-2 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-extrabold text-xl shadow-xs ring-2 ring-emerald-500/20">
-                  {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <UserIcon className="h-8 w-8" />}
-                </div>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={avatarUploading}
-                title="Change Photo"
-                className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-white dark:ring-slate-900 transition-transform active:scale-90"
+                onClick={handleTestApiKey}
+                disabled={keyTesting}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50 cursor-pointer"
               >
-                {avatarUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                {keyTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                Test Connection
               </button>
             </div>
 
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                {profile?.full_name || "Patient Account"}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {user?.email || "Connected via Supabase Auth"}
-              </p>
-              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                <ShieldCheck className="h-3 w-3" />
-                Supabase Avatars Bucket Connected
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarChange}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={avatarUploading}
-              className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-60 cursor-pointer"
-            >
-              {avatarUploading ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
-                  <span>Uploading to Storage...</span>
-                </>
-              ) : (
-                <>
-                  <Camera className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Upload New Photo</span>
-                </>
-              )}
-            </button>
-            {avatarError && (
-              <p className="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {avatarError}
-              </p>
-            )}
-            {avatarSuccess && (
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {avatarSuccess}
-              </p>
+            {keyStatusMsg && (
+              <div
+                className={`flex items-center gap-2 rounded-xl p-3 text-xs font-semibold ${
+                  keyStatus === "valid"
+                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    : "bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                }`}
+              >
+                {keyStatus === "valid" ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                )}
+                <span>{keyStatusMsg}</span>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Feature 1: Theme & Dark Mode Selection */}
+      {/* Group 1: Appearance */}
       <div>
-        <div className="flex items-center justify-between mb-2 px-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            {t("settings.theme_group", "Theme & Appearance")}
-          </span>
-          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-            Active: {resolvedTheme === "dark" ? "Dark" : "Light"}
-          </span>
-        </div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
+          {t("settings.appearance_group", "Interface Theme & Dark Mode")}
+        </span>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {themeOptions.map((opt) => {
             const Icon = opt.icon;
@@ -288,63 +375,58 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setTheme(opt.id)}
                 className={cn(
-                  "p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer active:scale-98",
+                  "flex flex-col items-start p-4 rounded-2xl border text-left transition-all cursor-pointer relative",
                   isSelected
-                    ? "bg-emerald-50/40 dark:bg-slate-800 border-emerald-500 shadow-sm ring-2 ring-emerald-500/25"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    ? "border-emerald-600 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-xs"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
                 )}
               >
-                <div className="flex items-center justify-between w-full mb-3">
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
-                      isSelected
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div
-                    className={cn(
-                      "h-4 w-4 rounded-full border flex items-center justify-center",
-                      isSelected
-                        ? "border-emerald-500 bg-emerald-500"
-                        : "border-slate-300 dark:border-slate-600"
-                    )}
-                  >
-                    {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
-                  </div>
+                <div
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl mb-3",
+                    isSelected
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                    {opt.label}
-                  </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
-                    {opt.description}
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                  {opt.label}
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                  {opt.description}
+                </span>
+                {isSelected && (
+                  <div className="absolute top-3.5 right-3.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Feature 2: Language & Regional Standards (Bangla, English, Spanish) */}
+      {/* Group 2: Regional Language */}
       <div>
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
-          {t("settings.lang_group", "Language & Regional Standards")}
+          {t("settings.regional_group", "Regional & Localization")}
         </span>
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden text-xs">
-          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="font-bold text-slate-900 dark:text-white block flex items-center gap-2">
-                <Globe className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                {t("settings.display_lang", "Display Language")}
-              </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
-                বাংলা (Bangla), English, and Español supported across the platform.
-              </span>
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                <Globe className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="font-bold text-slate-900 dark:text-white block">
+                  {t("settings.display_lang", "Display Language")}
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {t("settings.display_lang_sub", "Switch entire interface instantly")}
+                </span>
+              </div>
             </div>
             <select
               value={language}
@@ -466,7 +548,7 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={handleExportData}
-            className="flex items-center justify-center gap-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-2xs"
+            className="flex items-center justify-center gap-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-2xs cursor-pointer"
           >
             <Download className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <span>{t("action.export", "Export Complete Health Record (JSON)")}</span>
