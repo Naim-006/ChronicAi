@@ -189,9 +189,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
               <span className="block text-sm font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
                 ChronicAI
               </span>
-              <span className="mt-0.5 block text-[9.5px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
-                Care Intelligence
-              </span>
+             
             </div>
           </div>
 
