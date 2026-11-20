@@ -274,13 +274,13 @@ export function MobileTopBar() {
             <input
               type="search"
               placeholder="Search records, meds, visits…"
-              className="h-10 w-80 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-[#0c1527]/80 pl-10 pr-4 text-xs text-slate-900 dark:text-white outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500/50 focus:bg-white dark:focus:bg-[#0f1b32] focus:ring-2 focus:ring-emerald-500/20"
+              className="h-10 w-80 rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.05] backdrop-blur-md pl-10 pr-4 text-xs text-slate-900 dark:text-white outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-white dark:focus:bg-white/[0.08] focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
           <Link
             href="/notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-[#0c1527]/80 text-slate-600 dark:text-slate-300 transition-colors hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.05] backdrop-blur-md text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-200/70 dark:hover:bg-white/[0.1] hover:text-slate-900 dark:hover:text-white"
             title="Notifications & Alerts"
             aria-label="Notifications"
           >
