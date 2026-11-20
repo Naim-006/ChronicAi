@@ -241,10 +241,10 @@ export function MobileTabBar() {
         >
           <path
             d={svgPath}
-            fill={isDark ? "rgba(11, 19, 37, 0.92)" : "rgba(255, 255, 255, 0.95)"}
-            stroke={isDark ? "rgba(255, 255, 255, 0.12)" : "#475569"}
-            strokeWidth="1.25"
-            strokeOpacity={isDark ? "0.9" : "0.75"}
+            fill={isDark ? "rgba(9, 16, 30, 0.88)" : "rgba(255, 255, 255, 0.95)"}
+            stroke={isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(203, 213, 225, 0.8)"}
+            strokeWidth="1.2"
+            strokeOpacity="1"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
@@ -279,32 +279,32 @@ export function MobileTabBar() {
                   <Link
                     href={tab.href!}
                     aria-label="Chronic AI Copilot"
-                    className="flex flex-col items-center justify-center group active:scale-95 transition-transform"
+                    className="flex flex-col items-center justify-center group active:scale-95 transition-transform outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [-webkit-tap-highlight-color:transparent]"
                   >
                     {/* Floating Green Circle */}
                     <div
                       className={cn(
-                        "flex h-[54px] w-[54px] items-center justify-center rounded-full bg-gradient-to-b from-[#00d07e] to-[#00b86b] text-white shadow-[0_8px_20px_rgba(0,184,107,0.38)] transition-all",
+                        "flex h-[50px] w-[50px] sm:h-[54px] sm:w-[54px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_6px_20px_rgba(16,185,129,0.38)] transition-all",
                         isActive
-                          ? "ring-2 ring-[#00b86b] ring-offset-2 scale-105"
+                          ? "ring-2 ring-emerald-400 ring-offset-2 ring-offset-[#0b1325] scale-105"
                           : "group-hover:scale-105"
                       )}
                     >
-                      <Icon className="h-6 w-6 stroke-[2.3] text-white" />
+                      <Icon className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.3] text-slate-950" />
                     </div>
 
                     {/* Copilot Text */}
                     <span
                       className={cn(
-                        "text-[12px] leading-tight tracking-tight whitespace-nowrap mt-[5px]",
-                        isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569] dark:text-slate-300"
+                        "text-[10px] sm:text-[11px] leading-none tracking-tight whitespace-nowrap mt-1",
+                        isActive ? "font-bold text-emerald-400" : "font-medium text-slate-400 dark:text-slate-400"
                       )}
                     >
                       {tab.name}
                     </span>
 
                     {/* Spacer to align with tab indicators */}
-                    <span className="h-[3.5px] w-4 rounded-full bg-transparent mt-[3px]" />
+                    <span className="h-[3px] w-3 rounded-full bg-transparent mt-1" />
                   </Link>
                 </div>
               );
@@ -318,22 +318,22 @@ export function MobileTabBar() {
               >
                 <Link
                   href={tab.href!}
-                  className="flex flex-col items-center justify-center w-full group active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center w-full group active:scale-95 transition-transform outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [-webkit-tap-highlight-color:transparent]"
                 >
                   {/* Tab Icon */}
-                  <div className="h-[26px] w-[26px] flex items-center justify-center relative">
+                  <div className="h-[24px] w-[24px] sm:h-[26px] sm:w-[26px] flex items-center justify-center relative">
                     <Icon
                       className={cn(
-                        "h-[24px] w-[24px] transition-transform",
+                        "h-[21px] w-[21px] sm:h-[23px] sm:w-[23px] transition-transform",
                         isActive
-                          ? "stroke-[2.2] text-[#00b86b] scale-105"
-                          : "stroke-[1.8] text-[#475569] dark:text-slate-300 group-hover:scale-105"
+                          ? "stroke-[2.2] text-emerald-400 scale-105"
+                          : "stroke-[1.8] text-slate-400 dark:text-slate-400 group-hover:scale-105"
                       )}
                     />
 
                     {/* Notification badge on Records */}
                     {tab.badge && (
-                      <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#00b86b] px-1 text-[9px] font-bold text-white shadow-sm ring-1 ring-white">
+                      <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-extrabold text-slate-950 shadow-sm ring-1 ring-[#0b1325]">
                         {tab.badge}
                       </span>
                     )}
@@ -342,8 +342,8 @@ export function MobileTabBar() {
                   {/* Tab Label */}
                   <span
                     className={cn(
-                      "text-[12px] leading-tight tracking-tight text-center whitespace-nowrap mt-[5px]",
-                      isActive ? "font-semibold text-[#00b86b]" : "font-medium text-[#475569] dark:text-slate-300"
+                      "text-[10px] sm:text-[11px] leading-none tracking-tight text-center truncate max-w-full px-0.5 mt-1",
+                      isActive ? "font-bold text-emerald-400" : "font-medium text-slate-400 dark:text-slate-400"
                     )}
                   >
                     {tab.name}
@@ -352,8 +352,8 @@ export function MobileTabBar() {
                   {/* Active Indicator Pill */}
                   <span
                     className={cn(
-                      "h-[3.5px] w-4 rounded-full mt-[3px] transition-colors",
-                      isActive ? "bg-[#00b86b]" : "bg-transparent"
+                      "h-[3px] w-3 rounded-full mt-1 transition-all duration-200",
+                      isActive ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] scale-100" : "bg-transparent scale-0"
                     )}
                   />
                 </Link>
