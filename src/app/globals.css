@@ -175,6 +175,14 @@
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .dark .soft-inset {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
   .mint-wash {
     background:
       radial-gradient(ellipse 80% 50% at 10% -10%, rgba(16, 185, 129, 0.08), transparent),
@@ -235,64 +243,59 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .dark .bg-white,
-  .dark [class*="bg-white"] {
-    background-color: rgba(11, 19, 37, 0.85) !important;
+  .dark .bg-white:not([class*="dark:"]):not([class*="bg-white/"]) {
+    background-color: rgba(11, 19, 37, 0.85);
   }
 
-  .dark .text-slate-900 {
-    color: #f8fafc !important;
+  .dark .text-slate-900:not([class*="dark:text-"]) {
+    color: #f8fafc;
   }
 
-  .dark .text-slate-800 {
-    color: #f1f5f9 !important;
+  .dark .text-slate-800:not([class*="dark:text-"]) {
+    color: #f1f5f9;
   }
 
-  .dark .text-slate-700 {
-    color: #e2e8f0 !important;
+  .dark .text-slate-700:not([class*="dark:text-"]) {
+    color: #e2e8f0;
   }
 
-  .dark .text-slate-600 {
-    color: #cbd5e1 !important;
+  .dark .text-slate-600:not([class*="dark:text-"]) {
+    color: #cbd5e1;
   }
 
-  .dark .text-slate-500 {
-    color: #94a3b8 !important;
+  .dark .text-slate-500:not([class*="dark:text-"]) {
+    color: #94a3b8;
   }
 
-  .dark .text-slate-400 {
-    color: #64748b !important;
+  .dark .text-slate-400:not([class*="dark:text-"]) {
+    color: #64748b;
   }
 
-  .dark .border-slate-200,
-  .dark [class*="border-slate-100"],
-  .dark [class*="border-slate-200"],
-  .dark [class*="border-slate-300"] {
-    border-color: #1e293b !important;
+  .dark .border-slate-200:not([class*="dark:border-"]),
+  .dark .border-slate-100:not([class*="dark:border-"]),
+  .dark .border-slate-300:not([class*="dark:border-"]) {
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
-  .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-  .dark [class*="divide-slate-100"] > :not([hidden]) ~ :not([hidden]),
-  .dark [class*="divide-slate-200"] > :not([hidden]) ~ :not([hidden]) {
-    border-color: #1e293b !important;
+  .dark .divide-slate-100:not([class*="dark:divide-"]) > :not([hidden]) ~ :not([hidden]),
+  .dark .divide-slate-200:not([class*="dark:divide-"]) > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
-  .dark .bg-slate-50,
-  .dark [class*="bg-slate-50"] {
-    background-color: #162032 !important;
+  .dark .bg-slate-50:not([class*="dark:"]):not([class*="bg-slate-50/"]) {
+    background-color: #162032;
   }
 
-  .dark .hover\:bg-slate-50:hover {
-    background-color: #1e293b !important;
+  .dark .hover\:bg-slate-50:not([class*="dark:hover:"]):hover {
+    background-color: #1e293b;
   }
 
-  .dark .bg-slate-100,
-  .dark [class*="bg-slate-100"] {
-    background-color: #1e293b !important;
+  .dark .bg-slate-100:not([class*="dark:"]):not([class*="bg-slate-100/"]) {
+    background-color: #1e293b;
   }
 
-  .dark .hover\:bg-slate-100:hover {
-    background-color: #27354a !important;
+  .dark .hover\:bg-slate-100:not([class*="dark:hover:"]):hover {
+    background-color: rgba(255, 255, 255, 0.08);
   }
 
   .dark input[type="text"],
@@ -562,4 +565,9 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Hide Next.js dev indicator overlay so it does not obstruct bottom navigation */
+nextjs-portal {
+  display: none !important;
 }
