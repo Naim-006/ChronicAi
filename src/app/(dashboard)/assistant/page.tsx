@@ -675,11 +675,11 @@ How can I assist you with your health records, lab panels, or medication schedul
               <Clock className="h-4 w-4" />
             </button>
 
-            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full overflow-hidden border-2 border-emerald-400/40 bg-[#3b4e6b] shadow-md shadow-emerald-500/20 shrink-0">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full overflow-hidden border-2 border-emerald-400/50 bg-gradient-to-tr from-emerald-500/15 via-[#0b1728] to-teal-500/15 shadow-md shadow-emerald-500/25 shrink-0 p-0.5">
               <img
                 src="/images/ai-doctor.png"
                 alt="ChronicAI Copilot"
-                className="h-full w-full object-cover scale-110"
+                className="h-full w-full object-contain drop-shadow-sm"
               />
             </div>
 
@@ -835,11 +835,11 @@ How can I assist you with your health records, lab panels, or medication schedul
               }`}
             >
               {msg.role === "assistant" && (
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full overflow-hidden border border-emerald-500/30 bg-[#3b4e6b] shadow-xs mt-0.5 ring-1 ring-emerald-400/20">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full overflow-hidden border border-emerald-400/40 bg-gradient-to-tr from-emerald-500/15 via-[#0b1728] to-teal-500/15 shadow-sm shadow-emerald-500/20 mt-0.5 p-0.5">
                   <img
                     src="/images/ai-doctor.png"
                     alt="ChronicAI Copilot"
-                    className="h-full w-full object-cover scale-110"
+                    className="h-full w-full object-contain drop-shadow-xs"
                   />
                 </div>
               )}
@@ -950,11 +950,11 @@ How can I assist you with your health records, lab panels, or medication schedul
 
           {isTyping && (
             <div className="flex gap-3 items-center text-xs text-slate-500 dark:text-slate-400 py-1">
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-full overflow-hidden border border-emerald-500/30 bg-[#3b4e6b] shadow-xs shrink-0">
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-full overflow-hidden border border-emerald-400/40 bg-gradient-to-tr from-emerald-500/15 via-[#0b1728] to-teal-500/15 shadow-xs shrink-0 p-0.5">
                 <img
                   src="/images/ai-doctor.png"
                   alt="Analyzing..."
-                  className="h-full w-full object-cover scale-110 animate-pulse"
+                  className="h-full w-full object-contain animate-pulse"
                 />
                 <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
                   <Loader2 className="h-3.5 w-3.5 text-white animate-spin" />

@@ -281,7 +281,7 @@ export function MobileTabBar() {
                     {/* Floating Mascot Button */}
                     <div
                       className={cn(
-                        "flex h-[40px] w-[40px] sm:h-[42px] sm:w-[42px] items-center justify-center rounded-full bg-[#3b4e6b] border-2 border-emerald-400/80 shadow-[0_4px_14px_rgba(16,185,129,0.3)] transition-all overflow-hidden p-0.5",
+                        "flex h-[40px] w-[40px] sm:h-[42px] sm:w-[42px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500/20 via-[#0b1728] to-teal-500/20 border-2 border-emerald-400 shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all overflow-hidden p-0.5",
                         isActive
                           ? "ring-2 ring-emerald-400 ring-offset-1 ring-offset-[#0b1325] scale-105"
                           : "group-hover:scale-105"
@@ -290,7 +290,7 @@ export function MobileTabBar() {
                       <img
                         src="/images/ai-doctor.png"
                         alt="Copilot"
-                        className="h-full w-full object-cover rounded-full scale-110"
+                        className="h-full w-full object-contain"
                       />
                     </div>
 
