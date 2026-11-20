@@ -9,13 +9,13 @@ export default function AuthLayout({
   return (
     <div className="mint-wash flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <Link href="/" className="mb-8 flex items-center gap-2.5">
-        <span className="relative flex h-10 w-10 items-center justify-center rounded-2xl overflow-hidden bg-white shadow-md shadow-emerald-500/20 border border-slate-200 p-1">
+        <span className="relative flex h-10 w-13 shrink-0 items-center justify-center rounded-2xl overflow-hidden bg-white shadow-md shadow-emerald-500/20 border border-slate-200 p-0.5">
           <Image
             src="/logo.png"
             alt="ChronicAI Logo"
-            width={34}
-            height={34}
-            className="object-contain"
+            width={48}
+            height={32}
+            className="object-contain w-full h-full scale-110"
             priority
           />
         </span>

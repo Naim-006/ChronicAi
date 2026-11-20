@@ -403,14 +403,14 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
             <motion.span
               whileHover={{ rotate: 8, scale: 1.05 }}
-              className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5"
+              className="relative flex h-8 w-11 sm:h-9 sm:w-12 shrink-0 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white border border-slate-200/80 p-0.5"
             >
               <Image
                 src="/logo.png"
                 alt="ChronicAI Logo"
-                width={30}
-                height={30}
-                className="object-contain"
+                width={44}
+                height={28}
+                className="object-contain w-full h-full scale-110"
                 priority
               />
             </motion.span>
@@ -860,13 +860,13 @@ export default function LandingPage() {
       <footer className="relative border-t border-slate-200/80 dark:border-white/[0.08] bg-white/70 dark:bg-[#070d18]/80 py-8 sm:py-10 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-center sm:text-left text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <div className="relative flex h-6 w-6 items-center justify-center rounded-lg overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5 shrink-0">
+            <div className="relative flex h-6 w-9 shrink-0 items-center justify-center rounded-md overflow-hidden bg-white border border-slate-200/80 p-0.5">
               <Image
                 src="/logo.png"
                 alt="ChronicAI"
-                width={20}
+                width={32}
                 height={20}
-                className="object-contain"
+                className="object-contain w-full h-full scale-110"
               />
             </div>
             <span className="font-display font-extrabold text-slate-900 dark:text-white">

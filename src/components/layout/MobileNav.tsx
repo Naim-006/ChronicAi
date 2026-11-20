@@ -54,13 +54,13 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-slate-200">
             <div className="flex items-center gap-2">
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden bg-white border border-slate-200 p-0.5">
+              <div className="relative flex h-8 w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-slate-200 p-0.5">
                 <Image
                   src="/logo.png"
                   alt="ChronicAI Logo"
-                  width={26}
-                  height={26}
-                  className="object-contain"
+                  width={38}
+                  height={24}
+                  className="object-contain w-full h-full scale-110"
                 />
               </div>
               <span className="text-sm font-bold text-slate-900">

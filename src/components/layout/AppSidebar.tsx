@@ -61,13 +61,13 @@ export function AppSidebar() {
       <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5">
+            <div className="relative flex h-9 w-11 shrink-0 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white border border-slate-200 p-0.5">
               <Image
                 src="/logo.png"
                 alt="ChronicAI Logo"
-                width={30}
-                height={30}
-                className="object-contain"
+                width={42}
+                height={28}
+                className="object-contain w-full h-full scale-110"
               />
             </div>
             <div>
@@ -80,13 +80,13 @@ export function AppSidebar() {
             </div>
           </Link>
         ) : (
-          <Link href="/dashboard" className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-0.5">
+          <Link href="/dashboard" className="mx-auto flex h-9 w-11 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white border border-slate-200 p-0.5">
             <Image
               src="/logo.png"
               alt="ChronicAI Logo"
-              width={30}
-              height={30}
-              className="object-contain"
+              width={42}
+              height={28}
+              className="object-contain w-full h-full scale-110"
             />
           </Link>
         )}

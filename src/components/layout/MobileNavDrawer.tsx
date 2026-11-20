@@ -176,13 +176,13 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
         {/* Compact Clean Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-white/10 bg-gradient-to-r from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-[#070d18]/50">
           <div className="flex items-center gap-2.5">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-sm shadow-emerald-500/20 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 p-0.5">
+            <div className="relative flex h-9 w-11 shrink-0 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white border border-slate-200/80 p-0.5">
               <Image
                 src="/logo.png"
                 alt="ChronicAI Logo"
-                width={30}
-                height={30}
-                className="object-contain"
+                width={42}
+                height={28}
+                className="object-contain w-full h-full scale-110"
               />
             </div>
             <div>

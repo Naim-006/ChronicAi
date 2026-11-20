@@ -121,13 +121,13 @@ export function DesktopNavRail() {
       {/* Brand Header */}
       <div className="flex h-[72px] items-center px-5 border-b border-slate-200/60 dark:border-white/[0.06]">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-sm shadow-emerald-500/20 transition-transform group-hover:scale-105 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 p-1">
+          <div className="relative flex h-10 w-12 shrink-0 items-center justify-center rounded-xl overflow-hidden shadow-xs bg-white border border-slate-200/80 p-0.5 transition-transform group-hover:scale-105">
             <Image
               src="/logo.png"
               alt="ChronicAI Logo"
-              width={34}
-              height={34}
-              className="object-contain"
+              width={46}
+              height={30}
+              className="object-contain w-full h-full scale-110"
               priority
             />
           </div>
