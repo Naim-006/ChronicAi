@@ -472,38 +472,38 @@ export default function DashboardPage() {
         </div>
 
         {/* 4 Glassmorphism Vital Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
           {/* 1. Fasting Glucose */}
           <Link
             href="/metrics"
-            className="glass-card p-3.5 sm:p-5 flex flex-col justify-between group transition-all"
+            className="glass-card p-3 sm:p-5 flex flex-col justify-between group transition-all"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-                  <Droplets className="h-4.5 w-4.5" />
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/25 dark:border-emerald-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                  <Droplets className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                   Fasting Glucose
                 </span>
               </div>
             </div>
 
-            <div className="mt-2.5 sm:mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <div className="mt-2 sm:mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {vitals.glucose !== null ? `${timeRangeData.glucose}` : "--"}
                 </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">mg/dL</span>
+                <span className="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">mg/dL</span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30">
+              <span className="mt-1 inline-block text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 truncate max-w-full">
                 {timeRangeData.glucoseStatus}
               </span>
             </div>
 
             {/* Glowing Wave Sparkline */}
-            <div className="mt-2.5 sm:mt-4 pt-1">
-              <svg viewBox="0 0 240 36" className="w-full h-8 overflow-visible">
+            <div className="mt-2 sm:mt-3 pt-0.5">
+              <svg viewBox="0 0 240 36" className="w-full h-5 sm:h-8 overflow-visible">
                 <path
                   d={timeRangeData.pathGlucose}
                   fill="none"
@@ -529,34 +529,34 @@ export default function DashboardPage() {
           {/* 2. Blood Pressure */}
           <Link
             href="/metrics"
-            className="glass-card p-3.5 sm:p-5 flex flex-col justify-between group transition-all"
+            className="glass-card p-3 sm:p-5 flex flex-col justify-between group transition-all"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-500/25 dark:border-cyan-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-                  <Heart className="h-4.5 w-4.5" />
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-500/25 dark:border-cyan-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                  <Heart className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                   Blood Pressure
                 </span>
               </div>
             </div>
 
-            <div className="mt-2.5 sm:mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <div className="mt-2 sm:mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {vitals.systolic !== null ? timeRangeData.bp : "--/--"}
                 </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">mmHg</span>
+                <span className="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">mmHg</span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200/80 dark:bg-cyan-500/15 dark:text-cyan-300 dark:border-cyan-500/30">
+              <span className="mt-1 inline-block text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200/80 dark:bg-cyan-500/15 dark:text-cyan-300 dark:border-cyan-500/30 truncate max-w-full">
                 {timeRangeData.bpStatus}
               </span>
             </div>
 
             {/* Glowing Wave Sparkline */}
-            <div className="mt-2.5 sm:mt-4 pt-1">
-              <svg viewBox="0 0 240 36" className="w-full h-8 overflow-visible">
+            <div className="mt-2 sm:mt-3 pt-0.5">
+              <svg viewBox="0 0 240 36" className="w-full h-5 sm:h-8 overflow-visible">
                 <path
                   d={timeRangeData.pathBP}
                   fill="none"
@@ -582,35 +582,35 @@ export default function DashboardPage() {
           {/* 3. Latest HbA1c with Spectrum Slider */}
           <Link
             href="/metrics"
-            className="glass-card p-3.5 sm:p-5 flex flex-col justify-between group transition-all"
+            className="glass-card p-3 sm:p-5 flex flex-col justify-between group transition-all"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/25 dark:border-rose-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-                  <Droplets className="h-4.5 w-4.5" />
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-rose-500/15 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/25 dark:border-rose-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                  <Droplets className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                   Latest HbA1c
                 </span>
               </div>
             </div>
 
-            <div className="mt-2.5 sm:mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <div className="mt-2 sm:mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {timeRangeData.hba1c}
                 </span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30">
+              <span className="mt-1 inline-block text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30 truncate max-w-full">
                 {timeRangeData.hba1cSub}
               </span>
             </div>
 
             {/* Color Spectrum Slider Bar */}
-            <div className="mt-2.5 sm:mt-4 pt-3">
-              <div className="relative h-2.5 w-full rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 shadow-inner">
+            <div className="mt-2 sm:mt-3 pt-1.5 sm:pt-3">
+              <div className="relative h-2 sm:h-2.5 w-full rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 shadow-inner">
                 <span
-                  className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-slate-900 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                  className="absolute top-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-slate-900 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                   style={{ left: `${timeRangeData.hba1cPos}%` }}
                 />
               </div>
@@ -620,38 +620,38 @@ export default function DashboardPage() {
           {/* 4. Medications with Progress Bars */}
           <Link
             href="/medications"
-            className="glass-card p-3.5 sm:p-5 flex flex-col justify-between group transition-all"
+            className="glass-card p-3 sm:p-5 flex flex-col justify-between group transition-all"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/15 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400 border border-teal-500/25 dark:border-teal-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(20,184,166,0.2)]">
-                  <Pill className="h-4.5 w-4.5" />
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-teal-500/15 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400 border border-teal-500/25 dark:border-teal-500/30 shadow-xs dark:shadow-[0_0_10px_rgba(20,184,166,0.2)]">
+                  <Pill className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
                 </div>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                   Medications
                 </span>
               </div>
             </div>
 
-            <div className="mt-2.5 sm:mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <div className="mt-2 sm:mt-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {timeRangeData.medsActive}
                 </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">active</span>
+                <span className="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">active</span>
               </div>
-              <span className="mt-1.5 inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30 truncate max-w-full">
+              <span className="mt-1 inline-block text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30 truncate max-w-full">
                 {timeRangeData.medsStatus}
               </span>
             </div>
 
             {/* Progress Pill Segments */}
-            <div className="mt-2.5 sm:mt-4 pt-3 flex items-center gap-2">
+            <div className="mt-2 sm:mt-3 pt-1.5 sm:pt-3 flex items-center gap-1.5 sm:gap-2">
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
                   className={cn(
-                    "h-2.5 flex-1 rounded-full transition-all",
+                    "h-2 sm:h-2.5 flex-1 rounded-full transition-all",
                     medications.length > 0 && i < takenCount
                       ? "bg-teal-500 dark:bg-teal-400 shadow-xs dark:shadow-[0_0_8px_rgba(45,212,191,0.5)]"
                       : "bg-slate-200 dark:bg-white/10"
