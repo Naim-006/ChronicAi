@@ -305,11 +305,12 @@ Return a JSON object with:
       },
     };
 
-    // Robust Multi-Model Fallback for high availability
+    // Robust Multi-Model Fallback for high availability and low latency
     const candidateModels = [
-      "gemini-3.5-flash",
-      "gemini-flash-latest",
+      "gemini-3.5-flash-lite",
       "gemini-3.1-flash-lite",
+      "gemini-flash-latest",
+      "gemini-3.5-flash",
     ];
 
     let geminiRes: Response | null = null;
@@ -322,6 +323,7 @@ Return a JSON object with:
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(geminiPayload),
+          signal: AbortSignal.timeout(12000),
         });
 
         if (res.ok) {

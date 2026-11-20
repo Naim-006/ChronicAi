@@ -88,7 +88,10 @@ export default function VaultPage() {
     }
     try {
       const fetched = await getDocuments(effectiveUserId);
-      setDocuments(fetched || []);
+      const uniqueDocs = Array.from(
+        new Map((fetched || []).map((d) => [d.id, d])).values()
+      );
+      setDocuments(uniqueDocs);
     } catch {
       setDocuments([]);
     } finally {
@@ -207,7 +210,7 @@ export default function VaultPage() {
   };
 
   // Run Real Multimodal OCR Extraction with Gemini API
-  const handleCaptureAndRunOCR = async (imageSource?: string, overrideKey?: string) => {
+  const handleCaptureAndRunOCR = async (imageSource?: string, overrideKey?: string, directFile?: File) => {
     stopCameraStream();
     let snap = imageSource || capturedImage || "";
 
@@ -236,16 +239,17 @@ export default function VaultPage() {
       (profile?.preferences as any)?.gemini_api_key ||
       "";
 
-    // Extract base64
+    // Extract base64 reliably from data URI, File object, or blob URL
+    const targetFile = directFile || selectedUploadFile;
     let base64Data = "";
-    let mimeType = selectedUploadFile?.type || "image/jpeg";
+    let mimeType = targetFile?.type || "image/jpeg";
 
     if (snap.startsWith("data:")) {
       const parts = snap.split(",");
       const match = snap.match(/data:(.*?);base64/);
       if (match) mimeType = match[1];
       base64Data = parts[1] || "";
-    } else if (selectedUploadFile) {
+    } else if (targetFile) {
       try {
         base64Data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -255,8 +259,25 @@ export default function VaultPage() {
             resolve(b64);
           };
           reader.onerror = reject;
-          reader.readAsDataURL(selectedUploadFile);
+          reader.readAsDataURL(targetFile);
         });
+        if (targetFile.type) mimeType = targetFile.type;
+      } catch {}
+    } else if (snap.startsWith("blob:")) {
+      try {
+        const blobRes = await fetch(snap);
+        const blob = await blobRes.blob();
+        base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const res = reader.result as string;
+            const b64 = res.split(",")[1];
+            resolve(b64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        if (blob.type) mimeType = blob.type;
       } catch {}
     }
 
@@ -333,7 +354,7 @@ export default function VaultPage() {
     setEditFileName(file.name || `Mobile_Capture_${Date.now()}.jpg`);
     const url = URL.createObjectURL(file);
     setIsScannerOpen(true);
-    handleCaptureAndRunOCR(url);
+    handleCaptureAndRunOCR(url, undefined, file);
   };
 
   // Drag and Drop Handlers
@@ -367,7 +388,7 @@ export default function VaultPage() {
     setEditFileName(file.name);
     const url = URL.createObjectURL(file);
     setIsScannerOpen(true);
-    handleCaptureAndRunOCR(url);
+    handleCaptureAndRunOCR(url, undefined, file);
   };
 
   // Central Hub Ingestion: Ingests Record into Documents, Metrics, Medications, Conditions & Timeline
@@ -625,8 +646,14 @@ export default function VaultPage() {
         console.warn("Could not prepare vector chunks for RAG indexing:", vectorErr);
       }
 
-      setDocuments((prev) => [savedDoc, ...prev]);
-      setExtractedRecords((prev) => [savedExtracted, ...prev]);
+      setDocuments((prev) => {
+        const remaining = prev.filter((d) => d.id !== savedDoc.id);
+        return [savedDoc, ...remaining];
+      });
+      setExtractedRecords((prev) => {
+        const remaining = prev.filter((r) => r.id !== savedExtracted.id);
+        return [savedExtracted, ...remaining];
+      });
       setSelectedUploadFile(null);
       handleCloseScanner();
       setNotification(
@@ -1034,7 +1061,7 @@ export default function VaultPage() {
               <tbody className="divide-y divide-[var(--border)]/70">
                 {filteredDocs.map((doc, idx) => (
                   <tr
-                    key={doc.id}
+                    key={`${doc.id}-${idx}`}
                     className="transition-colors hover:bg-slate-50/70"
                   >
                     <td className="py-3.5 pl-6 font-bold text-[var(--foreground)]">
@@ -1123,7 +1150,7 @@ export default function VaultPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDocs.map((doc, idx) => (
             <div
-              key={doc.id}
+              key={`${doc.id}-${idx}`}
               className="soft-card hover-lift flex flex-col justify-between p-5 transition-all hover:border-emerald-300 group"
             >
               <div>
@@ -1391,7 +1418,7 @@ export default function VaultPage() {
                     </label>
                     <Input
                       type="text"
-                      value={editFileName}
+                      value={editFileName || ""}
                       onChange={(e) => setEditFileName(e.target.value)}
                       className="h-9 text-xs"
                       placeholder="e.g. Complete_Metabolic_Panel.pdf"
@@ -1422,7 +1449,7 @@ export default function VaultPage() {
                     </label>
                     <Input
                       type="text"
-                      value={editFacility}
+                      value={editFacility || ""}
                       onChange={(e) => setEditFacility(e.target.value)}
                       className="h-9 text-xs"
                       placeholder="e.g. Memorial Hospital Clinical Lab"
@@ -1435,7 +1462,7 @@ export default function VaultPage() {
                     </label>
                     <Input
                       type="text"
-                      value={editDoctor}
+                      value={editDoctor || ""}
                       onChange={(e) => setEditDoctor(e.target.value)}
                       className="h-9 text-xs"
                       placeholder="e.g. Dr. Jane Smith, MD"
@@ -1487,7 +1514,7 @@ export default function VaultPage() {
                             <td className="p-2">
                               <input
                                 type="text"
-                                value={lab.test_name}
+                                value={lab.test_name || ""}
                                 onChange={(e) => {
                                   const updated = [...editLabs];
                                   updated[i].test_name = e.target.value;
@@ -1499,7 +1526,7 @@ export default function VaultPage() {
                             <td className="p-2 w-20">
                               <input
                                 type="text"
-                                value={lab.value}
+                                value={lab.value ?? ""}
                                 onChange={(e) => {
                                   const updated = [...editLabs];
                                   updated[i].value = e.target.value;
@@ -1511,7 +1538,7 @@ export default function VaultPage() {
                             <td className="p-2 w-24">
                               <input
                                 type="text"
-                                value={lab.unit}
+                                value={lab.unit || ""}
                                 onChange={(e) => {
                                   const updated = [...editLabs];
                                   updated[i].unit = e.target.value;
@@ -1523,7 +1550,7 @@ export default function VaultPage() {
                             <td className="p-2 w-28">
                               <input
                                 type="text"
-                                value={lab.reference_range}
+                                value={lab.reference_range || ""}
                                 onChange={(e) => {
                                   const updated = [...editLabs];
                                   updated[i].reference_range = e.target.value;
@@ -1595,7 +1622,7 @@ export default function VaultPage() {
                   </label>
                   <textarea
                     rows={2}
-                    value={editSummary}
+                    value={editSummary || ""}
                     onChange={(e) => setEditSummary(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 p-2 text-xs text-slate-700"
                   />

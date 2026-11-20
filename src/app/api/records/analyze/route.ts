@@ -156,10 +156,12 @@ Return ONLY valid JSON matching this schema:
       },
     };
 
+    // High-speed multimodal OCR candidate models (flash-lite prioritised for sub-2s latency)
     const candidateModels = [
-      "gemini-3.5-flash",
-      "gemini-flash-latest",
+      "gemini-3.5-flash-lite",
       "gemini-3.1-flash-lite",
+      "gemini-flash-latest",
+      "gemini-3.5-flash",
     ];
 
     let geminiRes: Response | null = null;
@@ -172,6 +174,7 @@ Return ONLY valid JSON matching this schema:
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(12000),
         });
 
         if (res.ok) {
