@@ -13,13 +13,16 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install all dependencies (including devDependencies)
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # Copy source code
 COPY . .
 
 # Disable telemetry
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Hot reload reliability for containerized environments
+ENV WATCHPACK_POLLING=true
 
 EXPOSE 3000
 
@@ -28,4 +31,3 @@ ENV PORT=3000
 
 # Start in dev mode with hot-reload
 CMD ["npm", "run", "dev"]
-

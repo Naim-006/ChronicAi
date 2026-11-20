@@ -243,18 +243,53 @@ How can I assist you with your health records, lab panels, or medication schedul
     setShowAttachMenu(false);
     setIsTyping(true);
 
-    setTimeout(() => {
+    // Call live backend AI API with fallback
+    (async () => {
+      try {
+        const res = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: query,
+            conversation_id: activeSessionId,
+            include_clinical_context: true,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.content) {
+            const assistantMessage: AIMessage = {
+              id: `msg-${Date.now()}`,
+              conversation_id: activeSessionId,
+              role: "assistant",
+              content: data.content,
+              citations: data.citations && data.citations.length > 0 ? data.citations : [],
+              created_at: new Date().toISOString(),
+            };
+
+            setSessions((prev) =>
+              prev.map((s) =>
+                s.id === activeSessionId
+                  ? { ...s, messages: [...s.messages, assistantMessage] }
+                  : s
+              )
+            );
+            setIsTyping(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("[Assistant] API fetch error, using clinical fallback engine:", err);
+      }
+
+      // Fallback engine if backend is unreachable
       let responseContent = "";
       let citations: AICitation[] = [];
-
       const lower = query.toLowerCase();
 
       if (sentAttachedDoc) {
-        responseContent = `I have cross-examined **${sentAttachedDoc.file_name}** (${sentAttachedDoc.facility_name}):
-
-• **Key Finding:** The report confirms routine follow-up status with no critical variance from your baseline.
-• **Clinical Context:** Biomarkers remain aligned with your primary care protocol under Dr. Catherine Wei.
-• **Action Point:** The extracted parameters have been verified and linked to your lifelong medical timeline.`;
+        responseContent = `I have cross-examined **${sentAttachedDoc.file_name}** (${sentAttachedDoc.facility_name}):\n\n• **Key Finding:** The report confirms routine follow-up status with no critical variance from your baseline.\n• **Clinical Context:** Biomarkers remain aligned with your primary care protocol under Dr. Catherine Wei.\n• **Action Point:** The extracted parameters have been verified and linked to your lifelong medical timeline.`;
         citations = [
           {
             document_id: sentAttachedDoc.id,
@@ -272,20 +307,9 @@ How can I assist you with your health records, lab panels, or medication schedul
         lower.includes("ibuprofen")
       ) {
         if (explanationDepth === "plain") {
-          responseContent = `Based on your verified prescriptions:
-
-• **Metformin (1000 mg)** and **Lisinopril (20 mg)** are completely safe and routinely prescribed together.
-• They work as a team: Metformin helps lower your blood sugar, while Lisinopril protects your kidneys and manages your blood pressure.
-• **Safety Tip:** If you ever need pain medicine, avoid NSAIDs like Advil/Ibuprofen because they can strain your kidneys. Tylenol (Acetaminophen) is much safer for you.`;
+          responseContent = `Based on your verified prescriptions:\n\n• **Metformin (1000 mg)** and **Lisinopril (20 mg)** are completely safe and routinely prescribed together.\n• They work as a team: Metformin helps lower your blood sugar, while Lisinopril protects your kidneys and manages your blood pressure.\n• **Safety Tip:** If you ever need pain medicine, avoid NSAIDs like Advil/Ibuprofen because they can strain your kidneys. Tylenol (Acetaminophen) is much safer for you.`;
         } else {
-          responseContent = `### Pharmacological Profile & Renal Safety Evaluation
-
-1. **Dual Regimen Assessment (Metformin + Lisinopril):**
-   - **Metformin ER 1000mg BID:** Primary biguanide antihyperglycemic. Enhances peripheral insulin sensitivity and reduces intestinal glucose absorption.
-   - **Lisinopril 20mg QD:** Angiotensin-Converting Enzyme (ACE) inhibitor. Reduces efferent arteriolar resistance, providing intraglomerular pressure reduction and diabetic renoprotection.
-2. **Interaction Risk:** None identified between active prescription agents.
-3. **Renal Clearance Caution:**
-   - Baseline eGFR is **68 mL/min/1.73m²**. Concurrent use of non-steroidal anti-inflammatory drugs (NSAIDs) is contraindicated due to acute renal hemodynamic reduction risk.`;
+          responseContent = `### Pharmacological Profile & Renal Safety Evaluation\n\n1. **Dual Regimen Assessment (Metformin + Lisinopril):**\n   - **Metformin ER 1000mg BID:** Primary biguanide antihyperglycemic.\n   - **Lisinopril 20mg QD:** Angiotensin-Converting Enzyme (ACE) inhibitor.\n2. **Interaction Risk:** None identified between active prescription agents.\n3. **Renal Clearance Caution:** Baseline eGFR is **68 mL/min/1.73m²**.`;
         }
         citations = [
           {
@@ -296,37 +320,8 @@ How can I assist you with your health records, lab panels, or medication schedul
             snippet: "Metformin 1000mg BID + Lisinopril 20mg daily. Renal protective regimen.",
           },
         ];
-      } else if (
-        lower.includes("wei") ||
-        lower.includes("doctor") ||
-        lower.includes("visit") ||
-        lower.includes("question")
-      ) {
-        responseContent = `Here are 3 tailored discussion checkpoints for your upcoming consultation with **Dr. Catherine Wei** on December 8, 2026:
-
-1. **HbA1c Target Milestone (6.8%):**
-   - Point out that your HbA1c improved from 7.1% down to **6.8%**, reaching your clinician-defined target (< 7.0%). Ask if your current Metformin dosage should stay steady.
-2. **Renal Function Stability:**
-   - Your eGFR is steady at **68 mL/min** (Creatinine 1.04). Confirm that Lisinopril 20 mg continues to provide adequate kidney protection.
-3. **Annual Diabetic Checkpoint:**
-   - Present your clear retinal eye exam findings from Valley Eye Center and request annual urine microalbumin orders for early 2027.`;
-        citations = [
-          {
-            document_id: "doc-101",
-            document_title: "Metabolic_Lipid_Panel_Nov2026.pdf",
-            date: "2026-11-02",
-            page: 1,
-            snippet: "HbA1c 6.8%, Fasting Glucose 118 mg/dL, eGFR 68",
-          },
-        ];
       } else {
-        responseContent = `Based on your verified medical records from Quest Diagnostics (Nov 2, 2026):
-
-• **HbA1c:** **6.8%** — down from 7.1% in May 2026, successfully meeting your clinical target goal (< 7.0%).
-• **Fasting Plasma Glucose:** **118 mg/dL** — improved from 126 mg/dL.
-• **Renal Filtration:** eGFR is **68 mL/min** and Serum Creatinine is **1.04 mg/dL**, confirming stable Stage 2 CKD on current ACE inhibitor therapy.
-
-Would you like me to generate a 1-page summary of these findings to bring to your next doctor visit?`;
+        responseContent = `Based on your verified medical records from Quest Diagnostics (Nov 2, 2026):\n\n• **HbA1c:** **6.8%** — down from 7.1% in May 2026, successfully meeting your clinical target goal (< 7.0%).\n• **Fasting Plasma Glucose:** **118 mg/dL** — improved from 126 mg/dL.\n• **Renal Filtration:** eGFR is **68 mL/min** and Serum Creatinine is **1.04 mg/dL**, confirming stable Stage 2 CKD on current ACE inhibitor therapy.`;
         citations = [
           {
             document_id: "doc-101",
@@ -355,7 +350,7 @@ Would you like me to generate a 1-page summary of these findings to bring to you
         )
       );
       setIsTyping(false);
-    }, 700);
+    })();
   };
 
   return (
