@@ -421,28 +421,32 @@ export function MobileTabBar() {
 
             const Icon = tab.icon;
 
-            // Center Copilot Button: Elevated floating green circle in dome
+            // Center Copilot Button: Elevated floating mascot avatar button matching Image 1
             if (tab.isCenterCopilot) {
               return (
                 <div
                   key={tab.name}
-                  className="flex flex-col items-center justify-start h-full pt-[11px]"
+                  className="flex flex-col items-center justify-start h-full pt-[9px]"
                 >
                   <Link
                     href={tab.href!}
                     aria-label="Chronic AI Copilot"
                     className="flex flex-col items-center justify-center group active:scale-95 transition-transform outline-none focus:outline-none focus-visible:outline-none focus:ring-0 [-webkit-tap-highlight-color:transparent]"
                   >
-                    {/* Floating Green Circle */}
+                    {/* Floating Mascot Button */}
                     <div
                       className={cn(
-                        "flex h-[50px] w-[50px] sm:h-[54px] sm:w-[54px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_6px_20px_rgba(16,185,129,0.38)] transition-all",
+                        "flex h-[48px] w-[48px] sm:h-[50px] sm:w-[50px] items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500/20 via-[#0b1728] to-teal-500/20 border-2 border-emerald-400 shadow-[0_4px_16px_rgba(16,185,129,0.38)] transition-all overflow-hidden p-0.5",
                         isActive
                           ? "ring-2 ring-emerald-400 ring-offset-2 ring-offset-[#0b1325] scale-105"
                           : "group-hover:scale-105"
                       )}
                     >
-                      <Icon className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.3] text-slate-950" />
+                      <img
+                        src="/images/ai-doctor.png"
+                        alt="ChronicAI Copilot"
+                        className="h-full w-full object-contain drop-shadow-xs"
+                      />
                     </div>
 
                     {/* Copilot Text */}
