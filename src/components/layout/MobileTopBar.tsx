@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Search, User, Settings, LogOut } from "lucide-react";
+import { Bell, Search, User, Settings, LogOut, ChevronDown } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -55,20 +55,23 @@ function ProfileDropdown() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-xs font-bold text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-100 dark:ring-emerald-900/50 transition-transform active:scale-95 hover:scale-105 cursor-pointer overflow-hidden"
+        className="flex items-center gap-1.5 p-1 rounded-full hover:bg-white/[0.08] transition-all cursor-pointer"
         title={`${displayName} (${userEmail})`}
         aria-label="User Profile Menu"
         aria-expanded={isOpen}
       >
-        {currentAvatar ? (
-          <img
-            src={currentAvatar}
-            alt={displayName}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          initials || "PT"
-        )}
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-xs font-bold text-slate-950 shadow-md shadow-emerald-500/25 ring-2 ring-emerald-400/20 overflow-hidden">
+          {currentAvatar ? (
+            <img
+              src={currentAvatar}
+              alt={displayName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            initials || "A"
+          )}
+        </div>
+        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
       </button>
 
       {isOpen && (
@@ -238,36 +241,54 @@ export function MobileTopBar() {
       </header>
 
       {/* Desktop top bar */}
-      <header className="sticky top-0 z-30 hidden h-[72px] w-full items-center justify-between border-b border-[var(--border)]/70 bg-white/80 dark:bg-slate-900/80 px-8 backdrop-blur-xl lg:flex">
+      <header className="sticky top-0 z-30 hidden h-[76px] w-full items-center justify-between border-b border-white/[0.06] bg-[#070d18]/85 backdrop-blur-2xl px-8 lg:flex">
         <div className="min-w-0">
-          <h1 className="text-lg font-extrabold tracking-tight text-[var(--foreground)]">
-            {isDashboard ? "Health Overview" : pageTitle}
+          <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            {isDashboard ? (
+              <>
+                <span>
+                  {(() => {
+                    const h = new Date().getHours();
+                    if (h < 12) return "Good Morning";
+                    if (h < 18) return "Good Afternoon";
+                    return "Good Evening";
+                  })()}
+                  , {displayName.split(" ")[0]}
+                </span>
+                <span>👋</span>
+              </>
+            ) : (
+              pageTitle
+            )}
           </h1>
-          <p className="text-xs text-[var(--muted-foreground)]">
+          <p className="text-xs text-slate-400 mt-0.5">
             {isDashboard
-              ? "Your vitals, meds, and visits in one calm view"
+              ? "Your health, our priority."
               : "Secure lifelong health workspace"}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3.5">
           <div className="relative hidden xl:block">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
               placeholder="Search records, meds, visits…"
-              className="h-11 w-72 rounded-2xl border border-[var(--border)] bg-[var(--muted)] pl-10 pr-4 text-sm outline-none transition-all placeholder:text-[var(--muted-foreground)] focus:border-emerald-300 focus:bg-white dark:focus:bg-slate-850 focus:ring-2 focus:ring-emerald-500/20"
+              className="h-10 w-80 rounded-full border border-white/10 bg-[#0c1527]/80 pl-10 pr-4 text-xs text-white outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400/50 focus:bg-[#0f1b32] focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
           <Link
             href="/notifications"
-            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white dark:bg-slate-800 text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#0c1527]/80 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
             title="Notifications & Alerts"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
-            <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+            <span className="absolute top-2 right-2 flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+            </span>
           </Link>
 
           <ProfileDropdown />
