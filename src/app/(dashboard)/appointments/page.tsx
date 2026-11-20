@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Calendar,
   Clock,
@@ -15,6 +16,8 @@ import {
   ClipboardList,
   Check,
   Loader2,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Appointment } from "@/types/medical";
@@ -299,6 +302,22 @@ export default function AppointmentsPage() {
                   </ul>
                 </div>
               )}
+
+              {/* AI Pre-Consultation Guidance Action */}
+              <div className="pt-2 border-t border-[var(--border)]/60 flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Upcoming Consultation
+                </span>
+                <Link
+                  href={`/assistant?q=${encodeURIComponent(`I have an upcoming appointment with ${apt.doctor_name} (${apt.specialty}) for ${apt.reason}. Can you give me a pre-consultation summary and key questions to ask?`)}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 px-3 py-1.5 rounded-xl transition-all hover:scale-[1.02]"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Prep with Copilot</span>
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </article>
           ))
         )}

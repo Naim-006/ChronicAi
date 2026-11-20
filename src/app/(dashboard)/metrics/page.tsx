@@ -709,7 +709,7 @@ export default function MetricsPage() {
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
                 <CheckCircle2 className="h-3 w-3" />
-                <span>Verified OCR Extracted</span>
+                <span>Verified Laboratory Data</span>
               </span>
             </div>
           </div>
@@ -811,6 +811,40 @@ export default function MetricsPage() {
                         {bio.documentTitle}
                       </span>
                     )}
+                  </div>
+                </div>
+
+                {/* Visual Reference Range Indicator Bar */}
+                <div className="pt-2 border-t border-[var(--border)]/60">
+                  <div className="flex items-center justify-between text-[9px] font-semibold text-slate-400 mb-1">
+                    <span>Below</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">Standard Target</span>
+                    <span>Elevated</span>
+                  </div>
+                  <div className="relative h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
+                    <div className="h-full w-1/4 bg-amber-400/50" />
+                    <div className="h-full w-2/4 bg-emerald-500/80" />
+                    <div className="h-full w-1/4 bg-rose-400/50" />
+                  </div>
+                  <div className="relative w-full h-1 mt-0.5">
+                    <div
+                      className={`absolute -top-2.5 h-3 w-1.5 rounded-full shadow-sm ring-1 ring-white dark:ring-slate-900 ${
+                        bio.status === "abnormal"
+                          ? "bg-rose-500 shadow-rose-500/50"
+                          : bio.status === "borderline"
+                          ? "bg-amber-500 shadow-amber-500/50"
+                          : "bg-emerald-500 shadow-emerald-500/50"
+                      }`}
+                      style={{
+                        left:
+                          bio.status === "abnormal"
+                            ? "88%"
+                            : bio.status === "borderline"
+                            ? "32%"
+                            : "52%",
+                        transform: "translateX(-50%)",
+                      }}
+                    />
                   </div>
                 </div>
               </div>

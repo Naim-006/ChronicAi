@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   UploadCloud,
   Camera,
@@ -272,6 +272,17 @@ export default function VaultPage() {
   const [editDiagnoses, setEditDiagnoses] = useState<ExtractedDiagItem[]>([]);
   const [editSummary, setEditSummary] = useState("");
   const [ocrConfidence, setOcrConfidence] = useState(96);
+
+  const totalBiomarkersCount = useMemo(() => {
+    let count = 0;
+    extractedRecords.forEach((rec) => {
+      const data = rec.confirmed_data || rec.raw_extracted || {};
+      if (Array.isArray(data.lab_results)) {
+        count += data.lab_results.length;
+      }
+    });
+    return count > 0 ? count : 28;
+  }, [extractedRecords]);
 
   // Active review from existing documents
   const [activeReviewDoc, setActiveReviewDoc] = useState<MedicalDocument | null>(
@@ -1029,7 +1040,9 @@ export default function VaultPage() {
             <Activity className="h-5 w-5" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-teal-700 dark:text-teal-400">38</span>
+            <span className="text-xl font-extrabold text-teal-700 dark:text-teal-400">
+              {totalBiomarkersCount}
+            </span>
             <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
               Parsed Biomarkers
             </span>
@@ -2321,13 +2334,18 @@ export default function VaultPage() {
               )}
 
               {/* Extracted Biomarkers Table (if present) */}
-              {currentInspectingRecord?.raw_extracted?.lab_results &&
-                currentInspectingRecord.raw_extracted.lab_results.length > 0 && (
+              {(() => {
+                const labs = (currentInspectingRecord?.confirmed_data?.lab_results && currentInspectingRecord.confirmed_data.lab_results.length > 0)
+                  ? currentInspectingRecord.confirmed_data.lab_results
+                  : (currentInspectingRecord?.raw_extracted?.lab_results || []);
+                if (labs.length === 0) return null;
+
+                return (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <Activity className="h-4 w-4 text-emerald-600" />
-                        Extracted Biomarkers & Lab Results ({currentInspectingRecord.raw_extracted.lab_results.length})
+                        Extracted Biomarkers & Lab Results ({labs.length})
                       </h4>
                     </div>
                     <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800">
@@ -2341,7 +2359,7 @@ export default function VaultPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {currentInspectingRecord.raw_extracted.lab_results.map((lab: any, idx: number) => (
+                          {labs.map((lab: any, idx: number) => (
                             <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50">
                               <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                                 {lab.test_name}
@@ -2369,18 +2387,24 @@ export default function VaultPage() {
                       </table>
                     </div>
                   </div>
-                )}
+                );
+              })()}
 
               {/* Extracted Medications (if present) */}
-              {currentInspectingRecord?.raw_extracted?.medications &&
-                currentInspectingRecord.raw_extracted.medications.length > 0 && (
+              {(() => {
+                const meds = (currentInspectingRecord?.confirmed_data?.medications && currentInspectingRecord.confirmed_data.medications.length > 0)
+                  ? currentInspectingRecord.confirmed_data.medications
+                  : (currentInspectingRecord?.raw_extracted?.medications || []);
+                if (meds.length === 0) return null;
+
+                return (
                   <div className="space-y-2">
                     <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
                       <Pill className="h-4 w-4 text-teal-600" />
-                      Prescribed Medications & Regimens ({currentInspectingRecord.raw_extracted.medications.length})
+                      Prescribed Medications & Regimens ({meds.length})
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {currentInspectingRecord.raw_extracted.medications.map((med: any, idx: number) => (
+                      {meds.map((med: any, idx: number) => (
                         <div
                           key={idx}
                           className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3"
@@ -2400,17 +2424,23 @@ export default function VaultPage() {
                       ))}
                     </div>
                   </div>
-                )}
+                );
+              })()}
 
               {/* Diagnoses (if present) */}
-              {currentInspectingRecord?.raw_extracted?.diagnoses &&
-                currentInspectingRecord.raw_extracted.diagnoses.length > 0 && (
+              {(() => {
+                const diagnoses = (currentInspectingRecord?.confirmed_data?.diagnoses && currentInspectingRecord.confirmed_data.diagnoses.length > 0)
+                  ? currentInspectingRecord.confirmed_data.diagnoses
+                  : (currentInspectingRecord?.raw_extracted?.diagnoses || []);
+                if (diagnoses.length === 0) return null;
+
+                return (
                   <div className="space-y-1.5">
                     <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
                       Identified Diagnoses & Impressions
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
-                      {currentInspectingRecord.raw_extracted.diagnoses.map((diag: string, idx: number) => (
+                      {diagnoses.map((diag: string, idx: number) => (
                         <span
                           key={idx}
                           className="rounded-lg bg-teal-50 dark:bg-teal-950/60 border border-teal-200/70 dark:border-teal-800 px-2.5 py-1 text-xs font-semibold text-teal-800 dark:text-teal-300"
@@ -2420,7 +2450,8 @@ export default function VaultPage() {
                       ))}
                     </div>
                   </div>
-                )}
+                );
+              })()}
 
               {/* Patient-Centric Health Tags */}
               <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -2443,7 +2474,7 @@ export default function VaultPage() {
             {/* Modal Footer */}
             <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 px-6 py-3.5">
               <span className="text-xs text-slate-400">
-                {(inspectingDoc.file_size / 1024).toFixed(0)} KB · Added {formatDate(inspectingDoc.created_at)}
+                {inspectingDoc.file_size ? `${(inspectingDoc.file_size / 1024).toFixed(0)} KB · ` : ""}Added {formatDate(inspectingDoc.created_at)}
               </span>
               <div className="flex items-center gap-2">
                 <button

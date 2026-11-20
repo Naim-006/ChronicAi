@@ -254,8 +254,8 @@ export default function TimelinePage() {
         ))}
       </div>
 
-      {/* Event feed */}
-      <div className="space-y-3.5">
+      {/* Event feed with Connected Milestone Spine */}
+      <div className="relative pl-6 sm:pl-8 space-y-5 before:absolute before:left-2.5 sm:before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-emerald-500 before:via-teal-500 before:to-slate-300 dark:before:to-slate-800">
         {isLoading ? (
           <div className="soft-card flex items-center justify-center p-12">
             <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
@@ -272,51 +272,55 @@ export default function TimelinePage() {
           filteredEvents.map((ev) => {
             const badge = getEventBadge(ev.event_type);
             return (
-              <article
-                key={ev.id}
-                className="soft-card space-y-3 p-5 transition-all hover:border-emerald-200 dark:hover:border-emerald-800"
-              >
-                <div className="flex flex-col justify-between gap-2 border-b border-[var(--border)]/80 pb-3 sm:flex-row sm:items-center">
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${badge.color}`}
-                    >
-                      {badge.label}
+              <div key={ev.id} className="relative group">
+                {/* Glowing Milestone Node Dot */}
+                <span className="absolute -left-6 sm:-left-8 top-5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#070d18] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)] group-hover:scale-125 transition-transform" />
+
+                <article
+                  className="soft-card space-y-3 p-4 sm:p-5 transition-all hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md"
+                >
+                  <div className="flex flex-col justify-between gap-2 border-b border-[var(--border)]/80 pb-3 sm:flex-row sm:items-center">
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${badge.color}`}
+                      >
+                        {badge.label}
+                      </span>
+                      <h3 className="text-sm font-extrabold text-[var(--foreground)]">
+                        {ev.title}
+                      </h3>
+                    </div>
+                    <span className="text-xs font-bold text-[var(--muted-foreground)]">
+                      {formatDate(ev.event_date)}
                     </span>
-                    <h3 className="text-sm font-extrabold text-[var(--foreground)]">
-                      {ev.title}
-                    </h3>
                   </div>
-                  <span className="text-xs font-bold text-[var(--muted-foreground)]">
-                    {formatDate(ev.event_date)}
-                  </span>
-                </div>
 
-                {ev.description && (
-                  <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
-                    {ev.description}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between pt-1 text-[11px]">
-                  <span className="flex items-center gap-1 font-semibold text-[var(--foreground)]">
-                    <Building className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                    {ev.facility_or_doctor || "Self-Reported"}
-                  </span>
-
-                  {ev.document_id ? (
-                    <Link
-                      href="/vault"
-                      className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      <span>View in Vault →</span>
-                    </Link>
-                  ) : (
-                    <span className="text-[10px] text-slate-400 font-medium">Self-Logged Event</span>
+                  {ev.description && (
+                    <p className="text-xs leading-relaxed text-[var(--muted-foreground)]">
+                      {ev.description}
+                    </p>
                   )}
-                </div>
-              </article>
+
+                  <div className="flex items-center justify-between pt-1 text-[11px]">
+                    <span className="flex items-center gap-1 font-semibold text-[var(--foreground)]">
+                      <Building className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                      {ev.facility_or_doctor || "Self-Reported"}
+                    </span>
+
+                    {ev.document_id ? (
+                      <Link
+                        href="/vault"
+                        className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        <span>View in Vault →</span>
+                      </Link>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">Self-Logged Event</span>
+                    )}
+                  </div>
+                </article>
+              </div>
             );
           })
         )}

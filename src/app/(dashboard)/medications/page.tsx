@@ -795,7 +795,8 @@ export default function MedicationsPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* DESKTOP TABLE VIEW */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-xs">
             <thead>
               <tr className="border-b border-[var(--border)] text-[10px] font-extrabold uppercase text-[var(--muted-foreground)]">
@@ -935,6 +936,100 @@ export default function MedicationsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* MOBILE CARDS VIEW */}
+        <div className="md:hidden space-y-3">
+          {filteredMedications.length === 0 ? (
+            <div className="py-8 text-center text-xs text-[var(--muted-foreground)]">
+              No medications match the current filter.
+            </div>
+          ) : (
+            filteredMedications.map((med) => {
+              const isTaken = loggedMeds[med.id];
+              const rangeInfo = getMedRangeStatus(med);
+
+              return (
+                <div
+                  key={`mob-${med.id}`}
+                  className={`p-4 rounded-2xl border transition-all ${
+                    isTaken
+                      ? "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/60 shadow-xs"
+                      : "bg-white dark:bg-white/[0.03] border-slate-200/90 dark:border-white/10 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <Pill className="h-4.5 w-4.5" />
+                        </span>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-extrabold text-[var(--foreground)] truncate">
+                            {med.name}
+                          </h3>
+                          {med.generic_name && (
+                            <p className="text-[11px] text-[var(--muted-foreground)] truncate">
+                              {med.generic_name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleMed(med.id)}
+                      className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 active:scale-95 ${
+                        isTaken
+                          ? "bg-emerald-600 text-white shadow-emerald-600/30 hover:bg-emerald-700"
+                          : "border border-slate-300 dark:border-white/20 bg-slate-50 dark:bg-white/5 hover:border-emerald-500 text-[var(--foreground)]"
+                      }`}
+                    >
+                      <Check className={`h-4 w-4 ${isTaken ? "opacity-100" : "opacity-40"}`} />
+                      <span>{isTaken ? "Taken" : "Log"}</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-slate-100/80 dark:bg-white/5 p-2 rounded-xl border border-slate-200/50 dark:border-white/5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Dose & Frequency</span>
+                      <span className="font-extrabold text-[var(--foreground)]">{med.strength || med.dosage}</span>
+                      <span className="text-slate-500 block truncate">{med.frequency}</span>
+                    </div>
+                    <div className="bg-slate-100/80 dark:bg-white/5 p-2 rounded-xl border border-slate-200/50 dark:border-white/5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Course Status</span>
+                      <span className={`inline-block px-2 py-0.5 mt-0.5 rounded-full text-[10px] font-extrabold border ${rangeInfo.color}`}>
+                        {rangeInfo.label}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block truncate mt-0.5">
+                        {med.start_date ? formatDate(med.start_date) : "Ongoing"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {med.instructions && (
+                    <p className="mt-2 text-[11px] text-slate-600 dark:text-slate-300 italic bg-emerald-50/50 dark:bg-emerald-950/30 p-2 rounded-xl border border-emerald-200/40 dark:border-emerald-800/30">
+                      {med.instructions}
+                    </p>
+                  )}
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 dark:text-slate-400 truncate max-w-[65%]">
+                      Dr. {med.prescribing_doctor || "Physician"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(med)}
+                      className="cursor-pointer px-2.5 py-1 rounded-lg border border-[var(--border)] text-xs font-semibold hover:bg-[var(--muted)] text-[var(--foreground)]"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 

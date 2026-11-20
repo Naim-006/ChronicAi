@@ -508,14 +508,19 @@ export default function DashboardPage() {
       {/* SECTION 1: Health Overview with 7D, 30D, 3M, 1Y Filter & Analytics */}
       <section>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-1">
-          <div className="flex items-center gap-3">
-            
-            <div>
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
-                Health Overview
-              </h2>
-             
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Active Health Profile
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+              </span>
             </div>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
+            </h2>
           </div>
 
           {/* Time Range Filter & Analytics CTA */}
@@ -822,17 +827,17 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* 4. AI */}
+          {/* 4. AI Copilot */}
           <Link
             href="/assistant"
             className="glass-card p-3.5 sm:p-4 flex items-center gap-3 group transition-all hover:border-emerald-500/40"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-transform group-hover:scale-105">
-              <Stethoscope className="h-5 w-5 stroke-[2.3] text-slate-950" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00d29d] text-slate-900 shadow-[0_3px_10px_rgba(0,210,157,0.35)] transition-transform group-hover:scale-105">
+              <Stethoscope className="h-5 w-5 stroke-[2.3] text-slate-900" />
             </div>
             <div className="min-w-0 flex-1">
               <span className="block text-xs font-bold text-slate-900 dark:text-white truncate">
-                AI
+                Copilot
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
                 Clinical guidance
@@ -1055,38 +1060,9 @@ export default function DashboardPage() {
 
       {/* SECTION 4: Bottom Footer with Theme Switcher & Status */}
       <footer className="mt-8 pt-4 border-t border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="font-semibold text-slate-700 dark:text-slate-300">
-            Stay healthy. Live better.
-          </span>
-          <span className="text-emerald-500 dark:text-emerald-400">💚</span>
-        </div>
+      
 
-        <div className="flex items-center gap-3">
-          {/* Moon / Sun Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="flex items-center gap-1.5 p-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#0c1527]/80 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer shadow-xs"
-            title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
-            aria-label="Toggle Dark and Light Mode"
-          >
-            {resolvedTheme === "dark" ? (
-              <Moon className="h-4 w-4 text-emerald-400" />
-            ) : (
-              <Sun className="h-4 w-4 text-amber-500" />
-            )}
-          </button>
-
-          <Link
-            href="/assistant"
-            className="flex items-center gap-1.5 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors"
-          >
-            <HelpCircle className="h-3.5 w-3.5" />
-            <span>Need help?</span>
-          </Link>
-        </div>
+      
       </footer>
         </>
       )}

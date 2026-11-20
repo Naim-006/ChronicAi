@@ -236,7 +236,7 @@ export function DesktopNavRail() {
         </Link>
         {!isCollapsed && (
           <p className="mt-2 text-center text-[10px] font-medium text-slate-400 dark:text-slate-500">
-            v2.0.0 • Caring for a healthier you 💚
+          
           </p>
         )}
       </div>
