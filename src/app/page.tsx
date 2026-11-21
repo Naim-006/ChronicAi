@@ -435,9 +435,6 @@ export default function LandingPage() {
             <a href="#safety" className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400">
               Safety
             </a>
-            <Link href="/docs" className="transition-colors hover:text-emerald-600 dark:hover:text-emerald-400 font-bold text-emerald-600 dark:text-emerald-400">
-              Docs
-            </Link>
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2.5">
@@ -875,10 +872,10 @@ export default function LandingPage() {
             <span className="hidden sm:inline">· All your health records, one calm place.</span>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <Link href="/docs" className="hover:text-emerald-600 dark:hover:text-emerald-400 font-bold transition-colors">
-              API Documentation
+            <Link href="/docs" className="text-[11px] text-slate-400 dark:text-slate-500 hover:text-emerald-500 font-medium transition-colors">
+              Developer API & Docs
             </Link>
-            <p className="font-medium">Not a substitute for professional medical advice.</p>
+            <p className="font-medium text-[11px]">Not a substitute for professional medical advice.</p>
           </div>
         </div>
       </footer>

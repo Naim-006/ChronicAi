@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import {
   Settings,
   Bell,
@@ -18,6 +19,8 @@ import {
   User as UserIcon,
   Loader2,
   AlertCircle,
+  ExternalLink,
+  Code2,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useLanguage, Language } from "@/context/LanguageContext";
@@ -400,6 +403,33 @@ export default function SettingsPage() {
             <Download className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <span>{t("action.export", "Export Complete Health Record (JSON)")}</span>
           </button>
+        </div>
+      </div>
+
+      {/* Developer API & Architecture Documentation */}
+      <div className="pt-2">
+        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <Code2 className="h-3.5 w-3.5" />
+            </span>
+            <div>
+              <span className="font-bold text-slate-900 dark:text-white block text-[11px]">
+                Developer & Integration API Docs
+              </span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                REST endpoint schemas, pgvector architecture, and FHIR data models.
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/docs"
+            target="_blank"
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-200 shadow-2xs transition-colors shrink-0"
+          >
+            <span>Open API Docs</span>
+            <ExternalLink className="h-3 w-3 text-slate-400" />
+          </Link>
         </div>
       </div>
     </div>
