@@ -70,6 +70,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { name: "Notifications", href: "/notifications", icon: Bell },
       { name: "Health Profile", href: "/profile", icon: User },
       { name: "Settings", href: "/settings", icon: Settings },
+      { name: "Documentation", href: "/docs", icon: FileText },
     ],
   },
 ];

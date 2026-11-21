@@ -125,6 +125,11 @@ const navGroups: NavGroup[] = [
         href: "/settings",
         icon: Settings,
       },
+      {
+        name: "Documentation",
+        href: "/docs",
+        icon: FileText,
+      },
     ],
   },
 ];
