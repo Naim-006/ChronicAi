@@ -25,6 +25,7 @@ import { useAuth } from "@/context/AuthContext";
 import { updateHealthProfile } from "@/lib/supabase/services/profile";
 import { uploadAvatar } from "@/lib/supabase/storage";
 import { cn } from "@/lib/utils";
+import { DoctorAccessManager } from "@/components/consent/DoctorAccessManager";
 
 export default function SettingsPage() {
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -383,7 +384,15 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Group 5: Data Portability (Export JSON) */}
+      {/* Group 5: Doctor Access & Consent Management */}
+      <div>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
+          Doctor Access & Privacy Consent
+        </span>
+        <DoctorAccessManager />
+      </div>
+
+      {/* Group 6: Data Portability (Export JSON) */}
       <div>
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 block mb-2">
           {t("settings.data_group", "Data Ownership & Portability")}

@@ -30,6 +30,7 @@ import { useAuth } from "@/context/AuthContext";
 import { uploadAvatar } from "@/lib/supabase/storage";
 import { updateHealthProfile } from "@/lib/supabase/services/profile";
 import { Allergy, BloodGroup, Sex } from "@/types/medical";
+import { PatientIDCard } from "@/components/consent/PatientIDCard";
 
 export default function ProfilePage() {
   const { profile, user, effectiveUserId, refreshProfile } = useAuth();
@@ -395,6 +396,9 @@ export default function ProfilePage() {
           Settings
         </Link>
       </section>
+
+      {/* ChronicAI Medical ID & Quick Check-in */}
+      <PatientIDCard />
 
       {/* Demographics, Physical Measurements & Vitals */}
       <section className="soft-card p-5 space-y-4">

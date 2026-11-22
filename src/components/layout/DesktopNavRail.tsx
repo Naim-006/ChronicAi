@@ -79,7 +79,7 @@ export function DesktopNavRail() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { t } = useLanguage();
-  const { user, profile } = useAuth();
+  const { user, profile, isDoctor } = useAuth();
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
   const initials = displayName
@@ -214,6 +214,30 @@ export function DesktopNavRail() {
           </div>
         ))}
       </div>
+
+      {/* Doctor Portal Switcher */}
+      {isDoctor && (
+        <div className="px-3 pb-2">
+          <Link
+            href="/doctor/dashboard"
+            className={cn(
+              "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/20",
+              isCollapsed && "justify-center px-1"
+            )}
+            title={isCollapsed ? "Switch to Doctor Portal" : undefined}
+          >
+            <Stethoscope className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            {!isCollapsed && (
+              <>
+                <span className="truncate flex-1">Doctor Portal</span>
+                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-emerald-600 text-white">
+                  MD
+                </span>
+              </>
+            )}
+          </Link>
+        </div>
+      )}
 
       {/* Footer Profile & Version */}
       <div className="border-t border-slate-200/60 dark:border-white/[0.06] p-3">

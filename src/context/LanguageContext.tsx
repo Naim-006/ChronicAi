@@ -79,6 +79,25 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.upcoming_doses": "Today's Medication Doses",
     "dashboard.recent_records": "Recent Medical Records",
     "dashboard.clinical_alerts": "Clinical Insights & Alerts",
+
+    // Doctor Portal (Additive)
+    "doctor.nav.dashboard": "Doctor Dashboard",
+    "doctor.nav.queue": "Live Queue",
+    "doctor.nav.patients": "Patients",
+    "doctor.nav.consultations": "Consultations & Rx",
+    "doctor.nav.followups": "Follow-ups Due",
+    "doctor.nav.switch_to_patient": "Switch to Patient Portal",
+    "doctor.nav.switch_to_doctor": "Switch to Doctor Portal",
+    "doctor.portal.title": "ChronicAI Doctor Portal",
+    "doctor.portal.badge": "CLINICAL",
+    "doctor.register.title": "Doctor Registration",
+    "doctor.pending.title": "Verification Pending",
+    "doctor.consultations.title": "Consultations & E-Prescriptions",
+    "doctor.consultations.new": "New Consultation Note",
+    "doctor.consultations.publish": "Save & Publish to Patient App",
+    "doctor.followups.title": "Follow-ups & Care Adherence",
+    "doctor.followups.due_this_week": "Due This Week",
+    "doctor.followups.send_reminder": "Send Reminder",
   },
   bn: {
     // Nav Items (বাংলা)
@@ -148,6 +167,25 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.upcoming_doses": "আজকের ওষুধ সেবনের তালিকা",
     "dashboard.recent_records": "সাম্প্রতিক মেডিকেল রিপোর্ট",
     "dashboard.clinical_alerts": "চিকিৎসা সংক্রান্ত পর্যবেক্ষণ ও সতর্কতা",
+
+    // Doctor Portal (বাংলা)
+    "doctor.nav.dashboard": "ডক্টর ড্যাশবোর্ড",
+    "doctor.nav.queue": "লাইভ সিরিয়াল কিউ",
+    "doctor.nav.patients": "রোগী তালিকা",
+    "doctor.nav.consultations": "পরামর্শ ও প্রেসক্রিপশন",
+    "doctor.nav.followups": "ফলো-আপ শিডিউল",
+    "doctor.nav.switch_to_patient": "রোগী পোর্টালে যান",
+    "doctor.nav.switch_to_doctor": "ডক্টর পোর্টালে যান",
+    "doctor.portal.title": "ক্রনিকএআই ডক্টর পোর্টাল",
+    "doctor.portal.badge": "ক্লিনিক্যাল",
+    "doctor.register.title": "ডাক্তার রেজিস্ট্রেশন",
+    "doctor.pending.title": "ভেরিফিকেশন অপেক্ষারত",
+    "doctor.consultations.title": "পরামর্শ ও ই-প্রেসক্রিপশন",
+    "doctor.consultations.new": "নতুন কনসালটেশন নোট",
+    "doctor.consultations.publish": "সংরক্ষণ ও প্রেসক্রিপশন প্রকাশ করুন",
+    "doctor.followups.title": "ফলো-আপ ও চিকিৎসা ধারাবাহিকতা",
+    "doctor.followups.due_this_week": "চলতি সপ্তাহে নির্ধারিত",
+    "doctor.followups.send_reminder": "অনুস্মারক পাঠান",
   },
   es: {
     // Nav Items (Español)
@@ -217,6 +255,25 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.upcoming_doses": "Dosis de Medicamentos de Hoy",
     "dashboard.recent_records": "Registros Médicos Recientes",
     "dashboard.clinical_alerts": "Información y Alertas Clínicas",
+
+    // Doctor Portal (Español)
+    "doctor.nav.dashboard": "Panel Médico",
+    "doctor.nav.queue": "Cola en Vivo",
+    "doctor.nav.patients": "Pacientes",
+    "doctor.nav.consultations": "Consultas y Recetas",
+    "doctor.nav.followups": "Seguimientos Pendientes",
+    "doctor.nav.switch_to_patient": "Modo Paciente",
+    "doctor.nav.switch_to_doctor": "Modo Médico",
+    "doctor.portal.title": "Portal Médico ChronicAI",
+    "doctor.portal.badge": "CLÍNICO",
+    "doctor.register.title": "Registro Médico",
+    "doctor.pending.title": "Verificación Pendiente",
+    "doctor.consultations.title": "Consultas y Recetas Electrónicas",
+    "doctor.consultations.new": "Nueva Nota de Consulta",
+    "doctor.consultations.publish": "Guardar y Publicar en App del Paciente",
+    "doctor.followups.title": "Seguimientos y Adherencia al Tratamiento",
+    "doctor.followups.due_this_week": "Pendiente Esta Semana",
+    "doctor.followups.send_reminder": "Enviar Recordatorio",
   },
 };
 

@@ -3,13 +3,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Search, User, Settings, LogOut, ChevronDown } from "lucide-react";
+import { Bell, Search, User, Settings, LogOut, ChevronDown, Stethoscope } from "lucide-react";
 import { useMobileNav } from "./MobileNavContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 
 function ProfileDropdown() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isDoctor, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +101,25 @@ function ProfileDropdown() {
 
           {/* Quick Menu Links */}
           <div className="mt-2 space-y-1">
+            {isDoctor ? (
+              <Link
+                href="/doctor/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+              >
+                <Stethoscope className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Switch to Doctor Portal</span>
+              </Link>
+            ) : (
+              <Link
+                href="/doctor/register"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
+              >
+                <Stethoscope className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Doctor Registration</span>
+              </Link>
+            )}
             <Link
               href="/profile"
               onClick={() => setIsOpen(false)}
